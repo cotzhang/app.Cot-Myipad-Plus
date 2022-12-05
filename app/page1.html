@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<link rel="stylesheet" href="panelistic3.0-electron.css">
+	<script src="panelistic3.0-electron.js"></script>
+	<title>title</title>
+	<style type="text/css"></style>
+	<script type="text/javascript">
+		let $ = document.querySelector;
+		let panelistic;
+		const electron = require("electron");
+		window.onload=function() {
+			document.getElementById('window_title').innerText=document.title;
+			panelistic = new Panelistic();
+			panelistic.initialize();
+		}
+		const remote = require("@electron/remote");
+	</script>
+</head>
+<body>
+	<div id="panelistic_content_sidebar_in">
+		<h1>Page Title 1</h1>
+			<h6>This is a subtitle with a small font size.</h6>
+			<span class="panelistic_placeholder"></span>
+			<div class="panelistic_panel">
+				<div class="panelistic_panel_name">The demo of interactive inputs</div><br><span class="panelistic_placeholder_large"></span>
+				<input type="text" value="This is an input">
+				<input type="button" value="Button"><br>
+				<span class="panelistic_placeholder"></span>
+				<select>
+					<option>Dropbox 1</option>
+					<option>Dropbox 2</option>
+					<option>Dropbox 3</option>
+					<option>Dropbox 4</option>
+				</select>
+				<span class="panelistic_placeholder"></span>
+				<div class="panelistic_checkbox"><input type="checkbox"><span class="panelistic_checkbox_text">Checkbox Text</span></div>
+				<span class="panelistic_placeholder"></span>
+				<textarea>Textarea test</textarea>
+			</div>
+	</div>
+</body>
+</html>

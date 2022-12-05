@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<link rel="stylesheet" href="panelistic3.0-electron.css">
+	<script src="panelistic3.0-electron.js"></script>
+	<title>Cot Application Framework (with sidebar)</title>
+	<style type="text/css"></style>
+	<script type="text/javascript">
+		let $ = document.querySelector;
+		let panelistic;
+		let webview;
+		const electron = require("electron");
+		window.onload=function() {
+			document.getElementById('window_title').innerText=document.title;
+			panelistic = new Panelistic();
+			panelistic.initialize();
+			webview = document.getElementById('webview');
+			webview.src = __dirname + "/page1.html"
+		}
+		const remote = require("@electron/remote");
+	</script>
+</head>
+<body>
+	<div id="panelistic_window" ondragstart="return false;">
+		<div id="panelistic_titlebar">
+			<span id="window_title"></span>
+			<img src="src/btn/window/Close.svg" class="panelistic_controlbtn" id="controlbtn_closebtn" onclick="window.close();">
+			<img src="src/btn/window/min.png" class="panelistic_controlbtn" id="controlbtn_minbtn" onclick="remote.getCurrentWindow().minimize()">
+		</div>
+		<div id="panelistic_blur"></div>
+		<div id="panelistic_contents">
+			<div id="panelistic_sidebar">
+				<span class="panelistic_sidebar_placeholder"></span>
+				<div class="panelistic_sidebar_title">Title</div>
+				<div class="panelistic_sidebar_subtitle">Subtitle</div>
+				<span class="panelistic_placeholder"></span>
+				<div id="select1" class="panelistic_sidebar_selection" onclick="webview.loadURL(__dirname+'/page1.html')">Page 1</div>
+				<div id="select2" class="panelistic_sidebar_selection" onclick="webview.loadURL(__dirname+'/page2.html')">Page 2</div>
+			</div>
+			<div id="panelistic_content_sidebar">
+				<webview id="webview" nodeintegration disablewebsecurity/></webview>
+			</div>
+		</div>
+	</div>
+</body>
+</html>

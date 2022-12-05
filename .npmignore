@@ -1,0 +1,13 @@
+.idea/
+build/
+node_modules/
+.git/
+.gitignore
+.github/
+logo.png
+screenshots/
+examples/
+.vscode/
+.editorconfig
+.eslintrc.js
+prettier.config.js

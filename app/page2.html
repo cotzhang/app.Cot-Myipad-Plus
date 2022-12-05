@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<link rel="stylesheet" href="panelistic3.0-electron.css">
+	<script src="panelistic3.0-electron.js"></script>
+	<title>title</title>
+	<style type="text/css"></style>
+	<script type="text/javascript">
+		let $ = document.querySelector;
+		let panelistic;
+		const electron = require("electron");
+		window.onload=function() {
+			document.getElementById('window_title').innerText=document.title;
+			panelistic = new Panelistic();
+			panelistic.initialize();
+		}
+		const remote = require("@electron/remote");
+	</script>
+</head>
+<body>
+	<div id="panelistic_content_sidebar_in">
+		<h1>Page Title 2</h1>
+			<h6>This is a subtitle with a small font size.</h6>
+			<span class="panelistic_placeholder"></span>
+			<div class="panelistic_panel">
+				<div class="panelistic_panel_name">The demo of display blocks</div><br><span class="panelistic_placeholder_large"></span>
+				<img src="src/img/example.jpg">
+				<span class="panelistic_placeholder"></span>
+				<div class="panelistic_code"><code>This is an example of the code area<br>12345<br>67890</code></div>
+			</div>
+	</div>
+</body>
+</html>

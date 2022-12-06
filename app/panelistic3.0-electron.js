@@ -16,7 +16,7 @@ function Panelistic() {
 	}
 	this.dialog.salert= function(content) {
 		let id = Date.now();
-		panelistic_blur.innerHTML += `<div class="panelistic_popup" id="${id}"><div class="panelistic_panel panelistic_popup_layout"><spa<span class="panelistic_popup_content">${content}</span></div><span class="panelistic_placeholder"></span><span class="panelistic_placeholder"></span><input type="button" value="Dismiss" onclick="panelistic.dialog.dismiss(${id});"><br></div>`
+		panelistic_blur.innerHTML += `<div class="panelistic_popup" id="${id}"><div class="panelistic_panel panelistic_popup_layout"><spa<span class="panelistic_popup_content">${content}</span></div></div>`
 		panelistic_blur.style.visibility='visible';
 		panelistic_dialog_count++;
 		return id;

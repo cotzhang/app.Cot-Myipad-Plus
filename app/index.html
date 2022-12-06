@@ -4,19 +4,288 @@
 	<meta charset="utf-8">
 	<link rel="stylesheet" href="panelistic3.0-electron.css">
 	<script src="panelistic3.0-electron.js"></script>
-	<title>Cot Application Framework (with sidebar)</title>
+	<title>平板助手</title>
 	<style type="text/css"></style>
 	<script type="text/javascript">
-		let $ = document.querySelector;
 		let panelistic;
+		const fs = require('fs');
+		var currdiag;
+		const $ = require('jquery');
 		let webview;
+		var retdta;
+		/*function login(datas) {
+			let pwmd5 = require('crypto').createHash('md5').update(datas[1]).digest('hex');
+			console.log(pwmd5);
+			let reqstr = `<v:Envelope xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns:d="http://www.w3.org/2001/XMLSchema" xmlns:c="http://schemas.xmlsoap.org/soap/encoding/" xmlns:v="http://schemas.xmlsoap.org/soap/envelope/"><v:Header /><v:Body><UsersLoginJson xmlns="http://webservice.myi.cn/wmstudyservice/wsdl/" id="o0" c:root="1"><lpszUserName i:type="d:string">${datas[0]}</lpszUserName><lpszPasswordMD5 i:type="d:string">${pwmd5}</lpszPasswordMD5><lpszClientID i:type="d:string">myipad_</lpszClientID><lpszHardwareKey i:type="d:string">MODEL: BZT-W09
+WifiMac: 12:34:56:78:90:ab
+services.jar: d54f80b88122485ef2e8efb9c6e81a06
+framework.jar: d54f80b88122485ef2e8efb9c6e81a06
+ClientVersion: 5.2.3.52427
+ClientSign: 308203253082020da00302010202040966f52d300d06092a864886f70d01010b05003042310b300906035504061302434e310f300d060355040713064e696e67426f31223020060355040a13194e696e67426f2052756959694b654a6920436f2e204c74642e3020170d3132313231313130313133355a180f32303632313132393130313133355a3042310b300906035504061302434e310f300d060355040713064e696e67426f31223020060355040a13194e696e67426f2052756959694b654a6920436f2e204c74642e30820122300d06092a864886f70d01010105000382010f003082010a0282010100abf2c60e5fcb7776da3d22c3180e284da9c4e715cec2736646da086cbf979a7f74bc147167f0f32ef0c52458e9183f0dd9571d7971e49564c00fbfd30bef3ca9a2d52bffcd0142c72e10fac158cb62c7bc7e9e17381a555ad7d39a24a470584a0e6aafdce2e4d6877847b15cbf4de89e3e4e71b11dca9920843ccc055acf8781db29bdaf3f06e16f055bf579a35ae3adb4d1149f8d43d90add54596acef8e4a28905f9f19fc0aa7fda9e8d56aa63db5d8d5e0fc4c536629f0a25a44429c699318329af6a3e869dd5e8289c78f55d14563559ffc9ccbf71fac5a03e13a3ee1fb8fc3857d10d5d3990bf9b84cd6fa555eb17a74809a7bb501e953a639104146adb0203010001a321301f301d0603551d0e04160414da4b4d8147840ff4b03f10fc5dd534bb133204e6300d06092a864886f70d01010b05000382010100801b8d796b90ab7a711a88f762c015158d75f1ae5caf969767131e6980ebe7f194ce33750902e6aa561f33d76d37f4482ff22cccbf9d5fecb6ed8e3f278fd1f988ea85ae30f8579d4afe710378b3ccb9cb41beaddef22fb3d128d9d61cfcb3cb05d32ab3b2c4524815bfc9a53c8e5ee3ad4589dc888bcdbdaf9270268eb176ff2d43c2fd236b5bf4ef8ffa8dd920d1583d70f971b988ee4054e1f739ea71510ee7172546ffcda31e6b270178f91086db9ff1051dedf453a6bad4f9b432d362bbe173fd1cc7350853fddd552a27a82fdfaf98e5b08186a03ffc6e187387e4bbd52195126c7c6cec6ab07fd5aadc43a0edb7826b237ba8c8aa443f132516fe89ba
+AppKey: MyiPad
+Flavor: normalAppKey: MyiPad
+Flavor: normal</lpszHardwareKey></UsersLoginJson></v:Body></v:Envelope>`
+			$.ajax({
+	        	url: "https://gzzx.lexuewang.cn:8003/wmexam/wmstudyservice.WSDL",
+	        	data: reqstr,
+	        	type: "post",
+	        	dataType:"text",
+	        	beforeSend: function(request) {
+	        		request.setRequestHeader("SOAPAction", "http://webservice.myi.cn/wmstudyservice/wsdl/UsersLoginJson");
+	        	},
+	        	success: function (data) {
+	        		//console.log(data)
+	        		panelistic.dialog.dismiss(currdiag)
+	        		if((data+"").indexOf(">-4060<")!=-1){
+	        			panelistic.dialog.alert("登录失败","用户名或密码错误","确定")
+	        		}else if((data+"").indexOf(">1168<")!=-1){
+	        			panelistic.dialog.alert("登录失败","用户名不正确","确定")
+	        		}else{
+	        			fs.writeFile(__dirname+'/account',JSON.stringify({account:datas[0],password:pwmd5}),()=>{})
+	        			syncdata();
+	        		}
+	        	}
+	        })
+		}
+		function syncdata() {
+	        currdiag = panelistic.dialog.salert("正在同步数据");
+			let getusrfile = JSON.parse(fs.readFileSync(__dirname+'/account'));
+			let reqstr = `<v:Envelope xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns:d="http://www.w3.org/2001/XMLSchema" xmlns:c="http://schemas.xmlsoap.org/soap/encoding/" xmlns:v="http://schemas.xmlsoap.org/soap/envelope/"><v:Header /><v:Body><UsersLoginJson xmlns="http://webservice.myi.cn/wmstudyservice/wsdl/" id="o0" c:root="1"><lpszUserName i:type="d:string">${getusrfile.account}</lpszUserName><lpszPasswordMD5 i:type="d:string">${getusrfile.password}</lpszPasswordMD5><lpszClientID i:type="d:string">myipad_</lpszClientID><lpszHardwareKey i:type="d:string">MODEL: BZT-W09
+WifiMac: 12:34:56:78:90:ab
+services.jar: d54f80b88122485ef2e8efb9c6e81a06
+framework.jar: d54f80b88122485ef2e8efb9c6e81a06
+ClientVersion: 5.2.3.52427
+ClientSign: 308203253082020da00302010202040966f52d300d06092a864886f70d01010b05003042310b300906035504061302434e310f300d060355040713064e696e67426f31223020060355040a13194e696e67426f2052756959694b654a6920436f2e204c74642e3020170d3132313231313130313133355a180f32303632313132393130313133355a3042310b300906035504061302434e310f300d060355040713064e696e67426f31223020060355040a13194e696e67426f2052756959694b654a6920436f2e204c74642e30820122300d06092a864886f70d01010105000382010f003082010a0282010100abf2c60e5fcb7776da3d22c3180e284da9c4e715cec2736646da086cbf979a7f74bc147167f0f32ef0c52458e9183f0dd9571d7971e49564c00fbfd30bef3ca9a2d52bffcd0142c72e10fac158cb62c7bc7e9e17381a555ad7d39a24a470584a0e6aafdce2e4d6877847b15cbf4de89e3e4e71b11dca9920843ccc055acf8781db29bdaf3f06e16f055bf579a35ae3adb4d1149f8d43d90add54596acef8e4a28905f9f19fc0aa7fda9e8d56aa63db5d8d5e0fc4c536629f0a25a44429c699318329af6a3e869dd5e8289c78f55d14563559ffc9ccbf71fac5a03e13a3ee1fb8fc3857d10d5d3990bf9b84cd6fa555eb17a74809a7bb501e953a639104146adb0203010001a321301f301d0603551d0e04160414da4b4d8147840ff4b03f10fc5dd534bb133204e6300d06092a864886f70d01010b05000382010100801b8d796b90ab7a711a88f762c015158d75f1ae5caf969767131e6980ebe7f194ce33750902e6aa561f33d76d37f4482ff22cccbf9d5fecb6ed8e3f278fd1f988ea85ae30f8579d4afe710378b3ccb9cb41beaddef22fb3d128d9d61cfcb3cb05d32ab3b2c4524815bfc9a53c8e5ee3ad4589dc888bcdbdaf9270268eb176ff2d43c2fd236b5bf4ef8ffa8dd920d1583d70f971b988ee4054e1f739ea71510ee7172546ffcda31e6b270178f91086db9ff1051dedf453a6bad4f9b432d362bbe173fd1cc7350853fddd552a27a82fdfaf98e5b08186a03ffc6e187387e4bbd52195126c7c6cec6ab07fd5aadc43a0edb7826b237ba8c8aa443f132516fe89ba
+AppKey: MyiPad
+Flavor: normalAppKey: MyiPad
+Flavor: normal</lpszHardwareKey></UsersLoginJson></v:Body></v:Envelope>`
+			$.ajax({
+	        	url: "https://gzzx.lexuewang.cn:8003/wmexam/wmstudyservice.WSDL",
+	        	data: reqstr,
+	        	type: "post",
+	        	dataType:"text",
+	        	beforeSend: function(request) {
+	        		request.setRequestHeader("SOAPAction", "http://webservice.myi.cn/wmstudyservice/wsdl/UsersLoginJson");
+	        	},
+	        	success: function (data) {
+	        		//console.log(data)
+	        		if((data+"").indexOf(">-4060<")!=-1){
+	        			panelistic.dialog.dismiss(currdiag)
+						console.log("Password changed!");
+						webview.src = __dirname + "/login.html"
+	        			panelistic.dialog.alert("登录失败","您的密码已经更改","重新登录")
+	        			fs.unlink(__dirname+'/account')
+	        		}else if((data+"").indexOf(">1168<")!=-1){
+	        			panelistic.dialog.dismiss(currdiag)
+	        			panelistic.dialog.alert("登录失败","用户名不正确","确定")
+	        		}else{
+	        			var gotdatas = data.substring(data.indexOf('<AS:szLoginJson>')+16,data.indexOf("</AS:szLoginJson>"));
+	        			var temp = document.createElement("div");
+            			temp.innerHTML = gotdatas;
+            			var output = temp.innerText || temp.textContent;
+            			temp = null;
+	        			let allcfgs = JSON.parse(output);
+	        			fs.writeFile(__dirname+'/data',output,()=>{});
+	        			let sessionid = allcfgs.sessionid;
+	        			let usrname = allcfgs.realname;
+	        			let userguid = allcfgs.userguid;
+	        			let displayname = getusrfile.account+"@gzzx.lexuewang.cn:8003";
+						console.log("Hello "+usrname+" with sessionid "+sessionid);
+	        			$('.panelistic_sidebar_title')[0].value=usrname;
+	        			$('.panelistic_sidebar_subtitle')[0].value=displayname;
+	        			$('#panelistic_sidebar')[0].style.pointerEvents="auto";
+						let reqstr = `<v:Envelope xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns:d="http://www.w3.org/2001/XMLSchema" xmlns:c="http://schemas.xmlsoap.org/soap/encoding/" xmlns:v="http://schemas.xmlsoap.org/soap/envelope/"><v:Header /><v:Body><DataSynchronizeGet xmlns="http://webservice.myi.cn/wmstudyservice/wsdl/" id="o0" c:root="1"><lpszClientID i:type="d:string">myipad_689047</lpszClientID><szInputOutputXML i:type="d:string">&lt;wmStudy&gt;
+   &lt;DataSynchronize skipcontent="true" version="1.1"/&gt;
+&lt;/wmStudy&gt;</szInputOutputXML></DataSynchronizeGet></v:Body></v:Envelope>`
+						$.ajax({
+	        				url: "https://gzzx.lexuewang.cn:8003/wmexam/wmstudyservice.WSDL",
+	        				data: reqstr,
+	        				dataType:"text",
+	        				type: "post",
+	        				beforeSend: function(request) {
+	        					request.setRequestHeader("SOAPAction", "http://webservice.myi.cn/wmstudyservice/wsdl/LessonsScheduleGetTableData");
+	        				},
+	        				success: function (data) {
+	        					//console.log(data)
+	        					if((data+"").indexOf("><faultstring>Error -4063</faultstring")!=-1){
+	        						panelistic.dialog.dismiss(currdiag)
+									console.log("Wrong Sessionid");
+									webview.src = __dirname + "/login.html"
+	        						panelistic.dialog.alert("同步出错","登录已过期","重新登录")
+	        						fs.unlink(__dirname+'/account')
+	        					}else{
+	        						retdta = data
+	        						var gotdatas = data.substring(data.indexOf('<AS:szInputOutputXML>')+21,data.indexOf("</AS:szInputOutputXML>"));
+	        						console.log(gotdatas)
+	        						var temp = document.createElement("div");
+            						temp.innerHTML = gotdatas;
+            						var output = temp.innerText || temp.textContent;
+            						temp = null;
+	        						// fs.writeFile(__dirname+'/account',JSON.stringify({account:getusrfile.account,password:pwmd5}),()=>{})
+	        						// var gotdatas = data.substring(data.indexOf('<AS:szLoginJson>')+16,data.indexOf("</AS:szLoginJson>"));
+	        						// var temp = document.createElement("div");
+            			// 			temp.innerHTML = gotdatas;
+            			// 			var output = temp.innerText || temp.textContent;
+            			// 			temp = null;
+	        						// let allcfgs = JSON.parse(output);
+	        						// fs.writeFile(__dirname+'/data',output,()=>{});
+	        						// let sessionid = allcfgs.sessionid;
+	        						// let usrname = allcfgs.realname;
+	        						// let userguid = allcfgs.userguid;
+	        						// let displayname = getusrfile.account+"@gzzx.lexuewang.cn:8003";
+	        						// $('.panelistic_sidebar_title')[0].value=usrname;
+	        						// $('.panelistic_sidebar_subtitle')[0].value=displayname;
+	        						// $('#panelistic_sidebar')[0].style.pointerEvents="auto";
+	        						// panelistic.dialog.dismiss(currdiag)
+	        					}
+	        				}
+	        			})
+	        		}
+	        	}
+	        })
+		}*/
+		function request(pos,body,callback) {
+			$.ajax({
+	        	url: "https://gzzx.lexuewang.cn:8003/wmexam/wmstudyservice.WSDL",
+	        	data: body,
+	        	dataType:"text",
+	        	type: "post",
+	        	async: true,
+	        	beforeSend: function(request) {
+	        		request.setRequestHeader("SOAPAction", pos);
+	        	},
+	        	success: callback
+	        })
+		}
+		function requestSync(pos,body) {
+			return $.ajax({
+	        	url: "https://gzzx.lexuewang.cn:8003/wmexam/wmstudyservice.WSDL",
+	        	data: body,
+	        	dataType:"text",
+	        	type: "post",
+	        	async: false,
+	        	beforeSend: function(request) {
+	        		request.setRequestHeader("SOAPAction", pos);
+	        	}
+	        })
+		}
+		function initlogin(id,pwmd5) {
+			currdiag = panelistic.dialog.salert("正在登录");
+			let reqstr = `<v:Envelope xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns:d="http://www.w3.org/2001/XMLSchema" xmlns:c="http://schemas.xmlsoap.org/soap/encoding/" xmlns:v="http://schemas.xmlsoap.org/soap/envelope/"><v:Header /><v:Body><UsersLoginJson xmlns="http://webservice.myi.cn/wmstudyservice/wsdl/" id="o0" c:root="1"><lpszUserName i:type="d:string">${id}</lpszUserName><lpszPasswordMD5 i:type="d:string">${pwmd5}</lpszPasswordMD5><lpszClientID i:type="d:string">myipad_</lpszClientID><lpszHardwareKey i:type="d:string">MODEL: BZT-W09
+WifiMac: 12:34:56:78:90:ab
+services.jar: d54f80b88122485ef2e8efb9c6e81a06
+framework.jar: d54f80b88122485ef2e8efb9c6e81a06
+ClientVersion: 5.2.3.52427
+ClientSign: 308203253082020da00302010202040966f52d300d06092a864886f70d01010b05003042310b300906035504061302434e310f300d060355040713064e696e67426f31223020060355040a13194e696e67426f2052756959694b654a6920436f2e204c74642e3020170d3132313231313130313133355a180f32303632313132393130313133355a3042310b300906035504061302434e310f300d060355040713064e696e67426f31223020060355040a13194e696e67426f2052756959694b654a6920436f2e204c74642e30820122300d06092a864886f70d01010105000382010f003082010a0282010100abf2c60e5fcb7776da3d22c3180e284da9c4e715cec2736646da086cbf979a7f74bc147167f0f32ef0c52458e9183f0dd9571d7971e49564c00fbfd30bef3ca9a2d52bffcd0142c72e10fac158cb62c7bc7e9e17381a555ad7d39a24a470584a0e6aafdce2e4d6877847b15cbf4de89e3e4e71b11dca9920843ccc055acf8781db29bdaf3f06e16f055bf579a35ae3adb4d1149f8d43d90add54596acef8e4a28905f9f19fc0aa7fda9e8d56aa63db5d8d5e0fc4c536629f0a25a44429c699318329af6a3e869dd5e8289c78f55d14563559ffc9ccbf71fac5a03e13a3ee1fb8fc3857d10d5d3990bf9b84cd6fa555eb17a74809a7bb501e953a639104146adb0203010001a321301f301d0603551d0e04160414da4b4d8147840ff4b03f10fc5dd534bb133204e6300d06092a864886f70d01010b05000382010100801b8d796b90ab7a711a88f762c015158d75f1ae5caf969767131e6980ebe7f194ce33750902e6aa561f33d76d37f4482ff22cccbf9d5fecb6ed8e3f278fd1f988ea85ae30f8579d4afe710378b3ccb9cb41beaddef22fb3d128d9d61cfcb3cb05d32ab3b2c4524815bfc9a53c8e5ee3ad4589dc888bcdbdaf9270268eb176ff2d43c2fd236b5bf4ef8ffa8dd920d1583d70f971b988ee4054e1f739ea71510ee7172546ffcda31e6b270178f91086db9ff1051dedf453a6bad4f9b432d362bbe173fd1cc7350853fddd552a27a82fdfaf98e5b08186a03ffc6e187387e4bbd52195126c7c6cec6ab07fd5aadc43a0edb7826b237ba8c8aa443f132516fe89ba
+AppKey: MyiPad
+Flavor: normalAppKey: MyiPad
+Flavor: normal</lpszHardwareKey></UsersLoginJson></v:Body></v:Envelope>`
+			request("http://webservice.myi.cn/wmstudyservice/wsdl/UsersLoginJson",reqstr,(retval)=>{
+				panelistic.dialog.dismiss(currdiag)
+	        	if((data+"").indexOf(">-4060<")!=-1){
+	        		panelistic.dialog.alert("登录失败","用户名或密码错误","确定")
+	        	}else if((data+"").indexOf(">1168<")!=-1){
+	        		panelistic.dialog.alert("登录失败","用户名不正确","确定")
+	        	}else{
+	        		fs.writeFile(__dirname+'/account',JSON.stringify({account:datas[0],password:pwmd5}),()=>{})
+	        		var gotdatas = data.substring(data.indexOf('<AS:szLoginJson>')+16,data.indexOf("</AS:szLoginJson>"));
+	        		var temp = document.createElement("div");
+            		temp.innerHTML = gotdatas;
+            		var output = temp.innerText || temp.textContent;
+            		temp = null;
+	        		let allcfgs = JSON.parse(output);
+	        		fs.writeFile(__dirname+'/data',output,()=>{});
+	        		let usrname = allcfgs.realname;
+	        		console.log("Login success "+usrname+" with sessionid "+sessionid);
+	        		syncdata();
+	        	}
+			});
+		}
+		function syncdata() {
+			let allcfgs = JSON.parse(fs.readFileSync(__dirname+"/data"));
+			let getusrfile = JSON.parse(fs.readFileSync(__dirname+"/account"));
+	        let sessionid = allcfgs.sessionid;
+	        let usrname = allcfgs.realname;
+	        let userguid = allcfgs.userguid;
+	        let displayname = "广州中学 | "+getusrfile.account;
+	        let classstr = "";
+	        for (var i = 0; i < allcfgs.classes.length; i++) {
+	        	classstr += allcfgs.classes[i].guid+",";
+	        }
+	        classstr+=userguid;
+	        console.log("Classes: "+classstr)
+	        document.getElementById("panelistic_sidebar_title").innerText = usrname;
+	        document.getElementById("panelistic_sidebar_subtitle").innerText = displayname;
+	        //http://webservice.myi.cn/wmstudyservice/wsdl/LessonsScheduleGetTableData
+	        request("http://webservice.myi.cn/wmstudyservice/wsdl/LessonsScheduleGetTableData",`<v:Envelope xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns:d="http://www.w3.org/2001/XMLSchema" xmlns:c="http://schemas.xmlsoap.org/soap/encoding/" xmlns:v="http://schemas.xmlsoap.org/soap/envelope/"><v:Header /><v:Body><LessonsScheduleGetTableData xmlns="http://webservice.myi.cn/wmstudyservice/wsdl/" id="o0" c:root="1"><lpszTableName i:type="d:string">lessonsschedule</lpszTableName><lpszUserClassGUID i:type="d:string">${classstr}</lpszUserClassGUID><lpszStudentID i:type="d:string">${getusrfile.account}</lpszStudentID><lpszLastSyncTime i:type="d:string"></lpszLastSyncTime><szReturnXML i:type="d:string">enablesegment=3;</szReturnXML></LessonsScheduleGetTableData></v:Body></v:Envelope>`,(data)=>{
+	        	if((data+"").indexOf("><faultstring>Error -4063</faultstring")!=-1){
+	        		panelistic.dialog.dismiss(currdiag)
+					console.log("Wrong Sessionid");
+					webview.src = __dirname + "/login.html"
+	        		panelistic.dialog.alert("同步出错","登录已过期","重新登录")
+	        		fs.unlink(__dirname+'/account')
+	        	}else{
+	        		var gotdatas = data.substring(data.indexOf('<AS:szReturnXML>')+16,data.indexOf("</AS:szReturnXML>"));
+	        		var temp = document.createElement("div");
+            		temp.innerHTML = gotdatas;
+            		gotdatas = temp.innerText || temp.textContent;
+            		temp = null;
+            		let allrecs = parseDom(gotdatas)[0].childNodes
+            		let psdrecs = {};
+            		for (let i = 0; i < allrecs.length; i++) {
+            			psdrecs[i] = parseRecord(allrecs[i])
+            		}
+
+	        	}
+	        	//
+	        })
+		}
+		function parseDom(arg) {
+		　　 var objE = document.createElement("div");
+		　　 objE.innerHTML = arg;
+		　　 return objE.childNodes;
+		};	
+		function parseRecord(recordItem) {
+			let retv = {};
+			retv.guid = recordItem.childNodes[0].innerText;
+			retv.subject = recordItem.childNodes[1].innerText;
+			retv.lessonindex = recordItem.childNodes[2].innerText;
+			retv.scheduledate = recordItem.childNodes[3].innerText;
+			retv.resourceguid = recordItem.childNodes[4].innerText;
+			retv.userclassguid = recordItem.childNodes[5].innerText;
+			retv.userclassname = recordItem.childNodes[6].innerText;
+			retv.state = recordItem.childNodes[7].innerText;
+			retv.syn_timestamp = recordItem.childNodes[8].innerText;
+			retv.syn_isdelete = recordItem.childNodes[8].innerText;
+			retv.scheduleenddate = recordItem.childNodes[8].innerText;
+			console.log(requestSync('http://webservice.myi.cn/wmstudyservice/wsdl/GetResourceByGUID',`<v:Envelope xmlns:v="http://schemas.xmlsoap.org/soap/envelope/" xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns:d="http://www.w3.org/2001/XMLSchema" xmlns:c="http://schemas.xmlsoap.org/soap/encoding/"><v:Header/><v:Body><GetResourceByGUID xmlns="http://webservice.myi.cn/wmstudyservice/wsdl/" id="o0" c:root="1"><lpszResourceGUID i:type="d:string">${retv.resourceguid}</lpszResourceGUID></GetResourceByGUID></v:Body></v:Envelope>`))
+			return retv;
+		}
 		const electron = require("electron");
 		window.onload=function() {
 			document.getElementById('window_title').innerText=document.title;
 			panelistic = new Panelistic();
 			panelistic.initialize();
 			webview = document.getElementById('webview');
-			webview.src = __dirname + "/page1.html"
+			// read login
+			fs.readFile(__dirname + "/account",(err,data)=>{
+				if(err){
+					console.log("First login");
+					webview.src = __dirname + "/login.html"
+				}else{
+					syncdata();
+				}
+			});
+			//webview.src = __dirname + "/page1.html"
+			webview.addEventListener('ipc-message', (event) => {
+				if(event.channel == "logindial"){
+					currdiag = panelistic.dialog.salert("正在登录");
+					initlogin(event.args);
+				}
+			})
+			webview.addEventListener('dom-ready',function() {
+				//
+			})
 		}
 		const remote = require("@electron/remote");
 	</script>
@@ -30,16 +299,19 @@
 		</div>
 		<div id="panelistic_blur"></div>
 		<div id="panelistic_contents">
-			<div id="panelistic_sidebar">
+			<div id="panelistic_sidebar" style="pointer-events: none;">
 				<span class="panelistic_sidebar_placeholder"></span>
-				<div class="panelistic_sidebar_title">Title</div>
-				<div class="panelistic_sidebar_subtitle">Subtitle</div>
+				<div class="panelistic_sidebar_title" id="panelistic_sidebar_title">未登录</div>
+				<div class="panelistic_sidebar_subtitle" id="panelistic_sidebar_subtitle">请先登录</div>
 				<span class="panelistic_placeholder"></span>
-				<div id="select1" class="panelistic_sidebar_selection" onclick="webview.loadURL(__dirname+'/page1.html')">Page 1</div>
-				<div id="select2" class="panelistic_sidebar_selection" onclick="webview.loadURL(__dirname+'/page2.html')">Page 2</div>
+				<div id="select1" class="panelistic_sidebar_selection" onclick="webview.loadURL(__dirname+'/page1.html')">自主学习</div>
+				<div id="select2" class="panelistic_sidebar_selection" onclick="webview.loadURL(__dirname+'/page2.html')">我的平板</div>
+				<div id="select2" class="panelistic_sidebar_selection" onclick="webview.loadURL(__dirname+'/page2.html')">账号设置</div>
+				<div id="select2" class="panelistic_sidebar_selection" onclick="webview.loadURL(__dirname+'/page2.html')">检查更新</div>
+				<div id="select2" class="panelistic_sidebar_selection" onclick="webview.loadURL(__dirname+'/page2.html')">清除缓存</div>
 			</div>
 			<div id="panelistic_content_sidebar">
-				<webview id="webview" nodeintegration disablewebsecurity/></webview>
+				<webview id="webview" nodeintegration disablewebsecurity webpreferences="contextIsolation=no"/></webview>
 			</div>
 		</div>
 	</div>

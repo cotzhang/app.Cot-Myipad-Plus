@@ -11,33 +11,26 @@
 		let panelistic;
 		const electron = require("electron");
 		window.onload=function() {
-			document.getElementById('window_title').innerText=document.title;
 			panelistic = new Panelistic();
 			panelistic.initialize();
 		}
 		const remote = require("@electron/remote");
+		const {ipcRenderer} = require('electron');
 	</script>
 </head>
 <body>
 	<div id="panelistic_content_sidebar_in">
-		<h1>Page Title 1</h1>
-			<h6>This is a subtitle with a small font size.</h6>
+		<h1>登录</h1>
+			<h6>请登录您的平板账号</h6>
 			<span class="panelistic_placeholder"></span>
 			<div class="panelistic_panel">
-				<div class="panelistic_panel_name">The demo of interactive inputs</div><br><span class="panelistic_placeholder_large"></span>
-				<input type="text" value="This is an input">
-				<input type="button" value="Button"><br>
+				<div class="panelistic_panel_name">账号</div><br><span class="panelistic_placeholder_large"></span>
+				<input type="text" value="" placeholder="请输入6位数账号" id="zhanghao"><br>
 				<span class="panelistic_placeholder"></span>
-				<select>
-					<option>Dropbox 1</option>
-					<option>Dropbox 2</option>
-					<option>Dropbox 3</option>
-					<option>Dropbox 4</option>
-				</select>
+				<div class="panelistic_panel_name">密码</div><br><span class="panelistic_placeholder_large"></span>
+				<input type="password" value="" placeholder="请输入睿易密码" id="mima"><br>
 				<span class="panelistic_placeholder"></span>
-				<div class="panelistic_checkbox"><input type="checkbox"><span class="panelistic_checkbox_text">Checkbox Text</span></div>
-				<span class="panelistic_placeholder"></span>
-				<textarea>Textarea test</textarea>
+				<input type="button" value="登录" onclick="ipcRenderer.sendToHost('logindial',document.getElementById('zhanghao').value,document.getElementById('mima').value)"><br>
 			</div>
 	</div>
 </body>

@@ -9,25 +9,29 @@
 	<script type="text/javascript">
 		let $ = document.querySelector;
 		let panelistic;
+		const ip = require("ip")
+		const fs = require("fs")
+		var qr = require('qr-image');
 		const electron = require("electron");
 		window.onload=function() {
-			document.getElementById('window_title').innerText=document.title;
 			panelistic = new Panelistic();
 			panelistic.initialize();
+			fs.writeFileSync(__dirname+'/qr.png',(qr.imageSync("cotpad://smartconnect."+JSON.parse(fs.readFileSync(__dirname+"/account")).account+"."+new Date().getTime()+"/"+ip.address())))
+			document.getElementById('smart_code').src="qr.png";
 		}
 		const remote = require("@electron/remote");
 	</script>
 </head>
 <body>
 	<div id="panelistic_content_sidebar_in">
-		<h1>Page Title 2</h1>
-			<h6>This is a subtitle with a small font size.</h6>
+		<h1>我的平板</h1>
+			<h6>Lenovo-TBx605M</h6>
 			<span class="panelistic_placeholder"></span>
 			<div class="panelistic_panel">
-				<div class="panelistic_panel_name">The demo of display blocks</div><br><span class="panelistic_placeholder_large"></span>
-				<img src="src/img/example.jpg">
+				<div class="panelistic_panel_name">扫码连接</div><br><span class="panelistic_placeholder_large"></span>
+				设备未连接<br>请使用平板智慧课堂扫描二维码连接
 				<span class="panelistic_placeholder"></span>
-				<div class="panelistic_code"><code>This is an example of the code area<br>12345<br>67890</code></div>
+				<img id="smart_code" text="图片加载中">
 			</div>
 	</div>
 </body>

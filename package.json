@@ -36,7 +36,8 @@
 		"bindings": "^1.5.0",
 		"jquery": "^3.6.1",
 		"node-addon-api": "^4.2.0",
-		"node-gyp": "^8.4.1"
+		"node-gyp": "^8.4.1",
+		"qr-image": "^3.2.0"
 	},
 	"devDependencies": {
 		"@commitlint/cli": "^15.0.0",

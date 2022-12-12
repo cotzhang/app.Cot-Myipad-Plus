@@ -298,12 +298,12 @@ Flavor: normal</lpszHardwareKey></UsersLoginJson></v:Body></v:Envelope>`
 			allretval = getResByGUIDSync(retv.objectguid).responseText;
 			let maxretries = 60;
 			const start = new Date();
-			globalTestVar=allretval;
+			globalTestVar = allretval;
 			if ((allretval + "").indexOf("-4063") != -1) {
 				fs.unlinkSync(__dirname + '/account');
 				console.log(allretval)
 				window.location.reload();
-			}else{
+			} else {
 				while ((allretval.indexOf("<center><h1>502 Bad Gateway</h1></center>") != -1) && maxretries > 0) {
 					const start = new Date();
 					while (true) {
@@ -389,10 +389,34 @@ Flavor: normal</lpszHardwareKey></UsersLoginJson></v:Body></v:Envelope>`
 				})
 			} else if (event.channel == "alert") {
 				panelistic.dialog.alert(event.args[0], event.args[1], event.args[2]);
+			} else if (event.channel == "loaddata") {
+				if (event.args[1] == 'saveas') {
+					downloadFile(event.args[0], __dirname + '/downloads/' + event.args[0].split('/')[event.args[0].split('/').length - 1])
+				} else {
+					let panelisticid = panelistic.dialog.salert('请稍等');
+					(async () => {
+						fs.writeFile(__dirname + '/downloads/' + event.args[0].split('/')[event.args[0].split('/').length - 1], await download(event.args[0]), () => {
+							panelistic.dialog.dismiss(panelisticid);
+							electron.shell.openExternal(__dirname + '/downloads/' + event.args[0].split('/')[event.args[0].split('/').length - 1])
+						})
+					})();
+				}
 			}
 		})
 		webview.addEventListener('dom-ready', function() {
 			webview.openDevTools()
+		})
+	}
+
+	const download = require('download');
+
+
+	function downloadFile(url, filePath, done) {
+		remote.getCurrentWebContents().downloadURL(url);
+		remote.getCurrentWebContents().session.once('will-download', (event, item, webContents) => {
+			item.once('done', (event, state) => {
+
+			})
 		})
 	}
 

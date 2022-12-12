@@ -34,9 +34,20 @@
 	window.onload = function() {
 		panelistic = new Panelistic();
 		panelistic.initialize();
+		renderPageInit()
 		document.getElementById('lastSyncTime').innerText = new Date(fs.statSync(__dirname + '/resources').ctime).Format('MM月dd日 hh:mm:ss');
+
+		document.getElementById('panelistic_content_sidebar_in').onscroll = function() {
+			if ((document.getElementById('panelistic_content_sidebar_in').scrollHeight - document.getElementById('panelistic_content_sidebar_in').scrollTop) < 1200) {
+				renderMore(12)
+			}
+		}
 	}
 	const remote = require("@electron/remote");
+
+	function loadData(fileuri, operation) {
+		electron.ipcRenderer.sendToHost('loaddata',fileuri,operation)
+	}
 
 	function cutString(str, len) {
 		if (str.length * 2 <= len) {
@@ -81,12 +92,20 @@
 
 	let renderredDate;
 
-	function renderPage(gotdatas) {
+	function renderPageInit() {
+		document.getElementById('panelistic_content_sidebar_in').innerHTML += readRecord(10)
+	}
 
+	function renderMore(cnt) {
+		document.getElementById('panelistic_content_sidebar_in').innerHTML += readRecord(cnt)
 	}
 
 	function getDigital(num) {
 		return Number(num.match(/\d+/g).join(''));
+	}
+
+	function getDigitalDay(num) {
+		return Number(num.substring(0, 10).match(/\d+/g).join(''));
 	}
 
 	function isBetween(x, a, b) {
@@ -97,19 +116,45 @@
 		}
 	}
 
+	function numToDate(numin) {
+		let allstrs=numin+"";
+		return allstrs.substring(0,4)+"年"+(new Number(allstrs.substring(4,6))+"")+"月"+(new Number(allstrs.substring(6,8))+"")+"日"
+	}
+
 	let recordCount = 0;
 
-	function readRecord(amount) {
-		let retv = []
-		let finalCnt = recordCount + amount;
-		for (; recordCount < finalCnt; recordCount++) {
-			try {
-				if (fulldata[recordCount].error != 1) {
-					retv.push(fulldata[recordCount]);
-				}
-			} catch {}
+	function readRecord(minAmount) {
+		if (recordCount >= fulldata.length) {
+			return [];
 		}
-		return retv;
+		let retv = new Array();
+		let allstrs = ""
+		let allcounts = 0;
+		let ii = 0;
+		while ((allcounts < minAmount) && (recordCount < fulldata.length)) {
+			let dayStart = getDigitalDay(fulldata[recordCount].date)
+			let i = 0;
+			retv[ii] = new Array()
+			allstrs += model_dayStart(numToDate(getDigitalDay(fulldata[recordCount].date)))
+			while (getDigitalDay(fulldata[recordCount].date) == dayStart) {
+				allstrs += model_F('', cutString(fulldata[recordCount].title, 35), fulldata[recordCount].author, fulldata[recordCount].viewdate, fulldata[recordCount].date, fulldata[recordCount].objectguid, fulldata[recordCount].fileuri) //title, author, viewdate, startdate, guid
+				retv[ii][i] = fulldata[recordCount]
+				recordCount++;
+				allcounts++;
+			}
+			allstrs += model_dayEnd(getDigitalDay(fulldata[recordCount].date))
+			ii++
+		}
+		return allstrs;
+		// let finalCnt = recordCount + amount;
+		// for (; recordCount < finalCnt; recordCount++) {
+		// 	try {
+		// 		if (fulldata[recordCount].error != 1) {
+		// 			retv.push(fulldata[recordCount]);
+		// 		}
+		// 	} catch {}
+		// }
+		// return retv;
 	}
 
 	function getDateContent(dateStartNum, dateEndNum) {
@@ -132,12 +177,16 @@
 	}
 
 	function model_subjectStart(subject) {
-		return `<div class="panelistic_panel" style="padding-bottom: 3px;">
+		return `<div class="panelistic_panel" style="padding-bottom: 1px;">
 				<div class="panelistic_panel_name" style="background-color: #ff555588;">${subject}</div><br><span class="panelistic_placeholder_large"></span>`
 	}
 
-	function model_file(title, author, viewdate, startdate, guid) {
-		return `<img src="https://gzzx.lexuewang.cn:8003/getresourcethumbnail?guid=e672d98393a14057ad8f7ed4bf1fc14c" style="display:inline;" height="80px" width="80px">
+	function model_F(subject, title, author, viewdate, startdate, guid, fileUri) {
+		return /*model_subjectStart(subject)+*/ model_file(title, author, viewdate, startdate, guid, fileUri) /*+model_subjectEnd()*/
+	}
+
+	function model_file(title, author, viewdate, startdate, guid, fileUri) {
+		return `<img src="https://gzzx.lexuewang.cn:8003/getresourcethumbnail?guid=${guid}" style="display:inline;" height="80px" width="80px">
 				<div style="vertical-align: top;display: inline-block;margin-left: 5px;width: 350px;height: 80px;">
 					<span style="vertical-align: top;font-size: 18px;font-weight: bold;">${title}</span>
 					<!--max-length-35chars-->
@@ -146,9 +195,9 @@
 					<span style="font-size: 13px;color: #555;display: block;">发布时间 ${startdate}</span>
 				</div>
 				<div style="vertical-align: top;display: inline-block;margin-left: 5px;">
-					<input type="button" value="打开文件" style="width: 95px;" onclick="loadData('${guid}','open')">
+					<input type="button" value="打开文件" style="width: 95px;" onclick="loadData('${fileUri}','open')">
 					<span class="panelistic_placeholder" style="height: 5px;"></span>
-					<input type="button" value="另存为..." style="width: 95px;" onclick="loadData('${guid}','saveas')">
+					<input type="button" value="另存为..." style="width: 95px;" onclick="loadData('${fileUri}','saveas')">
 				</div>`
 	}
 

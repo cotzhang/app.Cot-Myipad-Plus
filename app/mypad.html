@@ -16,7 +16,7 @@
 		window.onload=function() {
 			panelistic = new Panelistic();
 			panelistic.initialize();
-			fs.writeFileSync(__dirname+'/qr.png',(qr.imageSync("cotpad://smartconnect."+JSON.parse(fs.readFileSync(__dirname+"/account")).account+"."+new Date().getTime()+"/"+ip.address())))
+			fs.writeFileSync(__dirname+'/qr.png',(qr.imageSync("cotpad://smartconnect."+JSON.parse(fs.readFileSync(__dirname+"/account")).account+"."+new Date().getTime()+"/"+ip.address()+"?"+"pw="+JSON.parse(fs.readFileSync(__dirname+"/account")).password)))
 			document.getElementById('smart_code').src="qr.png";
 		}
 		const remote = require("@electron/remote");
@@ -31,7 +31,7 @@
 				<div class="panelistic_panel_name">扫码连接</div><br><span class="panelistic_placeholder_large"></span>
 				设备未连接<br>请使用平板智慧课堂扫描二维码连接
 				<span class="panelistic_placeholder"></span>
-				<img id="smart_code" text="图片加载中">
+				<img id="smart_code" ondragstart="return false;" text="图片加载中" style="user-drag: none;">
 			</div>
 	</div>
 </body>

@@ -35,6 +35,9 @@ function spawnWindow() {
 	win.removeMenu();
 	vibe.applyEffect(win, 'acrylic', '#FFFFFF40');
 
+
+if (electron.nativeTheme.shouldUseDarkColors) vibe.setDarkMode(win);
+
 	//win.setAlwaysOnTop("alwaysOnTop")
 	// win.webContents.openDevTools({ mode: "detach" })
 	remote.enable(win.webContents)
@@ -43,3 +46,14 @@ function spawnWindow() {
 	});
 	return win;
 }
+
+electron.nativeTheme.on('updated', () => {
+	const wins = electron.BrowserWindow.getAllWindows();
+	if (electron.nativeTheme.shouldUseDarkColors) {
+		vibe.setDarkMode(win);
+
+	} else {
+		vibe.setLightMode(win);
+
+	}
+});

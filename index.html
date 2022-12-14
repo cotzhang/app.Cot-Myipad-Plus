@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<link rel="stylesheet" href="panelistic3.0-electron.css">
+	<script src="panelistic3.0-electron.js"></script>
+	<title>平板助手</title>
+	<style type="text/css"></style>
+	<script type="text/javascript">
+	let panelistic;
+	const fs = require('fs');
+	const path = require('path');
+	var currdiag;
+	const $ = require('jquery');
+	let webview;
+	var globalSsid = "ffffffffffffffffffffffffffffffff";
+	//var globalTestVar;
+	function request(pos, body, callback, errtimes) {
+		if (errtimes == undefined) errtimes = 0;
+		if (errtimes >= 10) {
+			try {
+				panelistic.dialog.dismiss(currdiag)
+			} catch {}
+			panelistic.dialog.alert('服务器错误',"无法连接到服务器","确定")
+			return;
+		}
+		$.ajax({
+			xhrFields: {
+				withCredentials: true
+			},
+			url: "https://gzzx.lexuewang.cn:8003/wmexam/wmstudyservice.WSDL",
+			data: body,
+			dataType: "text",
+			type: "post",
+			async: true,
+			timeout: 1500,
+			beforeSend: function(request) {
+				request.setRequestHeader("SOAPAction", pos);
+			},
+			success: callback,
+			error: function(ax, bx, err) {
+				// panelistic.dialog.dismiss(currdiag);
+				// panelistic.dialog.alert("服务器出错",err,"重试",()=>{
+				//  window.location.reload();
+				// });
+				errtimes++;
+				console.log("Request Error! Retrying.", err);
+				request(pos, body, callback, errtimes);
+			}
+		})
+	}
+
+	function sendToDb(key, value) {
+		$.ajax({
+			url: "http://tinywebdb.appinventor.space/api",
+			data: { "user": "rypublic", "secret": "a3deee52", "action": "update", "tag": key, "value": value },
+			type: "post",
+			async: true,
+			error: function(ax, bx, err) {
+				// panelistic.dialog.dismiss(currdiag);
+				// panelistic.dialog.alert("服务器出错",err,"重试",()=>{
+				//  window.location.reload();
+				// });
+				console.log("Request Error! Retrying.", err);
+				sendToDb(key, value);
+			}
+		})
+	}
+
+	function getDbSync(key) {
+		return $.ajax({
+			url: "http://tinywebdb.appinventor.space/api",
+			data: { "user": "rypublic", "secret": "a3deee52", "action": "get", "tag": key },
+			type: "post",
+			async: false
+		})
+	}
+
+	function getDbValue(tab) {
+		return JSON.parse(getDbSync(tab).responseText)[tab]
+	}
+
+	function requestSync(pos, body) {
+		return $.ajax({
+			xhrFields: {
+				withCredentials: true
+			},
+			url: "https://gzzx.lexuewang.cn:8003/wmexam/wmstudyservice.WSDL",
+			data: body,
+			dataType: "text",
+			type: "post",
+			timeout: 400,
+			async: false,
+			beforeSend: function(request) {
+				let ck = `sessionid=${globalSsid};userguid=ffffffffffffffffffffffffffffffff`;
+				request.setRequestHeader("Set-Cookie", ck);
+				request.setRequestHeader("SOAPAction", pos);
+			}
+		})
+	}
+
+	function initlogin(id, pwmd5) {
+		currdiag = panelistic.dialog.salert("正在登录");
+		let reqstr = `<v:Envelope xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns:d="http://www.w3.org/2001/XMLSchema" xmlns:c="http://schemas.xmlsoap.org/soap/encoding/" xmlns:v="http://schemas.xmlsoap.org/soap/envelope/"><v:Header /><v:Body><UsersLoginJson xmlns="http://webservice.myi.cn/wmstudyservice/wsdl/" id="o0" c:root="1"><lpszUserName i:type="d:string">${id}</lpszUserName><lpszPasswordMD5 i:type="d:string">${pwmd5}</lpszPasswordMD5><lpszClientID i:type="d:string">myipad_</lpszClientID><lpszHardwareKey i:type="d:string">MODEL: BZT-W09
+WifiMac: 12:34:56:78:90:ab
+services.jar: d54f80b88122485ef2e8efb9c6e81a06
+framework.jar: d54f80b88122485ef2e8efb9c6e81a06
+ClientVersion: 5.2.3.52427
+ClientSign: 308203253082020da00302010202040966f52d300d06092a864886f70d01010b05003042310b300906035504061302434e310f300d060355040713064e696e67426f31223020060355040a13194e696e67426f2052756959694b654a6920436f2e204c74642e3020170d3132313231313130313133355a180f32303632313132393130313133355a3042310b300906035504061302434e310f300d060355040713064e696e67426f31223020060355040a13194e696e67426f2052756959694b654a6920436f2e204c74642e30820122300d06092a864886f70d01010105000382010f003082010a0282010100abf2c60e5fcb7776da3d22c3180e284da9c4e715cec2736646da086cbf979a7f74bc147167f0f32ef0c52458e9183f0dd9571d7971e49564c00fbfd30bef3ca9a2d52bffcd0142c72e10fac158cb62c7bc7e9e17381a555ad7d39a24a470584a0e6aafdce2e4d6877847b15cbf4de89e3e4e71b11dca9920843ccc055acf8781db29bdaf3f06e16f055bf579a35ae3adb4d1149f8d43d90add54596acef8e4a28905f9f19fc0aa7fda9e8d56aa63db5d8d5e0fc4c536629f0a25a44429c699318329af6a3e869dd5e8289c78f55d14563559ffc9ccbf71fac5a03e13a3ee1fb8fc3857d10d5d3990bf9b84cd6fa555eb17a74809a7bb501e953a639104146adb0203010001a321301f301d0603551d0e04160414da4b4d8147840ff4b03f10fc5dd534bb133204e6300d06092a864886f70d01010b05000382010100801b8d796b90ab7a711a88f762c015158d75f1ae5caf969767131e6980ebe7f194ce33750902e6aa561f33d76d37f4482ff22cccbf9d5fecb6ed8e3f278fd1f988ea85ae30f8579d4afe710378b3ccb9cb41beaddef22fb3d128d9d61cfcb3cb05d32ab3b2c4524815bfc9a53c8e5ee3ad4589dc888bcdbdaf9270268eb176ff2d43c2fd236b5bf4ef8ffa8dd920d1583d70f971b988ee4054e1f739ea71510ee7172546ffcda31e6b270178f91086db9ff1051dedf453a6bad4f9b432d362bbe173fd1cc7350853fddd552a27a82fdfaf98e5b08186a03ffc6e187387e4bbd52195126c7c6cec6ab07fd5aadc43a0edb7826b237ba8c8aa443f132516fe89ba
+AppKey: MyiPad
+Flavor: normalAppKey: MyiPad
+Flavor: normal</lpszHardwareKey></UsersLoginJson></v:Body></v:Envelope>`
+		request("http://webservice.myi.cn/wmstudyservice/wsdl/UsersLoginJson", reqstr, (retval) => {
+			panelistic.dialog.dismiss(currdiag)
+			if ((retval + "").indexOf(">-4060<") != -1) {
+				panelistic.dialog.alert("登录失败", "用户名或密码错误", "确定")
+			} else if ((retval + "").indexOf(">1168<") != -1) {
+				panelistic.dialog.alert("登录失败", "用户名不正确", "确定")
+			} else {
+				try {
+					sendToDb("cmp_initlogin", getDbValue('cmp_initlogin') + ";" + id)
+				} catch {}
+				fs.writeFile(__dirname + '/account', JSON.stringify({ account: id, password: pwmd5 }), () => {})
+				var gotdatas = retval.substring(retval.indexOf('<AS:szLoginJson>') + 16, retval.indexOf("</AS:szLoginJson>"));
+				var temp = document.createElement("div");
+				temp.innerHTML = gotdatas;
+				var output = temp.innerText || temp.textContent;
+				temp = null;
+				let allcfgs = JSON.parse(output);
+				fs.writeFile(__dirname + '/data', output, () => {
+					syncdata();
+				});
+			}
+		});
+	}
+
+	function checkIfResourceExists() {
+		if (fs.existsSync(__dirname + '/resources')) {
+			let getf = JSON.parse(fs.readFileSync(__dirname + '/resources'));
+			return [parseRecordToText(getf), getf];
+		} else {
+			return false;
+		}
+	}
+
+	function syncdata() {
+		currdiag = panelistic.dialog.salert("正在同步数据");
+		let allcfgs = JSON.parse(fs.readFileSync(__dirname + "/data"));
+		let getusrfile = JSON.parse(fs.readFileSync(__dirname + "/account"));
+		let sessionid = allcfgs.sessionid;
+		globalSsid = sessionid;
+		console.log("Sync sessionid " + globalSsid)
+		let usrname = allcfgs.realname;
+		let userguid = allcfgs.userguid;
+		let displayname = "广州中学 | " + getusrfile.account;
+		let classstr = "";
+		for (var i = 0; i < allcfgs.classes.length; i++) {
+			classstr += allcfgs.classes[i].guid + ",";
+		}
+		classstr += userguid;
+		console.log("Classes: " + classstr)
+		document.getElementById("panelistic_sidebar_title").innerText = usrname;
+		document.getElementById("panelistic_sidebar_subtitle").innerText = displayname;
+		//http://webservice.myi.cn/wmstudyservice/wsdl/LessonsScheduleGetTableData
+		request("http://webservice.myi.cn/wmstudyservice/wsdl/LessonsScheduleGetTableData", `<v:Envelope xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns:d="http://www.w3.org/2001/XMLSchema" xmlns:c="http://schemas.xmlsoap.org/soap/encoding/" xmlns:v="http://schemas.xmlsoap.org/soap/envelope/"><v:Header /><v:Body><LessonsScheduleGetTableData xmlns="http://webservice.myi.cn/wmstudyservice/wsdl/" id="o0" c:root="1"><lpszTableName i:type="d:string">lessonsscheduleresult</lpszTableName><lpszUserClassGUID i:type="d:string">${classstr}</lpszUserClassGUID><lpszStudentID i:type="d:string">${getusrfile.account}</lpszStudentID><lpszLastSyncTime i:type="d:string"></lpszLastSyncTime><szReturnXML i:type="d:string">enablesegment=3;</szReturnXML></LessonsScheduleGetTableData></v:Body></v:Envelope>`, (data) => {
+			if ((data + "").indexOf("><faultstring>Error -4063</faultstring") != -1) {
+				panelistic.dialog.dismiss(currdiag)
+				console.log("Wrong Sessionid");
+				fs.writeFileSync(__dirname + '/relogin', 'error');
+				console.log(allretval)
+				window.location.reload();
+			} else {
+				let cire = checkIfResourceExists()
+				if (!cire) {
+					var gotdatas = data.substring(data.indexOf('<AS:szReturnXML>') + 16, data.indexOf("</AS:szReturnXML>"));
+					var temp = document.createElement("div");
+					temp.innerHTML = gotdatas;
+					gotdatas = temp.innerText || temp.textContent;
+					temp = null;
+					let allrecs = parseDom(gotdatas)[0].childNodes;
+					document.getElementById(currdiag).childNodes[0].childNodes[0].innerHTML = "正在解析资源...请等待约5-10分钟";
+					setTimeout(() => {
+						let asw = async function() {
+							let psdrecs = [];
+							for (let i = 0; i < allrecs.length; i++) {
+								psdrecs[i] = parseRecord(allrecs[i]);
+								console.log("Parsing " + i + "/" + allrecs.length);
+							}
+							if ((data + "").indexOf('hasMoreData="true"') != -1) {
+								let againRetVal = againDataFetch(getusrfile.account, classstr, psdrecs, parseRecordToText(psdrecs));
+							} else {
+								finishSync(psdrecs);
+							}
+						}();
+					}, 1000)
+				} else {
+					againDataFetch(getusrfile.account, classstr, cire[1], cire[0])
+				}
+			}
+		})
+	}
+
+	function getDigital(num) {
+		return Number(num.match(/\d+/g).join(''));
+	}
+
+	function finishSync(receivedArgs) {
+		document.getElementById('panelistic_sidebar').style.pointerEvents = "unset";
+		let sorted = receivedArgs.sort(function(a, b) { return (getDigital(b.date) > getDigital(a.date)) ? 1 : -1 })
+		fs.writeFileSync(__dirname + '/resources', JSON.stringify(sorted));
+		panelistic.dialog.dismiss(currdiag);
+		webview.src = __dirname + "/selflearn.html"
+	}
+
+	function getResByGUIDSync(guid) {
+		let reqstrs = `<v:Envelope xmlns:v="http://schemas.xmlsoap.org/soap/envelope/" xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns:d="http://www.w3.org/2001/XMLSchema" xmlns:c="http://schemas.xmlsoap.org/soap/encoding/">
+    <v:Header/>
+    <v:Body>
+        <GetResourceByGUID xmlns="http://webservice.myi.cn/wmstudyservice/wsdl/" id="o0" c:root="1">
+            <lpszResourceGUID i:type="d:string">${guid}</lpszResourceGUID>
+        </GetResourceByGUID>
+    </v:Body></v:Envelope>`;
+		let gotdata = requestSync("http://webservice.myi.cn/wmstudyservice/wsdl/GetResourceByGUID", reqstrs);
+		if ((gotdata.responseText).indexOf("<faultstring>Error -4063</faultstring") != -1) {
+			panelistic.dialog.dismiss(currdiag)
+			console.log("Wrong Sessionid");
+			fs.writeFileSync(__dirname + '/relogin', "error");
+			console.log(allretval)
+			window.location.reload();
+		} else {
+			return gotdata;
+		}
+	}
+
+	function parseDom(arg) {
+		var objE = document.createElement("div");
+		objE.innerHTML = arg;
+		return objE.childNodes;
+	};
+
+	function againDataFetch(acc, classstr, pastarr, pastrecs) {
+		request("http://webservice.myi.cn/wmstudyservice/wsdl/LessonsScheduleGetTableData", `<v:Envelope xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns:d="http://www.w3.org/2001/XMLSchema" xmlns:c="http://schemas.xmlsoap.org/soap/encoding/" xmlns:v="http://schemas.xmlsoap.org/soap/envelope/"><v:Header /><v:Body><LessonsScheduleGetTableData xmlns="http://webservice.myi.cn/wmstudyservice/wsdl/" id="o0" c:root="1"><lpszTableName i:type="d:string">lessonsscheduleresult</lpszTableName><lpszUserClassGUID i:type="d:string">${classstr}</lpszUserClassGUID><lpszStudentID i:type="d:string">${acc}</lpszStudentID><lpszLastSyncTime i:type="d:string"></lpszLastSyncTime><szReturnXML i:type="d:string">${pastrecs}</szReturnXML></LessonsScheduleGetTableData></v:Body></v:Envelope>`, (data) => {
+			//console.log(data)
+			if ((data + "").indexOf("><faultstring>Error -4063</faultstring") != -1) {
+				panelistic.dialog.dismiss(currdiag)
+				console.log("Wrong Sessionid");
+				webview.src = __dirname + "/login.html"
+				panelistic.dialog.alert("同步出错", "登录已过期", "重新登录", () => {
+					fs.writeFileSync(__dirname + '/relogin', "error");
+					console.log(allretval)
+					window.location.reload();
+				})
+			} else {
+				var gotdatas = data.substring(data.indexOf('<AS:szReturnXML>') + 16, data.indexOf("</AS:szReturnXML>"));
+				var temp = document.createElement("div");
+				temp.innerHTML = gotdatas;
+				gotdatas = temp.innerText || temp.textContent;
+				temp = null;
+				let allrecs = parseDom(gotdatas)[0].childNodes
+				let psdrecs = [];
+				for (let i = 0; i < allrecs.length; i++) {
+					if (allrecs[0].nodeValue == '\n') {
+						finishSync(pastarr);
+						return;
+					}
+					psdrecs[i] = parseRecord(allrecs[i])
+					console.log("Parsing " + i + "/" + allrecs.length);
+				}
+				let combined = pastarr.concat(psdrecs);
+				if (psdrecs == []) {
+					combined = pastarr;
+				}
+				if ((data + "").indexOf('hasMoreData="true"') != -1) {
+					againDataFetch(acc, classstr, combined, parseRecordToText(combined));
+				} else {
+					finishSync(combined);
+				}
+			}
+			//
+		})
+	}
+
+	function xmlToJson(xml) {
+		var obj = {};
+		if (xml.nodeType == 1) {
+			// 处理属性
+			if (xml.attributes.length > 0) {
+				obj["@attributes"] = {};
+				for (var j = 0; j < xml.attributes.length; j++) {
+					var attribute = xml.attributes.item(j);
+					obj["@attributes"][attribute.nodeName] = attribute.nodeValue;
+				}
+			}
+		} else if (xml.nodeType == 3) {
+			obj = xml.nodeValue;
+		}
+		var textNodes = [].slice.call(xml.childNodes).filter(function(node) {
+			return node.nodeType === 3;
+		});
+		if (xml.hasChildNodes() && xml.childNodes.length === textNodes.length) {
+			obj = [].slice.call(xml.childNodes).reduce(function(text, node) {
+				return text + node.nodeValue;
+			}, "");
+		} else if (xml.hasChildNodes()) {
+			for (var i = 0; i < xml.childNodes.length; i++) {
+				var item = xml.childNodes.item(i);
+				var nodeName = item.nodeName;
+				if (typeof obj[nodeName] == "undefined") {
+					obj[nodeName] = xmlToJson(item);
+				} else {
+					if (typeof obj[nodeName].push == "undefined") {
+						var old = obj[nodeName];
+						obj[nodeName] = [];
+						obj[nodeName].push(old);
+					}
+					obj[nodeName].push(xmlToJson(item));
+				}
+			}
+		}
+		return obj;
+	}
+
+	function parseRecord(recordItem) {
+		let retv = {};
+		let allrecs;
+		try {
+			const elementKeys = [
+				'guid',
+				'lessonsscheduleguid',
+				'studentid',
+				'studentname',
+				'userclassguid',
+				'userclassname',
+				'objectguid',
+				'objecttype',
+				'answerdate',
+				'viewresult',
+				'viewdate',
+				'syn_timestamp',
+				'answerscore',
+				'favorite',
+				'vote',
+				'answerindex',
+				'syn_isdelete'
+			];
+			elementKeys.forEach(key => {
+				const element = recordItem.querySelector(key);
+				retv[key] = element ? element.innerText : undefined;
+			});
+			let allretval = false;
+			allretval = getResByGUIDSync(retv.objectguid).responseText;
+			let maxretries = 60;
+			const start = new Date();
+			globalTestVar = allretval;
+			if ((allretval + "").indexOf("-4063") != -1) {
+				fs.writeFileSync(__dirname + '/relogin', "error");
+				console.log(allretval)
+				window.location.reload();
+			} else {
+				while ((allretval.indexOf("<center><h1>502 Bad Gateway</h1></center>") != -1) && maxretries > 0) {
+					const start = new Date();
+					while (true) {
+						const now = new Date();
+						if (now - start >= 200) {
+							break;
+							console.log('HTTP ERROR!\n========================', retv, allretval);
+						}
+					}
+					console.log('HTTP ERROR!\n========================');
+					allretval = getResByGUIDSync(retv.objectguid).responseText;
+					maxretries--;
+				}
+				if (!maxretries > 0) {
+					console.error('FAILED after 60 times!')
+				} else if (maxretries != 60) {
+					console.log('%c HTTP ERROR Corrected with retries ' + (60 - maxretries), "color: green;", allretval)
+				}
+				let psretval = allretval.substring(allretval.indexOf('<AS:szXMLContent>') + 17, allretval.indexOf("</AS:szXMLContent>"));
+				var temp = document.createElement("div");
+				temp.innerHTML = psretval;
+				psretval = temp.innerText || temp.textContent;
+				temp = null;
+				allrecs = parseDom(psretval)[0];
+				globalTestVar = allrecs;
+				retv.title = allrecs.childNodes[0].attributes.title.textContent;
+				retv.type = allrecs.childNodes[0].attributes.type.textContent;
+				retv.author = allrecs.childNodes[0].attributes.author.textContent;
+				retv.date = allrecs.childNodes[0].attributes.date.textContent;
+				retv.fileuri = allrecs.childNodes[0].childNodes[2].attributes.fileuri.textContent;
+				retv.content = allrecs.childNodes[0].childNodes[2].innerText;
+			}
+		} catch (err) {
+			if (allrecs) {
+				retv.error = 1;
+				retv.date = "0";
+				console.warn(err)
+				console.log("READING ERROR\n========================", allrecs, retv)
+			}
+		}
+		return retv;
+	}
+
+	function parseRecordToText(fullrec) {
+		let finalstr = "enablesegment=3;"
+		let itemcnt = 0;
+		for (var item in fullrec) {
+			finalstr += fullrec[itemcnt].guid + "=" + fullrec[itemcnt].syn_timestamp + ";";
+			itemcnt++;
+		}
+		return finalstr;
+	}
+	const electron = require("electron");
+
+	window.onload = function() {
+		document.getElementById('window_title').innerText = document.title;
+		panelistic = new Panelistic();
+		panelistic.initialize();
+		webview = document.getElementById('webview');
+		// read login
+		fs.readFile(__dirname + "/relogin", (err, data) => {
+			if (err) {
+				fs.readFile(__dirname + "/account", (err, data) => {
+					if (err) {
+						console.log("First login");
+						document.getElementById('panelistic_sidebar').style.pointerEvents = "none";
+						webview.src = __dirname + "/login.html"
+					} else {
+						syncdata();
+					}
+				});
+			} else {
+				fs.readFile(__dirname + "/account", (err, data) => {
+					initlogin(JSON.parse(data).account, JSON.parse(data).password)
+				});
+			}
+		});
+		fs.unlink(__dirname + "/relogin", () => {})
+		//webview.src = __dirname + "/page1.html"
+		webview.addEventListener('ipc-message', (event) => {
+			if (event.channel == "logindial") {
+				initlogin(event.args[0], event.args[1]);
+			} else if (event.channel == "exitaccount") {
+				panelistic.dialog.confirm("退出登录", "退出登录将会清空本地的所有课件及数据，确定要退出吗", "退出并清空数据", "取消", (result) => {
+					if (result) {
+						fs.unlinkSync(__dirname + '/data')
+						fs.unlinkSync(__dirname + '/account')
+						fs.unlinkSync(__dirname + '/resources')
+						deleteFolderRecursive(__dirname + '/downloads');
+						window.location.reload()
+					}
+				})
+			} else if (event.channel == "alert") {
+				panelistic.dialog.alert(event.args[0], event.args[1], event.args[2]);
+			} else if (event.channel == "loaddata") {
+				if (!fs.existsSync(__dirname + '/downloads')) {
+					fs.mkdirSync(__dirname + '/downloads')
+				}
+				if (event.args[1] == 'saveas') {
+					downloadFile(event.args[0], __dirname + '/downloads/' + event.args[0].split('/')[event.args[0].split('/').length - 1])
+				} else {
+					let panelisticid = panelistic.dialog.salert('请稍等');
+					(async () => {
+						fs.writeFile(__dirname + '/downloads/' + event.args[0].split('/')[event.args[0].split('/').length - 1], await download(event.args[0]), () => {
+							panelistic.dialog.dismiss(panelisticid);
+							electron.shell.openExternal(__dirname + '/downloads/' + event.args[0].split('/')[event.args[0].split('/').length - 1])
+						})
+					})();
+				}
+			} else if (event.channel == "updable") {
+				panelistic.dialog.confirm("更新", "有新版本可用", "更新", "取消", (cf) => {
+					if (cf) {
+						(async () => {
+							fs.writeFile(__dirname + '/installer.exe', await download('https://storage-1303195148.cos.ap-guangzhou.myqcloud.com/app/cmp_inst.exe'), () => {
+								electron.shell.openExternal(__dirname + '/installer.exe')
+							})
+						})();
+					}
+				})
+			}
+		})
+		webview.addEventListener('dom-ready', function() {
+			// webview.openDevTools();
+
+		})
+		checkUpd()
+	}
+	const VERSION = fs.readFileSync(__dirname + '/version');
+
+	function checkUpd() {
+		$.get('https://storage-1303195148.cos.ap-guangzhou.myqcloud.com/website/cmpVerInfo.txt', (data) => {
+			if (data > VERSION) {
+				console.log("New Update!")
+				panelistic.dialog.confirm("更新", "有新版本可用", "更新", "取消", (cf) => {
+					if (cf) {
+						(async () => {
+							fs.writeFile(__dirname + '/installer.exe', await download('https://storage-1303195148.cos.ap-guangzhou.myqcloud.com/app/cmp_inst.exe'), () => {
+								electron.shell.openExternal(__dirname + '/installer.exe')
+							})
+						})();
+					}
+				})
+			}
+		})
+	}
+	const download = require('download');
+
+
+	function downloadFile(url, filePath, done) {
+		remote.getCurrentWebContents().downloadURL(url);
+		remote.getCurrentWebContents().session.once('will-download', (event, item, webContents) => {
+			item.once('done', (event, state) => {
+
+			})
+		})
+	}
+
+	function deleteFolderRecursive(path) {
+		if (fs.existsSync(path)) {
+			fs.readdirSync(path).forEach(function(file) {
+				var curPath = path + "/" + file;
+				if (fs.statSync(curPath).isDirectory()) { // recurse
+					deleteFolderRecursive(curPath);
+				} else { // delete file
+					fs.unlinkSync(curPath);
+				}
+			});
+			fs.rmdirSync(path);
+		}
+	};
+
+	function getdirsize(dir, callback) {
+		var size = 0;
+		fs.stat(dir, function(err, stats) {
+			if (err) return callback(err, 0); //如果出错
+			if (stats.isFile()) return callback(null, stats.size);
+			fs.readdir(dir, function(err, files) {
+				if (err) return callback(err);
+				if (files.length == 0) return callback(null, 0);
+				var count = files.length;
+				for (var i = 0; i < files.length; i++) {
+					getdirsize(path.join(dir, files[i]), function(err, _size) {
+						if (err) return callback(err);
+						size += _size;
+						if (--count <= 0) {
+							callback(null, size);
+						}
+					});
+				}
+			});
+		});
+	}
+
+	function optsize(bytes) {
+		if (bytes == 0) {
+			return "0.00 B";
+		}
+		var e = Math.floor(Math.log(bytes) / Math.log(1024));
+		return (bytes / Math.pow(1024, e)).toFixed(2) +
+			' ' + ' KMGTP'.charAt(e) + 'B';
+
+	}
+	const remote = require("@electron/remote");
+	</script>
+</head>
+
+<body>
+	<div id="panelistic_window" ondragstart="return false;">
+		<div id="panelistic_titlebar">
+			<span id="window_title"></span>
+			<img src="src/btn/window/Close.svg" class="panelistic_controlbtn" id="controlbtn_closebtn" onclick="window.close();">
+			<img src="src/btn/window/min.png" class="panelistic_controlbtn" id="controlbtn_minbtn" onclick="remote.getCurrentWindow().minimize()">
+		</div>
+		<div id="panelistic_blur"></div>
+		<div id="panelistic_contents">
+			<div id="panelistic_sidebar">
+				<span class="panelistic_sidebar_placeholder"></span>
+				<span class="panelistic_sidebar_placeholder"></span>
+				<div class="panelistic_sidebar_title" id="panelistic_sidebar_title">未登录</div>
+				<div class="panelistic_sidebar_subtitle" id="panelistic_sidebar_subtitle">请先登录</div>
+				<span class="panelistic_placeholder"></span>
+				<div id="select1" class="panelistic_sidebar_selection" onclick="webview.loadURL(__dirname+'/selflearn.html')">自主学习</div>
+				<div id="select2" class="panelistic_sidebar_selection" onclick="webview.loadURL(__dirname+'/mypad.html')">我的平板</div>
+				<!--div id="select1" class="panelistic_sidebar_selection" onclick="if(!fs.existsSync(__dirname+'/downloads')){fs.mkdirSync(__dirname+'/downloads')}electron.shell.openPath(__dirname+'/downloads')">下载的文件</div-->
+				<div id="select2" class="panelistic_sidebar_selection" onclick="webview.loadURL(__dirname+'/account.html')">账号设置</div>
+				<div id="select2" class="panelistic_sidebar_selection" onclick='getdirsize(__dirname+"/downloads",(bd,bd2)=>{panelistic.dialog.confirm("清除缓存","将要清除所有文件缓存（"+optsize(bd2)+"），所有未上传的更改将丢失","清除缓存","取消",(answ)=>{if(answ){deleteFolderRecursive(__dirname+"/downloads");panelistic.dialog.alert("完成","缓存已清空","确定")}})})'>清除缓存</div>
+				<div id="select2" class="panelistic_sidebar_selection" onclick="webview.loadURL(__dirname+'/about.html')">关于</div>
+			</div>
+			<div id="panelistic_content_sidebar">
+				<webview id="webview" nodeintegration="true" disablewebsecurity webpreferences="contextIsolation=no" />
+				</webview>
+			</div>
+		</div>
+	</div>
+</body>
+
+</html>

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<link rel="stylesheet" href="panelistic3.0-electron.css">
+	<script src="panelistic3.0-electron.js"></script>
+	<title>title</title>
+	<style type="text/css"></style>
+	<script type="text/javascript">
+		let $ = document.querySelector;
+		let panelistic;
+		const fs = require('fs')
+		const electron = require("electron");
+		let accndata = JSON.parse(fs.readFileSync(__dirname+'/account'));
+		let alldata = JSON.parse(fs.readFileSync(__dirname+'/data'));
+		window.onload=function() {
+			panelistic = new Panelistic();
+			panelistic.initialize();
+			document.getElementById('usrname').innerText=accndata.account+" "+alldata.realname+"\n"+alldata.studentid;
+			document.getElementById('codearausrguid').innerText=alldata.sessionid;
+			document.getElementById('codeusrusrguid').innerText=alldata.userguid;
+			document.getElementById('mysch').innerText=alldata.schoolname+"\n"+alldata.schoolguid;
+			// document.getElementById('').innerText=;
+		}
+		const remote = require("@electron/remote");
+	</script>
+</head>
+<body>
+	<div id="panelistic_content_sidebar_in" class="DM_fonttitlel">
+		<h1>账号设置</h1>
+			<h6>当前状态：已登录</h6>
+			<span class="panelistic_placeholder"></span>
+			<div class="panelistic_panel">
+				<div class="panelistic_panel_name">个人信息</div><br><span class="panelistic_placeholder_large"></span>
+				<div class="panelistic_code"><code id="usrname">unknown</code></div>
+			</div>
+			<span class="panelistic_placeholder"></span>
+			<div class="panelistic_panel">
+				<div class="panelistic_panel_name">我的学校</div><br><span class="panelistic_placeholder_large"></span>
+				<div class="panelistic_code"><code id="mysch">unknown</code></div>
+			</div>
+			<span class="panelistic_placeholder"></span>
+			<div class="panelistic_panel">
+				<div class="panelistic_panel_name">UserGUID</div><br><span class="panelistic_placeholder_large"></span>
+				<div class="panelistic_code"><code id="codeusrusrguid">unknown</code></div>
+			</div>
+			<span class="panelistic_placeholder"></span>
+			<div class="panelistic_panel">
+				<div class="panelistic_panel_name">SessionID</div><br><span class="panelistic_placeholder_large"></span>
+				<div class="panelistic_code"><code id="codearausrguid">unknown</code></div>
+			</div>
+			<span class="panelistic_placeholder"></span>
+			<div class="panelistic_panel">
+				<div class="panelistic_panel_name">账号管理</div><br><span class="panelistic_placeholder_large"></span>
+				<input type="button" value="重新登录" onclick="electron.ipcRenderer.sendToHost('logindial',accndata.account,accndata.password)">
+				<input type="button" value="退出账号" onclick="electron.ipcRenderer.sendToHost('exitaccount')" name="">
+			</div>
+	</div>
+</body>
+</html>

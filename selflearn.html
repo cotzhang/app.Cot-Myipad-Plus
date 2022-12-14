@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<link rel="stylesheet" href="panelistic3.0-electron.css">
+	<script src="panelistic3.0-electron.js"></script>
+	<title>title</title>
+	<style type="text/css"></style>
+	<script type="text/javascript">
+	const $ = require('jquery');
+	let panelistic;
+	const fs = require('fs')
+	const electron = require("electron");
+	let fulldata = JSON.parse(fs.readFileSync(__dirname + "/resources"));
+	Date.prototype.Format = function(fmt) {
+		var o = {
+			"M+": this.getMonth() + 1,
+			"d+": this.getDate(),
+			"h+": this.getHours(),
+			"m+": this.getMinutes(),
+			"s+": this.getSeconds(),
+			"q+": Math.floor((this.getMonth() + 3) / 3),
+			"S": this.getMilliseconds()
+		};
+		if (/(y+)/.test(fmt))
+			fmt = fmt.replace(RegExp.$1, (this.getFullYear() + "").substr(4 - RegExp.$1.length));
+		for (var k in o)
+			if (new RegExp("(" + k + ")").test(fmt))
+				fmt = fmt.replace(RegExp.$1, (RegExp.$1.length == 1) ?
+					(o[k]) : (("00" + o[k]).substr(("" + o[k]).length)));
+		return fmt;
+	}
+	window.onload = function() {
+		panelistic = new Panelistic();
+		panelistic.initialize();
+		renderPageInit()
+		document.getElementById('lastSyncTime').innerText = new Date(fs.statSync(__dirname + '/resources').ctime).Format('MM月dd日 hh:mm:ss');
+
+		document.getElementById('panelistic_content_sidebar_in').onscroll = function() {
+			if ((document.getElementById('panelistic_content_sidebar_in').scrollHeight - document.getElementById('panelistic_content_sidebar_in').scrollTop) < 1200) {
+				renderMore(12)
+			}
+		}
+	}
+	const remote = require("@electron/remote");
+
+	function loadData(fileuri, operation) {
+		electron.ipcRenderer.sendToHost('loaddata', fileuri, operation)
+	}
+
+	function cutString(str, len) {
+		if (str.length * 2 <= len) {
+			return str;
+		}
+		var strlen = 0;
+		var s = "";
+		for (var i = 0; i < str.length; i++) {
+			s = s + str.charAt(i);
+			if (str.charCodeAt(i) > 128) {
+				strlen = strlen + 2;
+				if (strlen >= len) {
+					return s.substring(0, s.length - 1) + "...";
+				}
+			} else {
+				strlen = strlen + 1;
+				if (strlen >= len) {
+					return s.substring(0, s.length - 2) + "...";
+				}
+			}
+		}
+		return s;
+	}
+
+	function requestSync(pos, body) {
+		return $.ajax({
+			url: "https://gzzx.lexuewang.cn:8003/wmexam/wmstudyservice.WSDL",
+			data: body,
+			dataType: "text",
+			type: "post",
+			async: false,
+			xhrFields: {
+				withCredentials: true
+			},
+			beforeSend: function(request) {
+				let ck = `sessionid=${globalSsid};userguid=ffffffffffffffffffffffffffffffff`;
+				request.setRequestHeader("Set-Cookie", ck);
+				request.setRequestHeader("SOAPAction", pos);
+			}
+		})
+	}
+
+	let renderredDate;
+
+	function renderPageInit() {
+		document.getElementById('panelistic_content_sidebar_in').innerHTML += readRecord(10)
+	}
+
+	function renderMore(cnt) {
+		document.getElementById('panelistic_content_sidebar_in').innerHTML += readRecord(cnt)
+	}
+
+	function getDigital(num) {
+		return Number(num.match(/\d+/g).join(''));
+	}
+
+	function getDigitalDay(num) {
+		return Number(num.substring(0, 10).match(/\d+/g).join(''));
+	}
+
+	function isBetween(x, a, b) {
+		if ((x >= a && x <= b) || (x <= a && x >= b)) {
+			return true;
+		} else {
+			return false
+		}
+	}
+
+	function numToDate(numin) {
+		let allstrs = numin + "";
+		return allstrs.substring(0, 4) + "年" + (new Number(allstrs.substring(4, 6)) + "") + "月" + (new Number(allstrs.substring(6, 8)) + "") + "日"
+	}
+
+	let recordCount = 0;
+
+	function readRecord(minAmount) {
+		if (recordCount >= fulldata.length) {
+			return [];
+		}
+		let retv = new Array();
+		let allstrs = ""
+		let allcounts = 0;
+		let ii = 0;
+		let lastObjLink = "";
+		while ((allcounts < minAmount) && (recordCount < fulldata.length)) {
+			let dayStart = getDigitalDay(fulldata[recordCount].date)
+			let i = 0;
+			retv[ii] = new Array()
+			allstrs += model_dayStart(numToDate(getDigitalDay(fulldata[recordCount].date)))
+			while (getDigitalDay(fulldata[recordCount].date) == dayStart) {
+				if (lastObjLink != fulldata[recordCount].fileuri) {
+					allstrs += model_F('', cutString(fulldata[recordCount].title, 35), fulldata[recordCount].author, fulldata[recordCount].viewdate, fulldata[recordCount].date, fulldata[recordCount].objectguid, fulldata[recordCount].fileuri) //title, author, viewdate, startdate, guid
+					retv[ii][i] = fulldata[recordCount]
+					lastObjLink = fulldata[recordCount].fileuri;
+				}
+					recordCount++;
+					allcounts++;
+			}
+			allstrs += model_dayEnd(getDigitalDay(fulldata[recordCount].date))
+			ii++
+		}
+		return allstrs;
+		// let finalCnt = recordCount + amount;
+		// for (; recordCount < finalCnt; recordCount++) {
+		// 	try {
+		// 		if (fulldata[recordCount].error != 1) {
+		// 			retv.push(fulldata[recordCount]);
+		// 		}
+		// 	} catch {}
+		// }
+		// return retv;
+	}
+
+	function getDateContent(dateStartNum, dateEndNum) {
+		let retv = []
+		for (var i = 0; i < fulldata.length; i++) {
+			//console.log(getDigital(fulldata[i]["date"]))
+			if (isBetween(getDigital(fulldata[i]["date"]), dateStartNum, dateEndNum)) {
+				//console.log(fulldata[i].date,fulldata[i]);
+				retv.push(fulldata[i]);
+			}
+		}
+		return retv;
+	}
+
+	//M
+	function model_dayStart(date) {
+		return `<span class="panelistic_placeholder"></span>
+		<div class="panelistic_panel">
+			<div class="panelistic_panel_name">${date}</div><br><span class="panelistic_placeholder_large"></span>`
+	}
+
+	function model_subjectStart(subject) {
+		return `<div class="panelistic_panel" style="padding-bottom: 1px;">
+				<div class="panelistic_panel_name" style="background-color: #ff555588;">${subject}</div><br><span class="panelistic_placeholder_large"></span>`
+	}
+
+	function model_F(subject, title, author, viewdate, startdate, guid, fileUri) {
+		return /*model_subjectStart(subject)+*/ model_file(title, author, viewdate, startdate, guid, fileUri) /*+model_subjectEnd()*/
+	}
+
+	function model_file(title, author, viewdate, startdate, guid, fileUri) {
+		return `<img src="https://gzzx.lexuewang.cn:8003/getresourcethumbnail?guid=${guid}" ondragstart="return false" style="display:inline;" height="80px" width="80px">
+				<div style="vertical-align: top;display: inline-block;margin-left: 5px;width: 361px;height: 80px;">
+					<span style="vertical-align: top;font-size: 18px;font-weight: bold;" class="DM_fonttitlel">${title}</span>
+					<!--max-length-35chars-->
+					<span style="font-size: 12px;color: #555;display: block;height: 16px" class="DM_fontsmall">发布者 ${author}</span>
+					<span style="font-size: 12px;color: #555;display: block;height: 16px" class="DM_fontsmall">访问时间 ${viewdate}</span>
+					<span style="font-size: 12px;color: #555;display: block;height: 16px" class="DM_fontsmall">发布时间 ${startdate}</span>
+				</div>
+				<div style="vertical-align: top;display: inline-block;margin-left: 5px;">
+					<input type="button" value="打开文件" style="width: 95px;" onclick="loadData('${fileUri}','open')">
+					<span class="panelistic_placeholder" style="height: 5px;"></span>
+					<input type="button" value="另存为..." style="width: 95px;" onclick="loadData('${fileUri}','saveas')">
+				</div>`
+	}
+
+	function model_subjectEnd() {
+		return `			</div>`
+	}
+
+	function model_dayEnd() {
+		return `</div>`
+	}
+
+	</script>
+</head>
+
+<body>
+	<div id="panelistic_content_sidebar_in" class="DM_fonttitlel">
+		<h1>自主学习</h1>
+		<h6>最近一次同步时间：<span id="lastSyncTime"></span></h6>
+	</div>
+	</div>
+</body>
+
+</html>

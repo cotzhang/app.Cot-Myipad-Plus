@@ -507,6 +507,7 @@ Flavor: normal</lpszHardwareKey></UsersLoginJson></v:Body></v:Envelope>`
 						fs.unlinkSync(__dirname + '/data')
 						fs.unlinkSync(__dirname + '/account')
 						fs.unlinkSync(__dirname + '/resources')
+						fs.unlinkSync(__dirname + '/videosrc')
 						deleteFolderRecursive(__dirname + '/downloads');
 						window.location.reload()
 					}
@@ -538,7 +539,7 @@ Flavor: normal</lpszHardwareKey></UsersLoginJson></v:Body></v:Envelope>`
 							vidwin = null
 						})
 						vidwin.removeMenu();
-						vidwin.webContents.openDevTools({mode:"detach"})
+						// vidwin.webContents.openDevTools({mode:"detach"})
 					} else {
 						let panelisticid = panelistic.dialog.salert('请稍等');
 						(async () => {
@@ -562,10 +563,18 @@ Flavor: normal</lpszHardwareKey></UsersLoginJson></v:Body></v:Envelope>`
 			} else if (event.channel == "sync") {
 				console.log("Sync auto")
 				syncdata()
+			} else if (event.channel == "testmode") {
+				panelistic.dialog.input("测试","请输入测试代码","000000","确定",(getdta)=>{
+					if(getdta=="070307"){
+						electron.ipcRenderer.send("testmode")
+					}else{
+						panelistic.dialog.alert("测试","测试代码无效","确定")
+					}
+				})
 			}
 		})
 		webview.addEventListener('dom-ready', function() {
-			webview.openDevTools();
+			// webview.openDevTools();
 
 		})
 		checkUpd()

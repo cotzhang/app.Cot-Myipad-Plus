@@ -1,12 +1,10 @@
-# framework.Cot-Panelistic-Framework
-A modern ui of panelistic 3.0 for desktop applications of electron
+# 平板+ 客户端
+A desktop application for myipad. 
+
+睿易少年派桌面客户端
 
 Designed by COT
 ## Screenshots
-![image](https://user-images.githubusercontent.com/107354861/205531950-008124a0-b614-4841-adec-1c07c98664e9.png)
-## Apis
-### panelistic.dialog.alert
-### panelistic.dialog.salert
-### panelistic.dialog.input
-### panelistic.dialog.confirm
-### panelistic.dialog.dismiss
+![image](https://user-images.githubusercontent.com/107354861/207770676-1ff22bbb-fce9-4e31-8fcd-de650d14bcd4.png)
+## 联系
+QQ:3514048093

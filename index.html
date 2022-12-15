@@ -14,6 +14,10 @@
 	var currdiag;
 	const $ = require('jquery');
 	let webview;
+	let serverADDR;
+	try {
+		serverADDR = JSON.parse(fs.readFileSync(__dirname + '/account') + '').server;
+	} catch {}
 	var globalSsid = "ffffffffffffffffffffffffffffffff";
 	//var globalTestVar;
 	function request(pos, body, callback, errtimes) {
@@ -22,14 +26,14 @@
 			try {
 				panelistic.dialog.dismiss(currdiag)
 			} catch {}
-			panelistic.dialog.alert('服务器错误',"无法连接到服务器","确定")
+			panelistic.dialog.alert('服务器错误', "无法连接到服务器", "确定")
 			return;
 		}
 		$.ajax({
 			xhrFields: {
 				withCredentials: true
 			},
-			url: "https://gzzx.lexuewang.cn:8003/wmexam/wmstudyservice.WSDL",
+			url: "https://" + serverADDR + "/wmexam/wmstudyservice.WSDL",
 			data: body,
 			dataType: "text",
 			type: "post",
@@ -48,6 +52,24 @@
 				console.log("Request Error! Retrying.", err);
 				request(pos, body, callback, errtimes);
 			}
+		})
+	}
+
+	function requestErr(pos, body, callback, err) {
+		$.ajax({
+			xhrFields: {
+				withCredentials: true
+			},
+			url: "https://" + serverADDR + "/wmexam/wmstudyservice.WSDL",
+			data: body,
+			dataType: "text",
+			type: "post",
+			async: true,
+			beforeSend: function(request) {
+				request.setRequestHeader("SOAPAction", pos);
+			},
+			success: callback,
+			error: err
 		})
 	}
 
@@ -86,7 +108,7 @@
 			xhrFields: {
 				withCredentials: true
 			},
-			url: "https://gzzx.lexuewang.cn:8003/wmexam/wmstudyservice.WSDL",
+			url: "https://" + serverADDR + "/wmexam/wmstudyservice.WSDL",
 			data: body,
 			dataType: "text",
 			type: "post",
@@ -111,7 +133,7 @@ ClientSign: 308203253082020da00302010202040966f52d300d06092a864886f70d01010b0500
 AppKey: MyiPad
 Flavor: normalAppKey: MyiPad
 Flavor: normal</lpszHardwareKey></UsersLoginJson></v:Body></v:Envelope>`
-		request("http://webservice.myi.cn/wmstudyservice/wsdl/UsersLoginJson", reqstr, (retval) => {
+		requestErr("http://webservice.myi.cn/wmstudyservice/wsdl/UsersLoginJson", reqstr, (retval) => {
 			panelistic.dialog.dismiss(currdiag)
 			if ((retval + "").indexOf(">-4060<") != -1) {
 				panelistic.dialog.alert("登录失败", "用户名或密码错误", "确定")
@@ -121,17 +143,20 @@ Flavor: normal</lpszHardwareKey></UsersLoginJson></v:Body></v:Envelope>`
 				try {
 					sendToDb("cmp_initlogin", getDbValue('cmp_initlogin') + ";" + id)
 				} catch {}
-				fs.writeFile(__dirname + '/account', JSON.stringify({ account: id, password: pwmd5 }), () => {})
 				var gotdatas = retval.substring(retval.indexOf('<AS:szLoginJson>') + 16, retval.indexOf("</AS:szLoginJson>"));
 				var temp = document.createElement("div");
 				temp.innerHTML = gotdatas;
 				var output = temp.innerText || temp.textContent;
 				temp = null;
 				let allcfgs = JSON.parse(output);
+				fs.writeFile(__dirname + '/account', JSON.stringify({ account: id, password: pwmd5, server: serverADDR }), () => {})
 				fs.writeFile(__dirname + '/data', output, () => {
 					syncdata();
 				});
 			}
+		}, (er) => {
+			panelistic.dialog.dismiss(currdiag)
+			panelistic.dialog.alert("登录失败", "无法连接到服务器", "确定")
 		});
 	}
 
@@ -144,16 +169,40 @@ Flavor: normal</lpszHardwareKey></UsersLoginJson></v:Body></v:Envelope>`
 		}
 	}
 
+	function cutString(str, len) {
+		if (str.length * 2 <= len) {
+			return str;
+		}
+		var strlen = 0;
+		var s = "";
+		for (var i = 0; i < str.length; i++) {
+			s = s + str.charAt(i);
+			if (str.charCodeAt(i) > 128) {
+				strlen = strlen + 2;
+				if (strlen >= len) {
+					return s.substring(0, s.length - 1) + "...";
+				}
+			} else {
+				strlen = strlen + 1;
+				if (strlen >= len) {
+					return s.substring(0, s.length - 2) + "...";
+				}
+			}
+		}
+		return s;
+	}
+
 	function syncdata() {
 		currdiag = panelistic.dialog.salert("正在同步数据");
 		let allcfgs = JSON.parse(fs.readFileSync(__dirname + "/data"));
 		let getusrfile = JSON.parse(fs.readFileSync(__dirname + "/account"));
+		serverADDR = getusrfile.server;
 		let sessionid = allcfgs.sessionid;
 		globalSsid = sessionid;
 		console.log("Sync sessionid " + globalSsid)
 		let usrname = allcfgs.realname;
 		let userguid = allcfgs.userguid;
-		let displayname = "广州中学 | " + getusrfile.account;
+		let displayname = cutString(allcfgs.schoolname.replaceAll(/.*省|.*市|.*区^(学|校)/g, ''), 16) + " | " + getusrfile.account;
 		let classstr = "";
 		for (var i = 0; i < allcfgs.classes.length; i++) {
 			classstr += allcfgs.classes[i].guid + ",";
@@ -210,6 +259,9 @@ Flavor: normal</lpszHardwareKey></UsersLoginJson></v:Body></v:Envelope>`
 		let sorted = receivedArgs.sort(function(a, b) { return (getDigital(b.date) > getDigital(a.date)) ? 1 : -1 })
 		fs.writeFileSync(__dirname + '/resources', JSON.stringify(sorted));
 		panelistic.dialog.dismiss(currdiag);
+		try {
+			webview.reload()
+		} catch {}
 		webview.src = __dirname + "/selflearn.html"
 	}
 
@@ -439,7 +491,16 @@ Flavor: normal</lpszHardwareKey></UsersLoginJson></v:Body></v:Envelope>`
 		//webview.src = __dirname + "/page1.html"
 		webview.addEventListener('ipc-message', (event) => {
 			if (event.channel == "logindial") {
-				initlogin(event.args[0], event.args[1]);
+				console.log(event.args[2])
+				if (event.args[2] == 0) {
+					serverADDR = 'gzzx.lexuewang.cn:8003';
+					initlogin(event.args[0], event.args[1]);
+				} else if (event.args[2] == 1) {
+					panelistic.dialog.input('选择学校', "请输入您的学校服务器地址", "gzzx.lexuewang.cn:8003", "确定", (val) => {
+						serverADDR = val;
+						initlogin(event.args[0], event.args[1]);
+					})
+				}
 			} else if (event.channel == "exitaccount") {
 				panelistic.dialog.confirm("退出登录", "退出登录将会清空本地的所有课件及数据，确定要退出吗", "退出并清空数据", "取消", (result) => {
 					if (result) {
@@ -459,13 +520,34 @@ Flavor: normal</lpszHardwareKey></UsersLoginJson></v:Body></v:Envelope>`
 				if (event.args[1] == 'saveas') {
 					downloadFile(event.args[0], __dirname + '/downloads/' + event.args[0].split('/')[event.args[0].split('/').length - 1])
 				} else {
-					let panelisticid = panelistic.dialog.salert('请稍等');
-					(async () => {
-						fs.writeFile(__dirname + '/downloads/' + event.args[0].split('/')[event.args[0].split('/').length - 1], await download(event.args[0]), () => {
-							panelistic.dialog.dismiss(panelisticid);
-							electron.shell.openExternal(__dirname + '/downloads/' + event.args[0].split('/')[event.args[0].split('/').length - 1])
+					if (event.args[0].match(/\.(mp4|avi|wmv|mpg|mpeg|mov|rm|ram|swf|flv)/)) {
+						fs.writeFileSync(__dirname + '/videosrc', event.args[0])
+						let vidwin = new remote.BrowserWindow({
+							width: 750,
+							height: 500,
+							webPreferences: {
+								nodeIntegration: true,
+								enableRemoteModule: true,
+								contextIsolation: false,
+								webviewTag: true,
+								nodeIntegrationInWorker: true
+							}
 						})
-					})();
+						vidwin.loadFile('video.html');
+						vidwin.on('close', () => {
+							vidwin = null
+						})
+						vidwin.removeMenu();
+						vidwin.webContents.openDevTools({mode:"detach"})
+					} else {
+						let panelisticid = panelistic.dialog.salert('请稍等');
+						(async () => {
+							fs.writeFile(__dirname + '/downloads/' + event.args[0].split('/')[event.args[0].split('/').length - 1], await download(event.args[0]), () => {
+								panelistic.dialog.dismiss(panelisticid);
+								electron.shell.openExternal(__dirname + '/downloads/' + event.args[0].split('/')[event.args[0].split('/').length - 1])
+							})
+						})();
+					}
 				}
 			} else if (event.channel == "updable") {
 				panelistic.dialog.confirm("更新", "有新版本可用", "更新", "取消", (cf) => {
@@ -477,21 +559,27 @@ Flavor: normal</lpszHardwareKey></UsersLoginJson></v:Body></v:Envelope>`
 						})();
 					}
 				})
+			} else if (event.channel == "sync") {
+				console.log("Sync auto")
+				syncdata()
 			}
 		})
 		webview.addEventListener('dom-ready', function() {
-			// webview.openDevTools();
+			webview.openDevTools();
 
 		})
 		checkUpd()
 	}
-	const VERSION = fs.readFileSync(__dirname + '/version');
+	const VERSION = fs.readFileSync(__dirname + '/versionBUILD') + "";
 
 	function checkUpd() {
 		$.get('https://storage-1303195148.cos.ap-guangzhou.myqcloud.com/website/cmpVerInfo.txt', (data) => {
+			console.log(data, VERSION)
 			if (data > VERSION) {
 				console.log("New Update!")
-				panelistic.dialog.confirm("更新", "有新版本可用", "更新", "取消", (cf) => {
+				let upditems = JSON.parse(getDbSync('update').responseText.replaceAll('\n', '<br>')).update;
+				console.log()
+				panelistic.dialog.confirm("更新", "有新版本可用<br>" + upditems, "更新", "取消", (cf) => {
 					if (cf) {
 						(async () => {
 							fs.writeFile(__dirname + '/installer.exe', await download('https://storage-1303195148.cos.ap-guangzhou.myqcloud.com/app/cmp_inst.exe'), () => {

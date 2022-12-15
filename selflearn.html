@@ -13,6 +13,7 @@
 	const fs = require('fs')
 	const electron = require("electron");
 	let fulldata = JSON.parse(fs.readFileSync(__dirname + "/resources"));
+	let serverADDR = JSON.parse(fs.readFileSync(__dirname + "/account")).server;
 	Date.prototype.Format = function(fmt) {
 		var o = {
 			"M+": this.getMonth() + 1,
@@ -42,6 +43,11 @@
 				renderMore(12)
 			}
 		}
+		setInterval(function() {
+			if(document.getElementById('panelistic_content_sidebar_in').scrollTop<100){
+				electron.ipcRenderer.sendToHost('sync')
+			}
+		},30000)
 	}
 	const remote = require("@electron/remote");
 
@@ -74,7 +80,7 @@
 
 	function requestSync(pos, body) {
 		return $.ajax({
-			url: "https://gzzx.lexuewang.cn:8003/wmexam/wmstudyservice.WSDL",
+			url: "https://" + serverADDR + "/wmexam/wmstudyservice.WSDL",
 			data: body,
 			dataType: "text",
 			type: "post",
@@ -143,8 +149,8 @@
 					retv[ii][i] = fulldata[recordCount]
 					lastObjLink = fulldata[recordCount].fileuri;
 				}
-					recordCount++;
-					allcounts++;
+				recordCount++;
+				allcounts++;
 			}
 			allstrs += model_dayEnd(getDigitalDay(fulldata[recordCount].date))
 			ii++
@@ -190,8 +196,8 @@
 	}
 
 	function model_file(title, author, viewdate, startdate, guid, fileUri) {
-		return `<img src="https://gzzx.lexuewang.cn:8003/getresourcethumbnail?guid=${guid}" ondragstart="return false" style="display:inline;" height="80px" width="80px">
-				<div style="vertical-align: top;display: inline-block;margin-left: 5px;width: 361px;height: 80px;">
+		return `<img src="https://${serverADDR}/getresourcethumbnail?guid=${guid}" ondragstart="return false" style="display:inline;" height="80px" width="80px">
+				<div style="vertical-align: top;display: inline-block;margin-left: 5px;width: 355px;height: 80px;">
 					<span style="vertical-align: top;font-size: 18px;font-weight: bold;" class="DM_fonttitlel">${title}</span>
 					<!--max-length-35chars-->
 					<span style="font-size: 12px;color: #555;display: block;height: 16px" class="DM_fontsmall">发布者 ${author}</span>
@@ -199,7 +205,7 @@
 					<span style="font-size: 12px;color: #555;display: block;height: 16px" class="DM_fontsmall">发布时间 ${startdate}</span>
 				</div>
 				<div style="vertical-align: top;display: inline-block;margin-left: 5px;">
-					<input type="button" value="打开文件" style="width: 95px;" onclick="loadData('${fileUri}','open')">
+					<input type="button" value="${(fileUri.match(/\.(mp4|avi|wmv|mpg|mpeg|mov|rm|ram|swf|flv)/)?'在线预览':'打开文件')}" style="width: 95px;" onclick="loadData('${fileUri}','open')">
 					<span class="panelistic_placeholder" style="height: 5px;"></span>
 					<input type="button" value="另存为..." style="width: 95px;" onclick="loadData('${fileUri}','saveas')">
 				</div>`
@@ -212,7 +218,6 @@
 	function model_dayEnd() {
 		return `</div>`
 	}
-
 	</script>
 </head>
 

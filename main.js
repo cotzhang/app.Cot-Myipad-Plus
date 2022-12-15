@@ -39,7 +39,7 @@ function spawnWindow() {
 if (electron.nativeTheme.shouldUseDarkColors) vibe.setDarkMode(win);
 
 	//win.setAlwaysOnTop("alwaysOnTop")
-	// win.webContents.openDevTools({ mode: "detach" })
+	win.webContents.openDevTools({ mode: "detach" })
 	remote.enable(win.webContents)
 	win.webContents.on('did-finish-load', () => {
 		win.show();

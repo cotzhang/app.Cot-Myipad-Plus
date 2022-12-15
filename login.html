@@ -24,13 +24,19 @@
 			<h6>请登录您的平板账号</h6>
 			<span class="panelistic_placeholder"></span>
 			<div class="panelistic_panel">
+				<div class="panelistic_panel_name">选择学校</div><br><span class="panelistic_placeholder_large"></span>
+				<select id="school">
+					<option>广州中学</option>
+					<option>其他学校</option>
+				</select>
+				<span class="panelistic_placeholder"></span>
 				<div class="panelistic_panel_name">账号</div><br><span class="panelistic_placeholder_large"></span>
 				<input type="text" value="" placeholder="请输入6位数账号" id="zhanghao"><br>
 				<span class="panelistic_placeholder"></span>
 				<div class="panelistic_panel_name">密码</div><br><span class="panelistic_placeholder_large"></span>
 				<input type="password" value="" placeholder="请输入睿易密码" id="mima"><br>
 				<span class="panelistic_placeholder"></span>
-				<input type="button" value="登录" onclick="ipcRenderer.sendToHost('logindial',document.getElementById('zhanghao').value,require('crypto').createHash('md5').update(document.getElementById('mima').value).digest('hex'))"><br>
+				<input type="button" value="登录" onclick="ipcRenderer.sendToHost('logindial',document.getElementById('zhanghao').value,require('crypto').createHash('md5').update(document.getElementById('mima').value).digest('hex'),document.getElementById('school').selectedIndex);"><br>
 			</div>
 	</div>
 </body>

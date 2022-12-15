@@ -34,9 +34,7 @@ function spawnWindow() {
 	//win.setHasShadow(true)
 	win.removeMenu();
 	vibe.applyEffect(win, 'acrylic', '#FFFFFF40');
-
-
-if (electron.nativeTheme.shouldUseDarkColors) vibe.setDarkMode(win);
+	if (electron.nativeTheme.shouldUseDarkColors) vibe.setDarkMode(win);
 
 	//win.setAlwaysOnTop("alwaysOnTop")
 	// win.webContents.openDevTools({ mode: "detach" })
@@ -54,7 +52,6 @@ electron.nativeTheme.on('updated', () => {
 
 	} else {
 		vibe.setLightMode(win);
-
 	}
 });
 

@@ -55,7 +55,7 @@
 			<div class="panelistic_panel_name">操作</div><br><span class="panelistic_placeholder_large"></span>
 			<input type="button" value="检查更新" onclick="checkUpd()">
 			<input type="button" value="意见反馈" onclick="electron.shell.openExternal('https://github.com/cotzhang/app.Cot-Myipad-Plus/issues')" name="">
-			<input type="button" value="进入测试模式" onclick="ipcRenderer.sendToHost('testmode');">
+			<input type="button" value="进入测试模式" onclick="electron.ipcRenderer.sendToHost('testmode');">
 			<input type="button" value="Star me on Github" onclick="electron.shell.openExternal('https://github.com/cotzhang/app.Cot-Myipad-Plus')" name="">
 		</div>
 	</div>

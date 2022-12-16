@@ -9,3 +9,10 @@ Designed by COT
 ![image](https://user-images.githubusercontent.com/107354861/207771103-0b559158-a648-4541-b5c5-645cfdaf1cc4.png)
 ## 联系
 QQ:3514048093
+## 运行
+```
+$ git clone https://github.com/cotzhang/app.Cot-Myipad-Plus.git
+$ cd app.Cot-Myipad-Plus
+$ npm install
+$ npm start
+```

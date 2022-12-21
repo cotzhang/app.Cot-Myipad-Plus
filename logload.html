@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<link rel="stylesheet" href="panelistic3.0-electron.css">
+	<script src="panelistic3.0-electron.js"></script>
+	<title>title</title>
+	<style type="text/css"></style>
+	<script type="text/javascript">
+	let $ = require('jquery');
+	let panelistic;
+	const fs = require('fs')
+	const VERSION = fs.readFileSync(__dirname + '/versionBUILD') + "";
+	const electron = require("electron");
+	let accndata = JSON.parse(fs.readFileSync(__dirname + '/account'));
+	let alldata = JSON.parse(fs.readFileSync(__dirname + '/data'));
+	window.onload = function() {
+		panelistic = new Panelistic();
+		panelistic.initialize();
+		// document.getElementById('').innerText=;
+	}
+	electron.ipcRenderer.on('syncdata', function(event, arg) {
+		console.log(arg); 
+		document.getElementById('syncfileguid').innerText="正在解析资源 "+arg;
+	});
+	electron.ipcRenderer.on('totdata', function(event, arg) {
+		console.log(arg); 
+		document.getElementById('synctotdata').innerText=arg;
+	});
+	electron.ipcRenderer.on('itemdatal', function(event, args) {
+		console.log(args); 
+		document.getElementById('progressbar').max=args;
+	});
+	electron.ipcRenderer.on('itemdatai', function(event, args) {
+		console.log(args); 
+		document.getElementById('progressbar').value=args;
+	});
+
+	const remote = require("@electron/remote");
+	</script>
+</head>
+
+<body>
+	<div id="panelistic_content_sidebar_in" class="DM_fonttitlel">
+		<h1>请稍等</h1>
+		<h6>正在同步数据</h6>
+		<span class="panelistic_placeholder"></span>
+		<div class="panelistic_panel">
+			<div class="panelistic_panel_name">同步备课进度</div><span style="position: absolute;text-align: right;right: 20px;" id="synctotdata">0/0</span><br><span class="panelistic_placeholder_large"></span>
+			<progress value="8" max="74" style="width:100%" id="progressbar">
+		</div>
+		<span class="panelistic_placeholder"></span>
+		<div class="panelistic_panel">
+			<div class="panelistic_panel_name">同步资源进度</div><br><span class="panelistic_placeholder_large"></span>
+			<span id="syncfileguid">正在解析资源 </span>
+		</div>
+		<span class="panelistic_placeholder"></span>
+		<!--div class="panelistic_panel" style="background: #ee15;">
+			<div class="panelistic_panel_name">解析资源出错</div><br><span class="panelistic_placeholder_large"></span>
+			资源 ${guid} 解析失败<br>服务器返回了1168错误代码
+		</div-->
+	</div>
+</body>
+
+</html>

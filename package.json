@@ -10,7 +10,7 @@
 	],
 	"author": "Cot Zhang",
 	"main": "main.js",
-	"icon":"./icon.png",
+	"icon": "./icon.png",
 	"scripts": {
 		"start": "electron .",
 		"build": "electron-packager . 平板助手 --platform=win32 --icon=icon.ico --app-version=1.0.0 --overwrite --out=../build"
@@ -30,6 +30,7 @@
 	},
 	"gypfile": true,
 	"devDependencies": {
-		"electron": "^16.0.4"
+		"electron": "^16.0.4",
+		"electron-is-dev": "^2.0.0"
 	}
 }

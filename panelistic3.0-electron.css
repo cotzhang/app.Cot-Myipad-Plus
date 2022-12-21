@@ -24,7 +24,7 @@ body {
 	font-family: "misans";
 	font-weight: normal;
 	user-select: none;
-	overflow: hidden;
+/*	overflow: hidden;*/
 }
 
 ::selection {
@@ -47,6 +47,7 @@ body {
 	position: absolute;
 	backdrop-filter: blur(8px);
 	width: 320px;
+	/*max-height: 80%;*/
 	margin: auto;
 	padding: 8px;
 	border-radius: 8px;
@@ -132,7 +133,7 @@ body {
 
 #panelistic_content {
 	padding: 8px;
-	height: 100%;
+	height: calc(100% - 16px);
 	overflow: auto;
 }
 
@@ -379,23 +380,23 @@ select option {
 		background-color: #33333333 !important;
 	}
 
-	.DM_fontsmall{
+	.DM_fontsmall {
 		color: #ddd !important;
 	}
 
-	.DM_fonttitlel{
+	.DM_fonttitlel {
 		color: #fff !important;
 	}
 
-	.panelistic_panel_name{
+	.panelistic_panel_name {
 		background-color: #444444aa !important;
 	}
 
-	a{
+	a {
 		color: #ccf !important;
 	}
 
-	.panelistic_popup{
+	.panelistic_popup {
 		color: white !important;
 		background-color: #444444cc;
 	}
@@ -405,7 +406,7 @@ select option {
 
 
 #panelistic_content_sidebar {
-	height: 100%;
+	height: calc(100% - 8px);
 	position: absolute;
 	display: inline-block;
 	width: calc(100% - 200px);

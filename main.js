@@ -4,6 +4,8 @@ vibe.setup(electron.app);
 const path = require('path');
 const os = require('os')
 const remote = require("@electron/remote/main")
+// const isDev = require('electron-is-dev')
+
 let win;
 
 electron.app.on('ready', () => {
@@ -26,18 +28,38 @@ function spawnWindow() {
 			webviewTag: true,
 			nodeIntegrationInWorker: true
 		},
+		icon: __dirname + '/icon.png',
 		show: false
 	});
 	require('@electron/remote/main').initialize()
 	require('@electron/remote/main').enable(win.webContents)
 	win.loadFile('index.html')
 	//win.setHasShadow(true)
+	// const { Menu, BrowserWindow } = require('electron'); //引入
+	// let template = [
+	// 	{
+	// 		label:"◀",
+	// 		click:()=>{
+	// 			win.webContents.send('rywebback')
+	// 		}
+	// 	},
+	// 	{
+	// 		label: '提取文件',
+	// 		click:()=>{
+	// 			win.webContents.send('ryfilelink')
+	// 		}
+	// 	},
+	// ]
+	// let m = Menu.buildFromTemplate(template);
+	// Menu.setApplicationMenu(m);
 	win.removeMenu();
 	vibe.applyEffect(win, 'acrylic', '#FFFFFF40');
 	if (electron.nativeTheme.shouldUseDarkColors) vibe.setDarkMode(win);
 
 	//win.setAlwaysOnTop("alwaysOnTop")
-	// win.webContents.openDevTools({ mode: "detach" })
+	// if (isDev) {
+	// 	win.webContents.openDevTools({ mode: "detach" })
+	// }
 	remote.enable(win.webContents)
 	win.webContents.on('did-finish-load', () => {
 		win.show();

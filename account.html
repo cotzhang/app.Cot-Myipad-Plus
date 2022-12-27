@@ -52,7 +52,7 @@
 			<span class="panelistic_placeholder"></span>
 			<div class="panelistic_panel">
 				<div class="panelistic_panel_name">账号管理</div><br><span class="panelistic_placeholder_large"></span>
-				<input type="button" value="重新登录" onclick="electron.ipcRenderer.sendToHost('logindial',accndata.account,accndata.password)">
+				<input type="button" value="重新登录" onclick="electron.ipcRenderer.sendToHost('relogin',accndata.account,accndata.password)">
 				<input type="button" value="退出账号" onclick="electron.ipcRenderer.sendToHost('exitaccount')" name="">
 			</div>
 	</div>

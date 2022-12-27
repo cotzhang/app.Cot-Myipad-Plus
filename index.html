@@ -8,8 +8,8 @@
 	<script src="func.js"></script>
 	<title>平板+</title>
 	<style type="text/css"></style>
-	<script type="text/javascript">
-	let panelistic;
+	<!--script type="text/javascript">
+	const panelistic;
 	const fs = require('fs');
 	const path = require('path');
 	let disableSync = false;
@@ -21,29 +21,75 @@
 		serverADDR = JSON.parse(fs.readFileSync(__dirname + '/account') + '').server;
 	} catch {}
 	var globalSsid = "ffffffffffffffffffffffffffffffff";
+	// GLOBAL SYNC VARIABLE
+	let finishAllowed = false;
+	let totalCounts = 0;
+	let fullDataSyncRetVal = [];
+	let currCount = 0;
+	let currCountReal = 0;
+	let historyArr = []
+	// GSV END
 	//var globalTestVar;
-	function request(pos, body, callback, errtimes) {
+	// error log
+	window.onerror = function(message, source, lineno, colno, error) {
+		panelistic.dialog('Error', '', '')
+		let preverrmsg = ""
+		try {
+			preverrmsg = fs.readFileSync(__dirname + '/errorreport');
+		} catch {}
+		fs.writeFileSync(__dirname + '/errorreport', '[' + new Date() + '] ' + message + '\n> ' + source + '\nAT ' + lineno + ',' + colno + '\n')
+	}
+
+	function request(pos, body, callback, errtimes, timeout) {
 		//console.log("Requesting:", body)
 		if (errtimes == undefined) errtimes = 0;
-		if (errtimes >= 10) {
+		if (errtimes >= 5) {
+			setTimeout(function() {
+				$.ajax({
+					url: "https://" + serverADDR + "/wmexam/wmstudyservice.WSDL",
+					data: body,
+					dataType: "text",
+					type: "post",
+					async: true,
+					xhrFields: {
+						withCredentials: true
+					},
+					timeout: timeout ? timeout : 1500,
+					beforeSend: function(request) {
+						request.setRequestHeader("SOAPAction", pos);
+					},
+					success: callback,
+					error: function(ax, bx, err) {
+						if ((ax.responseText + "").indexOf("-4063") != -1) {
+							fs.writeFileSync(__dirname + '/relogin', "error");
+							window.location.reload();
+						}
+						errtimes++;
+						request(pos, body, callback, errtimes);
+					}
+				})
+			}, 600)
+		}
+		if (errtimes >= 100) {
 			try {
 				panelistic.dialog.dismiss(currdiag)
 			} catch {}
 			panelistic.dialog.alert('服务器错误', "无法连接到服务器", "确定", () => {
-				initlogin();
+				console.log('FKK', pos, body, callback, errtimes, timeout)
+				debugger;
 			})
 			return;
 		}
 		$.ajax({
-			xhrFields: {
-				withCredentials: true
-			},
 			url: "https://" + serverADDR + "/wmexam/wmstudyservice.WSDL",
 			data: body,
 			dataType: "text",
 			type: "post",
 			async: true,
-			timeout: 1500,
+			xhrFields: {
+				withCredentials: true
+			},
+			timeout: timeout ? timeout : 1500,
 			beforeSend: function(request) {
 				request.setRequestHeader("SOAPAction", pos);
 			},
@@ -54,10 +100,82 @@
 				//  window.location.reload();
 				// });
 				errtimes++;
-				console.log("Request Error! Retrying.", err);
+				// console.warn("Request Error! Retrying.", body);
 				request(pos, body, callback, errtimes);
 			}
 		})
+	}
+
+	function requestAdvanced(pos, body, callback, errtimes, timeout) {
+		//console.log("Requesting:", body)
+		if (errtimes == undefined) errtimes = 0;
+		if (errtimes >= 10) {
+			setTimeout(function() {
+				$.ajax({
+					url: "https://" + serverADDR + "/wmexam/wmstudyservice.WSDL",
+					data: body,
+					dataType: "text",
+					type: "post",
+					async: true,
+					xhrFields: {
+						withCredentials: true
+					},
+					timeout: timeout ? timeout : 1500,
+					beforeSend: function(request) {
+						let ck = `sessionid=${globalSsid};userguid=ffffffffffffffffffffffffffffffff`;
+						request.setRequestHeader("Set-Cookie", ck);
+						request.setRequestHeader("SOAPAction", pos);
+					},
+					success: callback,
+					error: function(ax, bx, err) {
+						// panelistic.dialog.dismiss(currdiag);
+						// panelistic.dialog.alert("服务器出错",err,"重试",()=>{
+						//  window.location.reload();
+						// });
+						errtimes++;
+						// console.log("Request Error! Retrying.", body);
+						if ((ax.responseText + "").indexOf("-4063") != -1) {
+							fs.writeFileSync(__dirname + '/relogin', "error");
+
+							window.location.reload();
+						}
+						requestAdvanced(pos, body, callback, errtimes);
+					}
+				})
+			}, 600)
+		} else {
+			$.ajax({
+				url: "https://" + serverADDR + "/wmexam/wmstudyservice.WSDL",
+				data: body,
+				dataType: "text",
+				type: "post",
+				async: true,
+				xhrFields: {
+					withCredentials: true
+				},
+				timeout: timeout ? timeout : 1500,
+				beforeSend: function(request) {
+					let ck = `sessionid=${globalSsid};userguid=ffffffffffffffffffffffffffffffff`;
+					request.setRequestHeader("Set-Cookie", ck);
+					request.setRequestHeader("SOAPAction", pos);
+				},
+				success: callback,
+				error: function(ax, bx, err) {
+					// panelistic.dialog.dismiss(currdiag);
+					// panelistic.dialog.alert("服务器出错",err,"重试",()=>{
+					//  window.location.reload();
+					// });
+					errtimes++;
+					if ((ax.responseText + "").indexOf("-4063") != -1) {
+						fs.writeFileSync(__dirname + '/relogin', "error");
+						console.log(allretval)
+						window.location.reload();
+					}
+					// console.log("Request Error! Retrying.", body);
+					requestAdvanced(pos, body, callback, errtimes);
+				}
+			})
+		}
 	}
 
 	function requestErr(pos, body, callback, err) {
@@ -149,6 +267,7 @@ Flavor: normal</lpszHardwareKey></UsersLoginJson></v:Body></v:Envelope>`
 
 
 	function syncdata() {
+		document.getElementById('panelistic_sidebar').style.pointerEvents = "none";
 		webview.src = __dirname + "/logload.html";
 		// currdiag = panelistic.dialog.salert("正在同步数据");
 		let allcfgs = JSON.parse(fs.readFileSync(__dirname + "/data"));
@@ -169,45 +288,160 @@ Flavor: normal</lpszHardwareKey></UsersLoginJson></v:Body></v:Envelope>`
 		document.getElementById("panelistic_sidebar_title").innerText = usrname;
 		document.getElementById("panelistic_sidebar_subtitle").innerText = displayname;
 		//http://webservice.myi.cn/wmstudyservice/wsdl/LessonsScheduleGetTableData
-
+		// GLOBAL SYNC VARIABLE
+		finishAllowed = false;
+		totalCounts = 0;
+		fullDataSyncRetVal = [];
+		currCount = 0;
+		currCountReal = 0;
+		// GSV END
 		let pastRess = []
 		let prtt = "enablesegment=3;";
 		try {
 			pastRess = JSON.parse(fs.readFileSync(__dirname + '/resources'))
 			prtt = parseRecordToText(pastRess);
-		} catch {}
-		// console.log(prtt)
-		setTimeout(function() {
-			againDataFetch(getusrfile.account, classstr, pastRess, prtt)
-		}, 500)
+		} catch (err) {
+			console.warn(err)
+		}
+		historyArr = pastRess
+		againDataFetch(getusrfile.account, classstr, pastRess, prtt)
 	}
 
 	function finishSync(receivedArgs) {
+		finishAllowed = true;
+		console.log("SYNC FINISHED!")
+		console.warn(fullDataSyncRetVal)
+		if (fullDataSyncRetVal.length == 0) {
+			finishSyncReal()
+		}
+		for (var i = 0; i < fullDataSyncRetVal.length; i++) {
+			getResByGUID(fullDataSyncRetVal[i].resourceguid, i)
+			webview.send('itemdatal', i)
+		}
+		// webview.loadURL(__dirname + "/selflearn.html")
+	}
+
+	function finishSyncReal() {
+		let receivedArgs = historyArr.concat(fullDataSyncRetVal);
 		document.getElementById('panelistic_sidebar').style.pointerEvents = "unset";
-		let sorted = receivedArgs.sort(function(a, b) { return (getDigital(b.scheduledate) > getDigital(a.scheduledate)) ? 1 : -1 })
+		let remindRelogin = false;
+		let sorted = receivedArgs.sort(function(a, b) {
+			if (a.scheduledate === b.scheduledate) {
+				// console.log('Equalled!', a.scheduledate)
+				return (getDigital(b.date) > getDigital(a.date)) ? 1 : -1
+			}
+			if (b.error) return -1;
+			if (a.error) return 1;
+			try {
+				if (getDigital(b.scheduledate) > getDigital(a.scheduledate)) {
+					return 1;
+				} else {
+					return -1;
+				}
+			} catch {
+				remindRelogin = true;
+			}
+		})
+		if (remindRelogin) {
+			panelistic.dialog.alert('提示', '您的版本已更新，请点击 关于 > 修复资源 重新解析资源，获得最佳体验。')
+		}
 		fs.writeFileSync(__dirname + '/resources', JSON.stringify(sorted));
 		try {
 			panelistic.dialog.dismiss(currdiag);
-			webview.reload()
 		} catch {}
-		console.log("SYNC FINISHED!")
-		webview.loadURL(__dirname + "/selflearn.html")
+		try {
+			webview.loadURL(__dirname + "/selflearn.html")
+			webview.loadURL(__dirname + "/selflearn.html")
+		} catch {}
+		setTimeout(() => {
+			if (webview.getURL().indexOf('selflearn') == -1) {
+				webview.loadURL(__dirname + "/selflearn.html")
+			}
+		}, 500)
+	}
+
+	function getResByGUID(guid, itemcnt) {
+		let reqstrs = `<v:Envelope xmlns:v="http://schemas.xmlsoap.org/soap/envelope/" xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns:d="http://www.w3.org/2001/XMLSchema" xmlns:c="http://schemas.xmlsoap.org/soap/encoding/">
+	<v:Header/>
+	<v:Body>
+		<GetResourceByGUID xmlns="http://webservice.myi.cn/wmstudyservice/wsdl/" id="o0" c:root="1">
+			<lpszResourceGUID i:type="d:string">${guid}</lpszResourceGUID>
+		</GetResourceByGUID>
+	</v:Body></v:Envelope>`;
+		requestAdvanced("http://webservice.myi.cn/wmstudyservice/wsdl/GetResourceByGUID", reqstrs, (allretval) => {
+			webview.send('syncdata', guid)
+			try {
+				if ((allretval + "").indexOf("-4063") != -1) {
+					fs.writeFileSync(__dirname + '/relogin', "error");
+					console.log(allretval)
+					window.location.reload();
+				} else {
+					let psretval = allretval.substring(allretval.indexOf('<AS:szXMLContent>') + 17, allretval.indexOf("</AS:szXMLContent>"));
+					var temp = document.createElement("div");
+					temp.innerHTML = psretval;
+					psretval = temp.innerText || temp.textContent;
+					temp = null;
+					// console.log(psretval)
+					allrecs = parseDom(psretval)[0];
+					globalTestVar = allrecs;
+					// console.log(allrecs)
+					fullDataSyncRetVal[itemcnt].author = allrecs.childNodes[0].attributes.author.value
+					fullDataSyncRetVal[itemcnt].date = allrecs.childNodes[0].attributes.date.value
+					fullDataSyncRetVal[itemcnt].resguid = allrecs.childNodes[0].attributes.guid.value
+					fullDataSyncRetVal[itemcnt].numbersubject = allrecs.childNodes[0].attributes.numbersubject.value
+					fullDataSyncRetVal[itemcnt].subject = allrecs.childNodes[0].attributes.subject.value
+					fullDataSyncRetVal[itemcnt].title = allrecs.childNodes[0].attributes.title.value
+					const logs = allrecs.childNodes[0].childNodes[1].getElementsByTagName("log");
+					fullDataSyncRetVal[itemcnt].logs = [];
+					for (let i = 0; i < logs.length; i++) {
+						const log = logs[i];
+						const date = log.getAttribute("date");
+						const operatorguid = log.getAttribute("operatorguid");
+						const operatorname = log.getAttribute("operatorname");
+						const content = log.textContent;
+						fullDataSyncRetVal[itemcnt].logs.push({ date, operatorguid, operatorname, content });
+					}
+					const allress = allrecs.childNodes[0].childNodes[2].getElementsByTagName("resource");
+					fullDataSyncRetVal[itemcnt].resource = [];
+					for (let i = 0; i < allress.length; i++) {
+						const thisres = allress[i];
+						const guid = thisres.getAttribute("guid");
+						const resourcetype = thisres.getAttribute("resourcetype");
+						const title = thisres.getAttribute("title");
+						fullDataSyncRetVal[itemcnt].resource.push({ guid, resourcetype, title });
+					}
+				}
+			} catch (err) {
+				fullDataSyncRetVal[itemcnt].error = 1;
+				fullDataSyncRetVal[itemcnt].scheduledate = "0";
+				fullDataSyncRetVal[itemcnt].date = "0";
+				// console.warn(err)
+				// console.log("READING ERROR\n========================", allrecs, fullDataSyncRetVal[itemcnt])
+			}
+			// console.warn(retv)
+			currCountReal++;
+			webview.send('itemdatai', currCountReal)
+			webview.send('totdata', currCountReal + "/" + totalCounts)
+			if ((currCountReal >= totalCounts) && finishAllowed) {
+				finishSyncReal()
+			}
+		}, 0, 300);
 	}
 
 	function getResByGUIDSync(guid) {
 		let reqstrs = `<v:Envelope xmlns:v="http://schemas.xmlsoap.org/soap/envelope/" xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns:d="http://www.w3.org/2001/XMLSchema" xmlns:c="http://schemas.xmlsoap.org/soap/encoding/">
-    <v:Header/>
-    <v:Body>
-        <GetResourceByGUID xmlns="http://webservice.myi.cn/wmstudyservice/wsdl/" id="o0" c:root="1">
-            <lpszResourceGUID i:type="d:string">${guid}</lpszResourceGUID>
-        </GetResourceByGUID>
-    </v:Body></v:Envelope>`;
+	<v:Header/>
+	<v:Body>
+		<GetResourceByGUID xmlns="http://webservice.myi.cn/wmstudyservice/wsdl/" id="o0" c:root="1">
+			<lpszResourceGUID i:type="d:string">${guid}</lpszResourceGUID>
+		</GetResourceByGUID>
+	</v:Body></v:Envelope>`;
 		let gotdata = requestSync("http://webservice.myi.cn/wmstudyservice/wsdl/GetResourceByGUID", reqstrs);
 		if ((gotdata.responseText).indexOf("<faultstring>Error -4063</faultstring") != -1) {
 			panelistic.dialog.dismiss(currdiag)
 			console.log("Wrong Sessionid");
 			fs.writeFileSync(__dirname + '/relogin', "error");
-			console.log(allretval)
+			// console.log(allretval)
 			window.location.reload();
 		} else {
 			return gotdata;
@@ -215,24 +449,20 @@ Flavor: normal</lpszHardwareKey></UsersLoginJson></v:Body></v:Envelope>`
 	}
 
 	function againDataFetch(acc, classstr, pastarr, pastrecs) {
-		// console.log(pastrecs)
-		// pastrecs = `enablesegment=3;54a7afe2b26e42999daf578ad24459f4=2022-09-01 07:19:56;a348dde3ca6d4215817e485a7d3fd185=2022-09-01 07:44:24;77c9c66790814a938fcb07ed69800f5b=2022-09-28 18:47:58;c6032d5cc981408d85af3321625c1623=2022-09-28 18:50:09;cf72dd7483fc469d81ca318d6be7f6d1=2022-10-09 12:46:40;148497e9eaac4d53aba79a7774d72ab4=2022-10-09 12:47:07;b89d65495bab41c18d2ca502a517503f=2022-10-09 12:48:22;f3578ae719d24de7acdf523d8c7befd1=2022-10-10 07:14:51;cd0d1bdfa97c43d0b2c6fe7ff1d2ccdc=2022-10-10 09:07:26;fa93a09623954079af4102ad4b7d7a1b=2022-10-10 09:10:47;821aec1aab0f47109b1532ddfea884e9=2022-10-10 09:53:47;27492fb13eaa43a08a30265481065640=2022-10-11 07:04:21;b54372249cb1430f8cab775a752eb047=2022-10-11 08:50:22;95b4d24044ac40e2bb4f5b0dad7e003d=2022-10-11 12:47:44;590a2783252d4ef484205ac1ebf4e9d0=2022-10-11 13:15:31;9d67b9cb8f804a64be50babc2c046b16=2022-10-11 16:59:00;17802a32efda45329a8536205a4054d0=2022-10-11 15:57:59;2c00d6f57f904f02a000fcc963ec4eb8=2022-10-11 16:11:19;bfada324dd9240e4aa3469eba75288a5=2022-10-11 16:34:57;c394c11aaed848be9a052536a9704e21=2022-10-11 16:41:46;2d40e1b3aa3645f8b3c8d16214edd476=2022-10-11 16:52:36;bd9b83a8dd1e4ae9a87d4945a73f3af7=2022-10-11 18:26:45;e5e46c9152de4d52a031afc96c168d28=2022-10-12 09:58:25;8358d9beb51e471689730984c2271fc2=2022-10-12 20:20:56;8e009261856c4259b44fb4e6580d01f8=2022-10-12 20:24:19;01529a2b20184923a930e2b6f9eff2ff=2022-10-13 06:16:08;b09920dc33f743e6b30d797d86daa037=2022-10-13 07:22:59;015ecdc3e2034ebdb81d4ae1bdb29f7a=2022-10-13 08:52:36;e9ef550407f14285a35cfa965d5101e7=2022-10-13 09:12:20;386a4fa9a2864a9d94528f11138e7ea2=2022-10-13 15:23:53;7f3df403841a4372ad1ae9020fd27d9e=2022-10-13 09:27:19;0e295096c5784e3ba967fa7f4bcb8fd0=2022-10-13 11:29:57;a6afd192bc0c4ce5bae575c8261dbaf0=2022-10-13 16:56:07;e025d598c27242fcb0aad5292c144cc3=2022-10-13 17:25:47;2a96472e2fb748c299fa6857e549b92c=2022-10-13 20:27:54;8cae1c1605364cc1b82ea3bd213e01b0=2022-10-14 07:09:04;2ad64e7fa61f4c67870e5e3db17b3f2e=2022-10-14 10:02:51;375a73afbdff48bb83759d58a24880ca=2022-10-14 13:15:44;4b2b149444594292923f8fca63607f74=2022-10-14 13:41:14;7ba9b118aa784ef58a01a18700d803df=2022-10-17 17:06:40;04b79708c959455288b7e1cacda9cde8=2022-10-17 06:57:31;1a10defd6d2847e7964753155a8dd65f=2022-10-17 12:32:04;08dc129bca1f4aa4ba8ba086f9cb19a2=2022-10-17 12:41:12;2615f46b5529431d950232ae13c2259d=2022-10-17 13:19:43;7dde5e5a983f4c1eadbac5a39227dd8d=2022-10-17 14:27:26;917631fe07a84c5589eb085fa700fc31=2022-10-17 14:40:46;05f4665ccd9e427ca4cd349debbfdb96=2022-10-17 16:00:37;8344995ee13e41cda5f3a19b371144f4=2022-10-18 12:21:31;ec337501465e4a5f850c1cfbac673b8f=2022-10-18 09:02:09;be93efa1958b41b09c24354bb5c6d06f=2022-10-18 12:19:41;22e156d74da345db9cb3cff23c86dd51=2022-10-18 12:22:14;0939d01d689a4b6fa5a43398fb0c1f13=2022-10-18 13:20:01;f8a3eab4fae54eb9a2ff76bd8b3fea14=2022-10-19 07:30:02;88cd5e741ccc401db6eae2198f9ecb78=2022-10-19 09:59:33;65425af7ab2b4939a014ebe147863d7c=2022-10-19 10:15:38;a53071d21aee452d81e1d5fc8438dee3=2022-10-19 11:48:20;258679f166b148ceb7ec813216d9965a=2022-10-19 14:49:09;8efda0ec879648c3812cb829944d209e=2022-10-19 16:38:51;89ce3df98a76496ca33b1d291f6c1297=2022-10-19 17:00:55;ada8a5601a6142678ff1c04c4392346e=2022-10-20 01:30:41;5ac92d40b3ef4656842e016107d4139d=2022-10-20 07:34:03;9563b1a1570045bebb5ff73e76702dfe=2022-10-20 10:18:00;77e3793b7f3d425caeb1c24c519b97d0=2022-10-20 12:36:26;49caba91c9c8446aafa77d0fabf65f20=2022-10-20 10:20:07;6bdd1a4e9d6e4a7d861cef747ff88cf9=2022-10-20 10:48:33;b6452fb5d14840b6abab76adc8f368a7=2022-10-20 12:34:55;896c6f35d9584a6bb3d99866c83a375e=2022-10-21 07:17:22;47e0b433c5714b03a8fef9bc8fc89b8f=2022-10-21 14:49:26;17387942516e4ae2b43b4f480388f7e8=2022-10-21 17:46:42;1ccc7031e4364a76b55968149c653241=2022-10-22 11:41:26;142166eb3ab448ef8cfd638d8a81ddc4=2022-10-22 11:43:11;18494297be1b450d87172ad6311bbbd0=2022-10-24 00:10:02;b7b7f94967f64cbeb69b3fcfdcdc28ed=2022-10-25 15:20:10;1f4a88559d8243bfabf2b90ce2edf37a=2022-10-24 07:44:56;`
-		// console.log(pastrecs)
 		let reqstr = `<v:Envelope xmlns:v="http://schemas.xmlsoap.org/soap/envelope/" xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns:d="http://www.w3.org/2001/XMLSchema" xmlns:c="http://schemas.xmlsoap.org/soap/encoding/">
-    <v:Header/>
-    <v:Body>
-        <LessonsScheduleGetTableData xmlns="http://webservice.myi.cn/wmstudyservice/wsdl/" id="o0" c:root="1">
-            <lpszTableName i:type="d:string">lessonsschedule</lpszTableName>
-            <lpszUserClassGUID i:type="d:string">${classstr}</lpszUserClassGUID>
-            <lpszStudentID i:type="d:string">${acc}</lpszStudentID>
-            <lpszLastSyncTime i:type="d:string"></lpszLastSyncTime>
-            <szReturnXML i:type="d:string">${pastrecs}</szReturnXML>
-        </LessonsScheduleGetTableData>
-    </v:Body></v:Envelope>`
+	<v:Header/>
+	<v:Body>
+		<LessonsScheduleGetTableData xmlns="http://webservice.myi.cn/wmstudyservice/wsdl/" id="o0" c:root="1">
+			<lpszTableName i:type="d:string">lessonsschedule</lpszTableName>
+			<lpszUserClassGUID i:type="d:string">${classstr}</lpszUserClassGUID>
+			<lpszStudentID i:type="d:string">${acc}</lpszStudentID>
+			<lpszLastSyncTime i:type="d:string"></lpszLastSyncTime>
+			<szReturnXML i:type="d:string">${pastrecs}</szReturnXML>
+		</LessonsScheduleGetTableData>
+	</v:Body></v:Envelope>`
 		// console.log(reqstr)
 		request("http://webservice.myi.cn/wmstudyservice/wsdl/LessonsScheduleGetTableData", reqstr, (data) => {
-			console.log(data + "")
-			// debugger;
+			// console.log(data + "")
 			if ((data + "").indexOf("><faultstring>Error -4063</faultstring") != -1) {
 				panelistic.dialog.dismiss(currdiag)
 				console.log("Wrong Sessionid");
@@ -249,186 +479,50 @@ Flavor: normal</lpszHardwareKey></UsersLoginJson></v:Body></v:Envelope>`
 				gotdatas = temp.innerText || temp.textContent;
 				temp = null;
 				let allrecs = parseDom(gotdatas)[0].childNodes
-				let psdrecs = [];
+				totalCounts += allrecs.length;
 				for (let i = 0; i < allrecs.length; i++) {
 					if (allrecs[0].nodeValue == '\n') {
-						finishSync(pastarr);
+						finishSync();
 						return;
 					}
-					psdrecs[i] = parseRecord(allrecs[i])
-					webview.send('totdata', i + "/" + allrecs.length)
-					webview.send('itemdatal', allrecs.length)
-					webview.send('itemdatai', i)
-					console.log("Parsing " + i + "/" + allrecs.length);
+					fullDataSyncRetVal[currCount] = (parseRecord(allrecs[i], currCount));
+					webview.send('itemdatal', totalCounts)
+					currCount++;
 				}
-				let combined = pastarr.concat(psdrecs);
-				if (psdrecs == []) {
-					combined = pastarr;
-				}
-				console.log(parseRecordToText(pastarr))
+				// console.log(parseRecordToText(fullDataSyncRetVal))
 				if ((data + "").indexOf('hasMoreData="true"') != -1) {
-					againDataFetch(acc, classstr, combined, parseRecordToText(combined));
+					againDataFetch(acc, classstr, fullDataSyncRetVal, parseRecordToText(fullDataSyncRetVal));
 				} else {
-					finishSync(combined);
+					finishSync();
 				}
 			}
 			//
 		})
 	}
 
-	function parseRecord(recordItem) {
+	function parseRecord(recordItem, cntI) {
 		let retv = {};
 		let allrecs;
-		try {
-			const elementKeys = [
-				'guid',
-				'subject',
-				'lessonindex',
-				'scheduledate',
-				'resourceguid',
-				'userschoolguid',
-				'userclassguid',
-				'userclassname',
-				'state',
-				'syn_timestamp',
-				'syn_isdelete',
-				'scheduleenddate'
-			];
-			elementKeys.forEach(key => {
-				const element = recordItem.querySelector(key);
-				retv[key] = element ? element.innerText : undefined;
-			});
-			webview.send('syncdata', retv.guid)
-			let allretval = false;
-			allretval = getResByGUIDSync(retv.resourceguid).responseText;
-			let maxretries = 60;
-			// const start = new Date();
-			globalTestVar = allretval;
-			if ((allretval + "").indexOf("-4063") != -1) {
-				fs.writeFileSync(__dirname + '/relogin', "error");
-				console.log(allretval)
-				window.location.reload();
-			} else {
-				while ((allretval.indexOf("<center><h1>502 Bad Gateway</h1></center>") != -1) && maxretries > 0) {
-					// const start = new Date();
-					// while (true) {
-					// 	const now = new Date();
-					// 	if (now - start >= 200) {
-					// 		break;
-					// 		console.log('HTTP ERROR!\n========================', retv, allretval);
-					// 	}
-					// }
-					console.log('HTTP ERROR!\n========================');
-					allretval = getResByGUIDSync(retv.objectguid).responseText;
-					maxretries--;
-				}
-				if (!maxretries > 0) {
-					console.error('FAILED after 60 times!')
-				} else if (maxretries != 60) {
-					console.log('%c HTTP ERROR Corrected with retries ' + (60 - maxretries), "color: green;", allretval)
-				}
-				let psretval = allretval.substring(allretval.indexOf('<AS:szXMLContent>') + 17, allretval.indexOf("</AS:szXMLContent>"));
-				var temp = document.createElement("div");
-				temp.innerHTML = psretval;
-				psretval = temp.innerText || temp.textContent;
-				temp = null;
-				allrecs = parseDom(psretval)[0];
-				globalTestVar = allrecs;
-				// console.log(allrecs)
-				retv.author = allrecs.childNodes[0].attributes.author.value
-				retv.date = allrecs.childNodes[0].attributes.date.value
-				retv.resguid = allrecs.childNodes[0].attributes.guid.value
-				retv.numbersubject = allrecs.childNodes[0].attributes.numbersubject.value
-				retv.subject = allrecs.childNodes[0].attributes.subject.value
-				retv.title = allrecs.childNodes[0].attributes.title.value
-
-				const logs = allrecs.childNodes[0].childNodes[1].getElementsByTagName("log");
-				retv.logs = [];
-
-				for (let i = 0; i < logs.length; i++) {
-					const log = logs[i];
-					const date = log.getAttribute("date");
-					const operatorguid = log.getAttribute("operatorguid");
-					const operatorname = log.getAttribute("operatorname");
-					const content = log.textContent;
-					retv.logs.push({ date, operatorguid, operatorname, content });
-				}
-
-				const allress = allrecs.childNodes[0].childNodes[2].getElementsByTagName("resource");
-				retv.resource = [];
-
-				for (let i = 0; i < allress.length; i++) {
-					const thisres = allress[i];
-					const guid = thisres.getAttribute("guid");
-					const resourcetype = thisres.getAttribute("resourcetype");
-					const title = thisres.getAttribute("title");
-					retv.resource.push({ guid, resourcetype, title });
-					// 				//starting getting object by guid
-					// 				thisallreturnval = getResByGUIDSync(guid).responseText;
-					// 				let maxretries = 60;
-					// 				const start = new Date();
-					// 				globalTestVar = thisallreturnval;
-					// 				if ((thisallreturnval + "").indexOf("-4063") != -1) {
-					// 					fs.writeFileSync(__dirname + '/relogin', "error");
-					// 					console.log(thisallreturnval)
-					// 					window.location.reload();
-					// 				} else {
-					// 					while ((thisallreturnval.indexOf("<center><h1>502 Bad Gateway</h1></center>") != -1) && maxretries > 0) {
-					// 						const starts = new Date();
-					// 						while (true) {
-					// 							const nows = new Date();
-					// 							if (nows - starts >= 200) {
-					// 								break;
-					// 								console.log('HTTP ERROR!\n========================', retv, thisallreturnval);
-					// 							}
-					// 						}
-					// 						console.log('HTTP ERROR!\n========================');
-					// 						thisallreturnval = getResByGUIDSync(guid).responseText;
-					// 						maxretries--;
-					// 					}
-					// 					if (!maxretries > 0) {
-					// 						console.error('FAILED after 60 times!')
-					// 					} else if (maxretries != 60) {
-					// 						console.log('%c HTTP ERROR Corrected with retries ' + (60 - maxretries), "color: green;", thisallreturnval)
-					// 					}
-					// 					let psretval = thisallreturnval.substring(thisallreturnval.indexOf('<AS:szXMLContent>') + 17, thisallreturnval.indexOf("</AS:szXMLContent>"));
-					// 					var temp = document.createElement("div");
-					// 					temp.innerHTML = psretval;
-					// 					psretval = temp.innerText || temp.textContent;
-					// 					temp = null;
-					// 					getdoms = parseDom(psretval)[0];
-					// 					globalTestVar = getdoms;
-					// 					// debugger;
-					// 					retv.resource[i]={}
-					// 					retv.resource[i].title = getdoms.childNodes[0].attributes.title.textContent;
-					// 					retv.resource[i].type = getdoms.childNodes[0].attributes.type.textContent;
-					// 					retv.resource[i].author = getdoms.childNodes[0].attributes.author.textContent;
-					// 					retv.resource[i].date = getdoms.childNodes[0].attributes.date.textContent;
-					// 					retv.resource[i].fileuri = getdoms.childNodes[0].childNodes[2].attributes.fileuri.textContent;
-					// 					retv.resource[i].content = getdoms.childNodes[0].childNodes[2].innerText;
-					// 					// debugger;
-
-					// 						const starts = new Date();
-					// 						while (true) {
-					// 							const nows = new Date();
-					// 							if (nows - starts >= 300) {
-					// 								break;
-					// 								console.log('HTTP ERROR!\n========================', retv, thisallreturnval);
-					// 							}
-					// 						}
-					// 				}
-				}
-				// 			console.log("Parsed",retv);
-				// 			// debugger;
-			}
-		} catch (err) {
-			if (allrecs) {
-				retv.error = 1;
-				retv.scheduledate = "0";
-				console.warn(err)
-				console.log("READING ERROR\n========================", allrecs, retv)
-			}
-		}
+		const elementKeys = [
+			'guid',
+			'subject',
+			'lessonindex',
+			'scheduledate',
+			'resourceguid',
+			'userschoolguid',
+			'userclassguid',
+			'userclassname',
+			'state',
+			'syn_timestamp',
+			'syn_isdelete',
+			'scheduleenddate'
+		];
+		elementKeys.forEach(key => {
+			const element = recordItem.querySelector(key);
+			retv[key] = element ? element.innerText : undefined;
+		});
+		// getResByGUID(retv.resourceguid, cntI)
+		// webview.send('syncdata', retv.guid)
 		return retv;
 	}
 
@@ -499,7 +593,9 @@ Flavor: normal</lpszHardwareKey></UsersLoginJson></v:Body></v:Envelope>`
 							fs.unlinkSync(__dirname + '/resources')
 							fs.unlinkSync(__dirname + '/videosrc')
 						} catch {}
-						deleteFolderRecursive(__dirname + '/downloads');
+						try {
+							deleteFolderRecursive(__dirname + '/downloads');
+						} catch {}
 						window.location.reload()
 					}
 				})
@@ -525,15 +621,17 @@ Flavor: normal</lpszHardwareKey></UsersLoginJson></v:Body></v:Envelope>`
 								enableRemoteModule: true,
 								contextIsolation: false,
 								webviewTag: true,
-								nodeIntegrationInWorker: true
-							}
+								nodeIntegrationInWorker: true,
+								ignoreCertificateErrors: true
+							},
+							webSecurity: false
 						})
 						vidwin.loadFile('video.html');
 						vidwin.on('close', () => {
 							vidwin = null
 						})
 						vidwin.removeMenu();
-						// vidwin.webContents.openDevTools({mode:"detach"})
+						// vidwin.webContents.openDevTools({ mode: "detach" })
 					} else {
 						let panelisticid = panelistic.dialog.salert('请稍等');
 						(async () => {
@@ -565,6 +663,11 @@ Flavor: normal</lpszHardwareKey></UsersLoginJson></v:Body></v:Envelope>`
 						panelistic.dialog.alert("测试", "测试代码无效", "确定")
 					}
 				})
+			} else if (event.channel == "reload") {
+				window.location.reload()
+			} else if (event.channel == "relogin") {
+				fs.writeFileSync(__dirname + '/relogin', "error");
+				window.location.reload();
 			}
 		})
 		webview.addEventListener('dom-ready', function() {
@@ -576,7 +679,7 @@ Flavor: normal</lpszHardwareKey></UsersLoginJson></v:Body></v:Envelope>`
 	const VERSION = fs.readFileSync(__dirname + '/versionBUILD') + "";
 
 	function checkUpd() {
-		$.get('https://storage-1303195148.cos.ap-guangzhou.myqcloud.com/website/cmpVerInfo.txt?tsp='+new Date().getTime(), (data) => {
+		$.get('https://storage-1303195148.cos.ap-guangzhou.myqcloud.com/website/cmpVerInfo.txt?tsp=' + new Date().getTime(), (data) => {
 			console.log(data, VERSION)
 			if (data > VERSION) {
 				console.log("New Update!")
@@ -693,7 +796,60 @@ Flavor: normal</lpszHardwareKey></UsersLoginJson></v:Body></v:Envelope>`
 		// webview.loadURL('https://gzzxres.lexuewang.cn:8008/login/home/goLogin?userid=' + allcfgs.userguid)
 	}
 	const remote = require("@electron/remote");
-	</script>
+
+
+	let alreadyanswersheets = [];
+
+	function syncAnswersheets(callback) {
+		alreadyanswersheets = [];
+		let usrinfo = JSON.parse(fs.readFileSync(__dirname + '/account'));
+		let alldatas = JSON.parse(fs.readFileSync(__dirname + '/data'));
+		try {
+			alreadyanswersheets = fs.readFileSync(__dirname + '/answersheet');
+		} catch {}
+		console.log(alreadyanswersheets)
+		let reqstr = JSON.stringify(alreadyanswersheets);
+		getAnswersheetsRequest(reqstr, alldatas, usrinfo)
+	}
+
+	function getAnswersheetsRequest(reqstr, alldatas, usrinfo) {
+		$.ajax({
+			url: "https://" + serverADDR + "/restfuldatasource/answersheetresult/",
+			data: reqstr,
+			dataType: "text",
+			type: "post",
+			async: true,
+			xhrFields: {
+				withCredentials: true
+			},
+			beforeSend: function(request) {
+				request.setRequestHeader("Set-Cookie", `sessionid=${globalSsid};szUserGUID=${alldatas.userguid};szUserName=${usrinfo.account}`);
+			},
+			success: getAnswersheetsCallback,
+			error: function(ax, bx, err) {
+				console.log(ax)
+				if ((ax.responseText + "").indexOf("-4063") != -1) {
+					fs.writeFileSync(__dirname + '/relogin', "error");
+					window.location.reload();
+				}
+				getAnswersheetsRequest(reqstr, alldatas, usrinfo);
+			}
+		})
+	}
+
+	function getAnswersheetsCallback(databack) {
+		let allDataBack = JSON.parse(databack);
+		console.log(allDataBack)
+	}
+
+	function downloadCertainAnswersheet(answerSheetObject) {
+		if (!fs.existsSync(__dirname + "/answersheetfolder")) {
+			fs.mkdirSync(__dirname + "/answersheetfolder");
+		}
+
+	}
+	</script-->
+	<script src="./procedure.js"></script>
 </head>
 
 <body>

@@ -13,11 +13,12 @@
 	let panelistic;
 	const fs = require('fs')
 	const electron = require("electron");
-	let fulldata = JSON.parse(fs.readFileSync(__dirname + "/resources"));
 	let serverADDR = JSON.parse(fs.readFileSync(__dirname + "/account")).server;
 	let allcfgs = JSON.parse(fs.readFileSync(__dirname + "/data"));
 	let sessionid = allcfgs.sessionid;
 	let isFutureShown = false;
+	let fulldata = JSON.parse(fs.readFileSync(__dirname + "/resources")).concat(JSON.parse(fs.readFileSync(__dirname + "/ryyresources"))).sort(sortAllArrs);
+	let cannotLoad = false;
 	globalSsid = sessionid;
 	Date.prototype.Format = function(fmt) {
 		var o = {
@@ -44,7 +45,7 @@
 		document.getElementById('lastSyncTime').innerText = new Date(fs.statSync(__dirname + '/resources').ctime).Format('MM月dd日 hh:mm:ss');
 
 		document.getElementById('panelistic_content_sidebar_in').onscroll = function() {
-			if (((document.getElementById('panelistic_content_sidebar_in').scrollHeight - document.getElementById('panelistic_content_sidebar_in').scrollTop) < 1200) && !isFutureShown) {
+			if (((document.getElementById('panelistic_content_sidebar_in').scrollHeight - document.getElementById('panelistic_content_sidebar_in').scrollTop) < 1200) && !cannotLoad) {
 				renderMore(8)
 			}
 		}
@@ -108,7 +109,7 @@
 	}
 
 	function renderMore(cnt) {
-		if (fulldata[recordCount].error != 1) {
+		if ((fulldata[recordCount].error != 1) && (fulldata[recordCount].author != undefined)) {
 			document.getElementById('allbkdisplays').innerHTML += readRecord(cnt)
 		}
 	}
@@ -154,13 +155,14 @@
 			futureRecords.push(fulldata[recordCount]);
 			recordCount++;
 		}
-		while ((allcounts < minAmount) && (recordCount < fulldata.length) && fulldata[recordCount].error != 1) {
+		while ((allcounts < minAmount) && (recordCount < fulldata.length) && (fulldata[recordCount].error != 1) && (fulldata[recordCount].author != undefined)) {
+			console.log(fulldata[recordCount])
 			let dayStart = getDigitalDay(fulldata[recordCount].scheduledate)
 			let i = 0;
 			retv[ii] = new Array()
 			allstrs += model_dayStart(numToDate(getDigitalDay(fulldata[recordCount].scheduledate)))
 			while (getDigitalDay(fulldata[recordCount].scheduledate) == dayStart) {
-				allstrs += model_classprepareStart(fulldata[recordCount].subject, fulldata[recordCount].title, fulldata[recordCount].resourceguid, fulldata[recordCount].author, fulldata[recordCount].scheduledate, fulldata[recordCount].scheduleenddate, recordCount) + model_classprepareEnd();
+				allstrs += model_classprepareStart(fulldata[recordCount].syn_isdelete, fulldata[recordCount].subject, fulldata[recordCount].title, fulldata[recordCount].resourceguid, fulldata[recordCount].author, fulldata[recordCount].scheduledate, fulldata[recordCount].scheduleenddate, recordCount, fulldata[recordCount]) + model_classprepareEnd();
 				retv[ii][i] = fulldata[recordCount]
 				recordCount++;
 				allcounts++;
@@ -220,11 +222,9 @@
     </v:Body></v:Envelope>`;
 		let gotdata = requestSync("http://webservice.myi.cn/wmstudyservice/wsdl/GetResourceByGUID", reqstrs);
 		if ((gotdata.responseText).indexOf("<faultstring>Error -4063</faultstring") != -1) {
-			panelistic.dialog.dismiss(currdiag)
 			console.log("Wrong Sessionid");
 			fs.writeFileSync(__dirname + '/relogin', "error");
-			console.log(allretval)
-			window.location.reload();
+			electron.ipcRenderer.sendToHost('reload')
 		} else {
 			return gotdata;
 		}
@@ -304,10 +304,10 @@
 	function showFuture() {
 		if (!isFutureShown) {
 			let allstrs = ``
-			allstrs += model_dayStart('未来的备课')
+			allstrs += model_futureStart('未来的备课')
 			for (let i = 0; i < futureRecords.length; i++) {
 				// futureRecords[i]
-				allstrs += model_classprepareStart(futureRecords[i].subject, futureRecords[i].title, futureRecords[i].resourceguid, futureRecords[i].author, futureRecords[i].scheduledate, futureRecords[i].scheduleenddate, i) + model_classprepareEnd();
+				allstrs += model_classprepareStart(futureRecords[i].syn_isdelete, futureRecords[i].subject, futureRecords[i].title, futureRecords[i].resourceguid, futureRecords[i].author, futureRecords[i].scheduledate, futureRecords[i].scheduleenddate, i, futureRecords[i]) + model_classprepareEnd();
 			}
 			allstrs += model_dayEnd()
 			document.getElementById('future').innerHTML = allstrs
@@ -327,14 +327,21 @@
 			<div class="panelistic_panel_name">${date}</div><br><span class="panelistic_placeholder"></span>`
 	}
 
+	function model_futureStart(date) {
+		return `<span class="panelistic_placeholder"></span>
+		<div class="panelistic_panel" style="background:#cc35">
+			<div class="panelistic_panel_name">${date}</div><br><span class="panelistic_placeholder"></span>`
+	}
+
 	// function model_subjectStart(subject) {
 	// 	return `<div class="panelistic_panel" style="padding-bottom: 1px;">
 	// 			<div class="panelistic_panel_name" style="background-color: #ff555588;">${subject}</div><br><span class="panelistic_placeholder_large"></span>`
 	// }
 
-	function model_classprepareStart(subject, bktitle, bkguid, bkauthor, bkstartdate, bkenddate, bknumber) {
-		return `<span class="panelistic_placeholder"></span><div class="panelistic_panel">
-			<div class="panelistic_panel_name"><!--span style="background: #a00c;padding-left: 8px;padding-right: 8px;margin-right: 8px;"-->${subject}<!--/span--><!--Moredatas here--></div><br><span class="panelistic_placeholder_large"></span>
+	function model_classprepareStart(isdel, subject, bktitle, bkguid, bkauthor, bkstartdate, bkenddate, bknumber, fullRec) {
+		if (!fullRec.isryyun) {
+			return `<span class="panelistic_placeholder"></span><div class="panelistic_panel" style="${(isdel=="1")?'background:#c335':''}">
+			<div class="panelistic_panel_name"><!--span style="background: #a00c;padding-left: 8px;padding-right: 8px;margin-right: 8px;"-->${((isdel=="1")?'[已被删除] ':'')+subject}<!--/span--><!--Moredatas here--></div><br><span class="panelistic_placeholder_large"></span>
 			<img src="https://${serverADDR}/getresourcethumbnail?guid=${bkguid}" ondragstart="return false" style="display:inline;" height="80px" width="80px">
 			<div style="vertical-align: top;display: inline-block;margin-left: 5px;width: 330px;height: 80px;">
 				<span style="vertical-align: top;font-size: 18px;font-weight: bold;position:relative;-webkit-line-clamp: 1;display:-webkit-box;-webkit-box-orient: vertical;overflow: hidden;" class="DM_fonttitlel">${bktitle}</span>
@@ -349,6 +356,24 @@
 				<input type="button" value="展开文件" style="width: 95px;" onclick="makeBkIntoLive(${bknumber})" id="expandBtn${bknumber}">
 			</div>
 			<span id="insertSpan${bknumber}"></span>`
+		} else {
+			return `<span class="panelistic_placeholder"></span><div class="panelistic_panel" style="${(isdel=="1")?'background:#c335':''}">
+			<div class="panelistic_panel_name"><!--span style="background: #a00c;padding-left: 8px;padding-right: 8px;margin-right: 8px;"-->${((isdel=="1")?'[已被删除] ':'')+subject}<!--/span--><!--Moredatas here--></div><br><span class="panelistic_placeholder_large"></span>
+			<img src="./src/img/ic_placehold.jpg" ondragstart="return false" style="display:inline;" height="80px" width="80px">
+			<div style="vertical-align: top;display: inline-block;margin-left: 5px;width: 330px;height: 80px;">
+				<span style="vertical-align: top;font-size: 18px;font-weight: bold;position:relative;-webkit-line-clamp: 1;display:-webkit-box;-webkit-box-orient: vertical;overflow: hidden;" class="DM_fonttitlel">${bktitle}</span>
+				<!--max-length-35chars-->
+				<span style="font-size: 12px;color: #555;display: block;height: 16px;" class="DM_fontsmall">完成情况 已完成${(new Number(fullRec.submitCount))} 总人数${(new Number(fullRec.studentCount))} 提交比例${(((new Number(fullRec.submitCount))/(new Number(fullRec.studentCount)))*100).toFixed(2)}%</span>
+				<span style="font-size: 12px;color: #555;display: block;height: 16px" class="DM_fontsmall">开始时间 ${bkstartdate}</span>
+				<span style="font-size: 12px;color: #555;display: block;height: 16px" class="DM_fontsmall">结束时间 ${bkenddate}</span>
+			</div>
+			<div style="vertical-align: top;display: inline-block;margin-left: 5px;">
+				<input type="button" value="打开" style="width: 95px;" onclick="makeRyyIntoLive('${fullRec.detailsurl}')">
+				<span class="panelistic_placeholder" style="height: 5px;"></span>
+				<input type="button" value="复制链接" style="width: 95px;" onclick="makeRyyIntoLive('${fullRec.detailsurl}',true)">
+			</div>
+			<span id="insertSpan${bknumber}"></span>`
+		}
 	}
 
 	function model_file(resguid, filetitle, fileuri, fileDesc) {
@@ -375,15 +400,37 @@
 
 	let regExBtnMode = false;
 
+	function sortAllArrs(a, b) {
+		if (b.error) return -1;
+		if (a.error) return 1;
+		if (b.state == "0") return -1;
+		if (a.state == "0") return 1;
+		try {
+			if (a.scheduledate === b.scheduledate) {
+				// console.log('Equalled!', a.scheduledate)
+				return (getDigital(b.date) > getDigital(a.date)) ? 1 : -1
+			}
+		} catch {
+			// debugger;
+		}
+		try {
+			if (getDigital(b.scheduledate) > getDigital(a.scheduledate)) {
+				return 1;
+			} else {
+				return -1;
+			}
+		} catch {}
+	}
+
 	function search(textContent) {
 		let searchedArr = []
 		let allstrs = ``
 		allstrs += model_dayStart('搜索结果')
 		for (let i = 0; i < fulldata.length; i++) {
 			try {
-				if ((fulldata[i].error != 1) && (fulldata[i].title.indexOf(textContent) != -1)) {
+				if ((fulldata[i].error != 1) && (fulldata[i].author != undefined) && (fulldata[i].title.indexOf(textContent) != -1)) {
 					searchedArr.push(fulldata[i])
-					allstrs += model_classprepareStart(fulldata[i].subject, fulldata[i].title, fulldata[i].resourceguid, fulldata[i].author, fulldata[i].scheduledate, fulldata[i].scheduleenddate, i) + model_classprepareEnd();
+					allstrs += model_classprepareStart(fulldata[i].syn_isdelete, fulldata[i].subject, fulldata[i].title, fulldata[i].resourceguid, fulldata[i].author, fulldata[i].scheduledate, fulldata[i].scheduleenddate, i, fulldata[i]) + model_classprepareEnd();
 				}
 			} catch {}
 		}
@@ -392,6 +439,7 @@
 			electron.ipcRenderer.sendToHost('alert', '搜索', '未找到相关条目', '确定')
 		} else {
 			isFutureShown = true
+			cannotLoad = true;
 			allstrs += model_dayEnd()
 			regExBtnMode = true;
 			document.getElementById('zzsearch').value = '清空结果'
@@ -410,9 +458,9 @@
 			allstrs += model_dayStart('正则搜索结果')
 			for (let i = 0; i < fulldata.length; i++) {
 				try {
-					if ((fulldata[i].error != 1) && (exps.test(fulldata[i].title))) {
+					if ((fulldata[i].error != 1) && (fulldata[i].author != undefined) && (exps.test(fulldata[i].title))) {
 						searchedArr.push(fulldata[i])
-					allstrs += model_classprepareStart(fulldata[i].subject, fulldata[i].title, fulldata[i].resourceguid, fulldata[i].author, fulldata[i].scheduledate, fulldata[i].scheduleenddate, i) + model_classprepareEnd();
+						allstrs += model_classprepareStart(fulldata[i].syn_isdelete, fulldata[i].subject, fulldata[i].title, fulldata[i].resourceguid, fulldata[i].author, fulldata[i].scheduledate, fulldata[i].scheduleenddate, i, fulldata[i]) + model_classprepareEnd();
 					}
 				} catch {}
 			}
@@ -421,12 +469,28 @@
 				electron.ipcRenderer.sendToHost('alert', '搜索', '未找到相关条目', '确定')
 			} else {
 				isFutureShown = true
+				cannotLoad = true;
 				allstrs += model_dayEnd()
 				regExBtnMode = true;
 				document.getElementById('zzsearch').value = '清空结果'
 				document.getElementById('futurebtn').disabled = 'disabled'
 				document.getElementById('allbkdisplays').innerHTML = allstrs
 			}
+		}
+	}
+
+	function makeRyyIntoLive(urlBack, copy) {
+		let finalLjString = 'https://gzzxres.lexuewang.cn:8008/login/home/goLogin?userid=' + allcfgs.userguid + '&url=' + urlBack;
+		if (copy) {
+			const newInput = document.createElement('input');
+			document.body.appendChild(newInput)
+			newInput.value = finalLjString;
+			newInput.select();
+			document.execCommand('copy');
+			document.body.removeChild(newInput)
+			electron.ipcRenderer.sendToHost('alert', "复制链接","链接已复制到剪贴板","确定");
+		} else {
+			electron.ipcRenderer.sendToHost('openryylink', finalLjString);
 		}
 	}
 	</script>

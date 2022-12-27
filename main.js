@@ -9,6 +9,8 @@ const remote = require("@electron/remote/main")
 let win;
 
 electron.app.on('ready', () => {
+	electron.app.commandLine.appendSwitch('ignore-certificate-errors')
+	electron.app.commandLine.appendSwitch('ignore-ssl-errors')
 	setTimeout(
 		spawnWindow,
 		process.platform == "linux" ? 1000 : 0
@@ -57,9 +59,7 @@ function spawnWindow() {
 	if (electron.nativeTheme.shouldUseDarkColors) vibe.setDarkMode(win);
 
 	//win.setAlwaysOnTop("alwaysOnTop")
-	// if (isDev) {
-	// 	win.webContents.openDevTools({ mode: "detach" })
-	// }
+	win.webContents.openDevTools({ mode: "detach" })
 	remote.enable(win.webContents)
 	win.webContents.on('did-finish-load', () => {
 		win.show();

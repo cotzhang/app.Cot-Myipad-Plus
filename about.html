@@ -31,6 +31,15 @@
 			}
 		})
 	}
+
+	function delres() {
+		try {
+			// fs.unlinkSync(__dirname + '/data')
+			fs.unlinkSync(__dirname + '/resources')
+			fs.unlinkSync(__dirname + '/videosrc')
+		} catch {}
+		electron.ipcRenderer.sendToHost('reload')
+	}
 	const remote = require("@electron/remote");
 	</script>
 </head>
@@ -46,9 +55,15 @@
 			<img src="snpicon.png">
 			<span class="panelistic_placeholder"></span>
 			<span style="font-weight: bold;font-size: 15px;">平板+ PadPlus</span><br>
-			<span style="font-size: 14px;">版本 V1.0.6</span><br>
+			<span style="font-size: 14px;">版本 V1.0.7</span><br>
 			<span style="font-size: 14px;">开发 小喵COT</span><br>
 			<a style="font-size: 14px;cursor: pointer;color: blue;text-decoration: underline;" onclick="electron.shell.openExternal('https://www.apache.org/licenses/LICENSE-2.0.txt')">开放源代码软件 Under Apache Licence</a>
+		</div>
+		<span class="panelistic_placeholder"></span>
+		<div class="panelistic_panel">
+			<div class="panelistic_panel_name">修复资源</div><br><span class="panelistic_placeholder_large"></span>
+			<input type="button" value="修复资源" onclick="delres()">
+			修复资源可以解决部分资源丢失、无法显示的问题。
 		</div>
 		<span class="panelistic_placeholder"></span>
 		<div class="panelistic_panel">

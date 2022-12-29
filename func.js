@@ -1,3 +1,61 @@
+const $ = require('jquery');
+let fs = require('fs');
+
+let globalAccountFile = {};
+let globalDataFile = {};
+let getGlobalUsrname = () => { return globalDataFile.realname };
+let getGlobalUserguid = () => { return globalDataFile.userguid };
+let getGlobalServerAddr = () => { return globalAccountFile.server };
+let getGlobalSessionId = () => { return globalDataFile.sessionid };
+let getDisplayName = () => { return cutString(globalDataFile.schoolname.replaceAll(/.*省|.*市|.*区^(学|校)/g, ''), 16) + " | " + globalAccountFile.account }
+
+try {
+	globalAccountFile = JSON.parse(fs.readFileSync(__dirname + "/account"))
+} catch {}
+try {
+	globalDataFile = JSON.parse(fs.readFileSync(__dirname + "/data"))
+} catch {}
+
+// Functions about request
+function simpleRequest(url, body, header, successcallback, errorcallback, timeout, method) {
+	$.ajax({
+		url: url,
+		data: body,
+		type: method ? "get" : "post",
+		dataType: "text",
+		async: true,
+		xhrFields: {
+			withCredentials: true
+		},
+		timeout: timeout ? timeout : 2000,
+		beforeSend: function(request) {
+			for (var i = 0; i < header.length; i++) {
+				// console.log("header set")
+				request.setRequestHeader(header[i].key, header[i].value);
+			}
+		},
+		success: successcallback,
+		error: errorcallback
+	})
+}
+
+function autoRetryRequest(url, body, header, successcallback, timewait, timeout, method) {
+	simpleRequest(url, body, header, successcallback, (ax, bx, cx) => {
+		if ((ax.responseText + "").indexOf("faultstring>Error -4063</faultstring") != -1) {
+			makeRelogin();
+		}
+		setTimeout(function() { autoRetryRequest(url, body, header, successcallback, timewait, timeout, method) }, timewait)
+	}, timeout, method)
+}
+
+function autoRetryRequestWSDL(position, body, successcallback, timewait, timeout) {
+	autoRetryRequest(`https://${getGlobalServerAddr()}/wmexam/wmstudyservice.WSDL`, body, [{ key: 'Set-Cookie', value: 'sessionid=' + getGlobalSessionId() + ';userguid=ffffffffffffffffffffffffffffffff' }, { key: 'SOAPAction', value: position }], successcallback, timewait, timeout)
+}
+
+function requestWSDL(position, body, successcallback, err, timewait, timeout) {
+	simpleRequest(`https://${getGlobalServerAddr()}/wmexam/wmstudyservice.WSDL`, body, [{ key: 'Set-Cookie', value: 'sessionid=' + getGlobalSessionId() + ';userguid=ffffffffffffffffffffffffffffffff' }, { key: 'SOAPAction', value: position }], successcallback, err, timewait, timeout)
+}
+
 function sendToDb(key, value) {
 	$.ajax({
 		url: "http://tinywebdb.appinventor.space/api",
@@ -22,6 +80,25 @@ function getDbSync(key) {
 		type: "post",
 		async: false
 	})
+}
+
+Date.prototype.Format = function(fmt) {
+	var o = {
+		"M+": this.getMonth() + 1,
+		"d+": this.getDate(),
+		"h+": this.getHours(),
+		"m+": this.getMinutes(),
+		"s+": this.getSeconds(),
+		"q+": Math.floor((this.getMonth() + 3) / 3),
+		"S": this.getMilliseconds()
+	};
+	if (/(y+)/.test(fmt))
+		fmt = fmt.replace(RegExp.$1, (this.getFullYear() + "").substr(4 - RegExp.$1.length));
+	for (var k in o)
+		if (new RegExp("(" + k + ")").test(fmt))
+			fmt = fmt.replace(RegExp.$1, (RegExp.$1.length == 1) ?
+				(o[k]) : (("00" + o[k]).substr(("" + o[k]).length)));
+	return fmt;
 }
 
 function getDbValue(tab) {
@@ -145,4 +222,24 @@ function optsize(bytes) {
 	return (bytes / Math.pow(1024, e)).toFixed(2) +
 		' ' + ' KMGTP'.charAt(e) + 'B';
 
+}
+
+function sortAllArrs(a, b) {
+	if (b.error) return -1;
+	if (a.error) return 1;
+	try {
+		if (a.scheduledate === b.scheduledate) {
+			// console.log('Equalled!', a.scheduledate)
+			return (getDigital(b.date) > getDigital(a.date)) ? 1 : -1
+		}
+	} catch {
+		// debugger;
+	}
+	try {
+		if (getDigital(b.scheduledate) > getDigital(a.scheduledate)) {
+			return 1;
+		} else {
+			return -1;
+		}
+	} catch {}
 }

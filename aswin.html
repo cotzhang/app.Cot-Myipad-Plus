@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<link rel="stylesheet" href="panelistic3.0-electron.css">
+	<script src="panelistic3.0-electron.js"></script>
+	<script src="func.js"></script>
+	<title>答题窗口</title>
+	<style type="text/css"></style>
+	<script type="text/javascript">
+	let panelistic;
+	const electron = require("electron");
+	window.onload = function() {
+		// document.getElementById('window_title').innerText=document.title;
+		panelistic = new Panelistic();
+		panelistic.initialize();
+	}
+	const remote = require("@electron/remote");
+	const path = require("path");
+	let asObj;
+	let autoCheck = false;
+	let ping = false;
+	let singleRecArr = [];
+	let capture = []
+	let oprObj;
+	let oprXb;
+
+	function makeRelogin() {
+		fs.writeFileSync(__dirname + '/relogin', "error");
+		electron.ipcRenderer.send('reload')
+		panelistic.dialog.alert('提示', "请重试操作", "确定")
+	}
+
+	electron.ipcRenderer.on("aswin", (event, arg) => {
+		asObj = JSON.parse(unescape(arg));
+		console.log(asObj)
+		singleRecArr = parseRecToSingleDismension(asObj.category)
+		let totalStr = '';
+		let currxiab = 0;
+		for (var i = 0; i < asObj.category.length; i++) {
+			totalStr += catStart(asObj.category[i].name)
+			for (var j = 0; j < asObj.category[i].questions.length; j++) {
+				totalStr += questionHead(asObj.category[i].questions[j]);
+				if (asObj.category[i].questions[j].type == '1' || asObj.category[i].questions[j].type == '0') {
+					let currsel = asObj.category[i].questions[j].options.slice('')
+					for (var k = 0; k < currsel.length; k++) {
+						totalStr += selectBtn(asObj.category[i].questions[j].guid, currsel[k], currsel, currsel.length)
+					}
+					totalStr += "<br>"
+				} else if (asObj.category[i].questions[j].type == '2') {
+					let currsel = asObj.category[i].questions[j].options.slice('')
+					for (var k = 0; k < currsel.length; k++) {
+						totalStr += mulSelectBtn(asObj.category[i].questions[j].guid, currsel[k], currsel, currsel.length)
+					}
+					totalStr += "<br>"
+				} else if (asObj.category[i].questions[j].type == '3' || asObj.category[i].questions[j].type == '4') {
+					totalStr += captBtn(asObj.category[i].questions[j].guid, currxiab) + '<br>'
+				}
+				currxiab++;
+				// console.log(asObj.category[i].questions[j])
+			}
+			totalStr += catEnd()
+		}
+		document.getElementById('panelistic_content_sidebar_in').innerHTML += totalStr
+	})
+
+	function parseRecToSingleDismension(recs) {
+		let retv = [];
+		for (let i = 0; i < recs.length; i++) {
+			for (var j = 0; j < recs[i].questions.length; j++) {
+				retv.push(recs[i].questions[j]);
+			}
+		}
+		return retv;
+	}
+
+	function storeItemToAss(guid, teacherid, asrguid, userid, scheduleguid, choice, qstguid, astext, ascamera) {
+		let template = `{
+			"answercamera": "${ascamera}",
+			"answerchoice": "${choice}",
+			"answerdate": "${new Date().Format('yyyy-MM-dd hh:mm:ss')}",
+			"answerhandwritedata": "",
+			"answerhandwritepreview": "",
+			"answerindex": 0,
+			"answersheetresourceguid": "${asrguid}",
+			"answertext": "${astext}",
+			"clientid": "myipad_${userid}",
+			"guid": "${guid}",
+			"notifyclientid": "${teacherid}_teacherpad",
+			"questionguid": "${qstguid}",
+			"scheduleguid": "${scheduleguid}",
+			"state": 0,
+			"studentname": "${getGlobalUsrname()}",
+			"syn_isdelete": 0,
+			"syn_timestamp": "${new Date().Format('yyyy-MM-dd hh:mm:ss')}",
+			"userclassguid": null,
+			"userclassname": null,
+			"username": "${globalAccountFile.account}",
+			"vote": 0}`
+		return template
+	}
+
+	function getChoiceByGUID(guid, xuanxiangs) {
+		let currsel = xuanxiangs.slice('')
+		let retv = ""
+		for (var k = 0; k < currsel.length; k++) {
+			// debugger;
+			if (document.getElementById(guid + currsel[k]).checked) {
+				retv += currsel[k]
+			}
+		}
+		return retv;
+	}
+
+	function getAllAnswersAndSubmit() {
+		let retv = ""
+		for (var i = 0; i < singleRecArr.length; i++) {
+			if (singleRecArr[i].type == "1" || singleRecArr[i].type == "2" || singleRecArr[i].type == '0') {
+				submitAns("", getChoiceByGUID(singleRecArr[i].guid, singleRecArr[i].options), asObj.resguid, asObj.authorusername, singleRecArr[i].guid, asObj.schguid, "")
+			} else if (singleRecArr[i].type == "3" || singleRecArr[i].type == "4") {
+				submitAns(capture[i], "", asObj.resguid, asObj.authorusername, singleRecArr[i].guid, asObj.schguid, getAstTextContent(i))
+			}
+		}
+	}
+
+	function submitAns(answercamera, answerchoice, asresguid, teacherid, currquestionguid, scheduleguid, answertext) {
+		let randguid = getRandomGUID();
+		let reqstr = `{"answercamera":"${answercamera}","answerchoice":"${answerchoice}","answerdate":"${new Date().Format("yy-MM-dd hh:mm:ss")}","answerhandwritedata":"","answerhandwritepreview":"","answerindex":0,"answersheetresourceguid":"${asresguid}","answertext":"${answertext}","clientid":"myipad_${globalAccountFile.account}","favorite":0,"guid":"${randguid}","notifyclientid":"${teacherid}_teacherpad","questionguid":"${currquestionguid}","scheduleguid":"${scheduleguid}","state":0,"studentname":"${getGlobalUsrname()}","syn_isdelete":0,"syn_timestamp":"${new Date().Format("yy-MM-dd hh:mm:ss")}","userguid":"${getGlobalUserguid()}","username":"${globalAccountFile.account}"}`
+		console.log(reqstr)
+		autoRetryRequest(`https://${getGlobalServerAddr()}/restfuldatasource/answersheetstudentanswer/${randguid}`, reqstr, [{ key: 'Set-Cookie', value: 'sessionid=' + getGlobalSessionId() + ';userguid=ffffffffffffffffffffffffffffffff' }], (data) => {
+			console.log(data)
+		}, 500, 1000)
+	}
+
+	// Model
+	function catStart(name) {
+		return `<span class="panelistic_placeholder"></span>
+		<div class="panelistic_panel">
+			<div class="panelistic_panel_name">${name}</div><br><span class="panelistic_placeholder_large"></span>`
+	}
+
+	function catEnd() {
+		return `</div>`
+	}
+
+	function questionHead(queObj) {
+		return `<span style="font-size:13px">${queObj.index} [${queObj.score}分]</span><br>`
+	}
+
+	function selectBtn(name, value, valuesel, count) {
+		return `<input type="radio" name="${name}" value="${name}" id="${name+value}" style="display:none"><label for="${name+value}"><span id="btn_${name+value}" class="btn" style="width:20px;text-align:center;margin:3px" onmousedown="clearAllBtnAndSel('${name}','${escape(JSON.stringify(valuesel))}','${count}',this.innerText)">${value}</span></label>`
+	}
+
+	function mulSelectBtn(name, value, valuesel, count) {
+		return `<input type="checkbox" name="${name}" value="${name}" id="${name+value}" style="display:none"><label for="${name+value}"><span id="btn_${name+value}" class="btn" style="width:20px;text-align:center;margin:3px" onmousedown="if(document.getElementById('${name+value}').checked){clearAllBtnSel('${name}','${escape(JSON.stringify(valuesel))}','${count}',this.innerText,false)}else{clearAllBtnSel('${name}','${escape(JSON.stringify(valuesel))}','${count}',this.innerText,true)}">${value}</span></label>`
+	}
+
+	function clearAllBtnAndSel(name, valuesel, count, onc) {
+		storeOption(name, true)
+		valuesel = JSON.parse(unescape(valuesel))
+		for (var i = 0; i < count; i++) {
+			document.getElementById('btn_' + name + valuesel[i]).className = "btn";
+		}
+		document.getElementById('btn_' + name + onc).className = "btn btn_sel"
+	}
+
+	function clearAllBtnSel(name, valuesel, count, onc, rev) {
+		storeOption(name, true)
+		if (rev) {
+			document.getElementById('btn_' + name + onc).className = "btn btn_sel"
+		} else {
+			document.getElementById('btn_' + name + onc).className = "btn"
+		}
+	}
+
+	function captBtn(guid, xiab) {
+		return `<img style="max-width:200px;display:block;margin-top:3px;margin-bottom:3px;border:solid #ccc 1px" ondragstart="return false" id="img_${guid}"><!--input type="button" value="手机拍照" class="mobCapture"--><textarea id="txt_${guid}" style="display:none;margin-top:3px;margin-bottom:3px;max-width:300px;max-height:300px;"></textarea><input type="button" value="上传图片" onclick="uploadimgAt(${xiab})">&nbsp;<input type="button" value="输入文本" onclick="showTextArea('${guid}')">`
+	}
+
+	function showTextArea(guid) {
+		document.getElementById("txt_" + guid).style.display = (document.getElementById("txt_" + guid).style.display == "none") ? "block" : "none"
+		document.getElementById("txt_" + guid).oninput = function() { storeOption(guid) }
+	}
+
+	function uploadimgAt(xiab) {
+		oprObj = genPackageId()
+		oprXb = xiab;
+		uploadFileAndCopy()
+	}
+
+	let totalduring = 0
+
+	setInterval(function() {
+		totalduring += 1000;
+		document.getElementById('answertime').innerText = formatDuring(totalduring);
+	}, 1000)
+
+	function formatDuring(mss) {
+		var days = parseInt(mss / (1000 * 60 * 60 * 24));
+		var hours = parseInt((mss % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+		var minutes = parseInt((mss % (1000 * 60 * 60)) / (1000 * 60));
+		var seconds = (mss % (1000 * 60)) / 1000;
+		return hours + " 小时 " + minutes + " 分钟 " + seconds + " 秒 ";
+	}
+
+	let exit = false;
+
+	// window.onbeforeunload = function() {
+	// 	panelistic.dialog.confirm("退出", "确定要退出答题吗？", "确定", "取消", (res) => {
+	// 		if (res) {
+	// 			exit = true
+	// 			window.close()
+	// 		}
+	// 	})
+	// 	if (!exit) return false
+	// }
+
+	function parseB64(file) {
+		let filePath = path.resolve(file);
+		let data = fs.readFileSync(filePath);
+		data = Buffer.from(data).toString('base64');
+		return data;
+	}
+
+	function genPackageId() {
+		var crypto = require('crypto');
+		var md5 = crypto.createHash('md5');
+		return 'Photoupload_' + md5.update(new Date().getTime() + 'Cot Random Md5').digest('hex');
+	}
+
+	function getRandomGUID() {
+		var crypto = require('crypto');
+		var md5 = crypto.createHash('md5');
+		return md5.update(new Date().getTime() + 'Cot Random Md5').digest('hex');
+	}
+
+	function uploadFileAndCopy() {
+		electron.ipcRenderer.send('upload')
+	}
+
+	electron.ipcRenderer.on('filepath', (event, args) => {
+		transFile(args[0], (pkgid) => {
+			uploadFile(pkgid, __dirname + '/userfile/' + pkgid)
+		});
+	})
+
+	function transFile(src, calb) {
+		let pkgid = oprObj;
+		if (!fs.existsSync(__dirname + '/userfile/')) {
+			fs.mkdirSync(__dirname + '/userfile/')
+		}
+		fs.copyFile(src, __dirname + '/userfile/' + pkgid, (err) => {
+			// console.log(src)
+			if (err) {
+				console.log(error)
+			}
+			calb(pkgid)
+		})
+	}
+
+	function uploadFile(packageId, filePath) {
+		let diag = panelistic.dialog.salert('正在上传图片...请稍等')
+		let prsdb64 = parseB64(filePath);
+		let reqstr = `<v:Envelope xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns:d="http://www.w3.org/2001/XMLSchema" xmlns:c="http://schemas.xmlsoap.org/soap/encoding/" xmlns:v="http://schemas.xmlsoap.org/soap/envelope/"><v:Header /><v:Body><DataSynchronizePut xmlns="http://webservice.myi.cn/wmstudyservice/wsdl/" id="o0" c:root="1"><lpszClientID i:type="d:string">myipad_${JSON.parse(fs.readFileSync(__dirname+"/account")).account}</lpszClientID><szInputOutputXML i:type="d:string">&lt;wmStudy&gt;
+   &lt;DataSynchronize skipcontent="true" version="1.1"&gt;
+      &lt;Item clientId="myipad_689047" delete="false" modifyDate="" packageId="${packageId}" type="1"&gt;${prsdb64}
+&lt;/Item&gt;
+   &lt;/DataSynchronize&gt;
+&lt;/wmStudy&gt;</szInputOutputXML></DataSynchronizePut></v:Body></v:Envelope>
+`
+		autoRetryRequestWSDL('http://webservice.myi.cn/wmstudyservice/wsdl/DataSynchronizePut', reqstr, (data) => {
+			console.log(packageId)
+			panelistic.dialog.dismiss(diag)
+			if (data.indexOf("<AS:DataSynchronizePutResult>0</AS:DataSynchronizePutResult>") != -1) {
+				panelistic.dialog.alert("提示", "上传成功", "确定");
+				storeOption(singleRecArr[oprXb].guid)
+				capture[oprXb] = packageId;
+				document.getElementById("img_" + singleRecArr[oprXb].guid).src = "data:image/jpeg;base64," + prsdb64;
+			} else {
+				panelistic.dialog.alert("提示", "上传失败", "确定");
+			}
+		}, 2000, 5000)
+	}
+
+	function getAstTextContent(givenxiab) {
+		let obj = document.getElementById('txt_' + singleRecArr[givenxiab].guid);
+		if (obj) {
+			return obj.value;
+		}
+		return ""
+	}
+
+	function getAstTextContentByGUID(guid) {
+		let obj = document.getElementById('txt_' + guid);
+		if (obj) {
+			return obj.value;
+		}
+		return ""
+	}
+
+	function findOrderInArr(arr, guid) {
+		for (var i = 0; i < arr.length; i++) {
+			if (guid == arr[i].questionguid) {
+				return i;
+			}
+		}
+		return arr.length
+	}
+
+	function findOrderInPhotoArr(guid) {
+		for (var i = 0; i < singleRecArr.length; i++) {
+			if (guid == singleRecArr[i].guid) {
+				return i;
+			}
+		}
+		console.log(guid)
+		throw new Error()
+		return singleRecArr.length;
+	}
+
+	function storeOption(guid, type, randguid) {
+		let alreadyass = JSON.parse(fs.readFileSync(__dirname + '/answersheetsstudent'));
+		let change = findOrderInArr(alreadyass, guid);
+		let opt = ""
+		let text = ""
+		let ascamera = ""
+		if (type) {
+			opt = getChoiceByGUID(guid, singleRecArr[findOrderInPhotoArr(guid)].options)
+		} else {
+			text = getAstTextContentByGUID(guid)
+			ascamera = capture[findOrderInPhotoArr(guid)]
+		}
+		alreadyass[change] = JSON.parse(storeItemToAss(randguid ? getRandomGUID() : randguid, asObj.authorusername, asObj.resguid, globalAccountFile.account, asObj.schguid, opt, guid, text, ascamera));
+		fs.writeFile(__dirname + '/answersheetsstudent', JSON.stringify(alreadyass), () => {
+			console.log("updated")
+		})
+	}
+	</script>
+</head>
+
+<body>
+	<div id="panelistic_content_sidebar_in">
+		<div id="panelistic_blur"></div>
+		<h1>答题卡</h1>
+		<h6>答题时间：<span id="answertime">0 小时 0 分钟 0 秒</span></h6>
+		<span class="panelistic_placeholder"></span>
+		<div class="panelistic_panel"><input type="button" value="开启自动校对" onclick="autoCheck=!autoCheck;this.value=(autoCheck)?'停止自动校对':'开启自动校对'">&nbsp;<input type="button" value="固定题板" onclick="electron.ipcRenderer.send('pin');ping=!ping;this.value=(ping)?'取消固定':'固定题板'">&nbsp;<input type="button" value="提交答案" onclick="getAllAnswersAndSubmit()"></div>
+	</div>
+</body>
+
+</html>

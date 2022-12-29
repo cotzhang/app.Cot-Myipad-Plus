@@ -9,9 +9,7 @@
 	<title>title</title>
 	<style type="text/css"></style>
 	<script type="text/javascript">
-	const $ = require('jquery');
 	let panelistic;
-	const fs = require('fs')
 	const electron = require("electron");
 	let serverADDR = JSON.parse(fs.readFileSync(__dirname + "/account")).server;
 	let allcfgs = JSON.parse(fs.readFileSync(__dirname + "/data"));
@@ -19,25 +17,9 @@
 	let isFutureShown = false;
 	let fulldata = JSON.parse(fs.readFileSync(__dirname + "/resources")).concat(JSON.parse(fs.readFileSync(__dirname + "/ryyresources"))).sort(sortAllArrs);
 	let cannotLoad = false;
+	let fullAnswerSheet = JSON.parse(fs.readFileSync(__dirname + "/answersheets"))
+	let fullAnswerSheetStudent = JSON.parse(fs.readFileSync(__dirname + "/answersheetsstudent"))
 	globalSsid = sessionid;
-	Date.prototype.Format = function(fmt) {
-		var o = {
-			"M+": this.getMonth() + 1,
-			"d+": this.getDate(),
-			"h+": this.getHours(),
-			"m+": this.getMinutes(),
-			"s+": this.getSeconds(),
-			"q+": Math.floor((this.getMonth() + 3) / 3),
-			"S": this.getMilliseconds()
-		};
-		if (/(y+)/.test(fmt))
-			fmt = fmt.replace(RegExp.$1, (this.getFullYear() + "").substr(4 - RegExp.$1.length));
-		for (var k in o)
-			if (new RegExp("(" + k + ")").test(fmt))
-				fmt = fmt.replace(RegExp.$1, (RegExp.$1.length == 1) ?
-					(o[k]) : (("00" + o[k]).substr(("" + o[k]).length)));
-		return fmt;
-	}
 	window.onload = function() {
 		panelistic = new Panelistic();
 		panelistic.initialize();
@@ -57,8 +39,8 @@
 	}
 	const remote = require("@electron/remote");
 
-	function loadData(fileuri, operation) {
-		electron.ipcRenderer.sendToHost('loaddata', fileuri, operation)
+	function loadData(fileuri, operation, trd) {
+		electron.ipcRenderer.sendToHost('loaddata', fileuri, operation, trd)
 	}
 
 	function cutString(str, len) {
@@ -252,6 +234,15 @@
 	}
 
 	function parsePrepareClass(prepareClass, element) {
+		let answersheet = getAnswerSheetOverall(prepareClass);
+		if (answersheet) {
+			answersheet = JSON.parse(answersheet);
+			answersheet.resguid = prepareClass.resource[0].guid;
+			answersheet.schguid = prepareClass.guid
+			answersheet = JSON.stringify(answersheet)
+			element.innerHTML += '<span class="panelistic_placeholder"></span>' + model_answersheet(answersheet);
+			console.log("answersheet detected")
+		}
 		for (let i = 0; i < prepareClass.resource.length; i++) {
 			const thisres = prepareClass.resource[i];
 			const guid = thisres.guid
@@ -301,6 +292,21 @@
 		// return returnvalue;
 	}
 
+	function getAnswerSheetOverall(prepareClass) {
+		try {
+			let reqstr = `<v:Envelope xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns:d="http://www.w3.org/2001/XMLSchema" xmlns:c="http://schemas.xmlsoap.org/soap/encoding/" xmlns:v="http://schemas.xmlsoap.org/soap/envelope/"><v:Header /><v:Body><GetPrivateData2 xmlns="http://webservice.myi.cn/wmstudyservice/wsdl/" id="o0" c:root="1"><lpszKey i:type="d:string">AnswerSheet_${prepareClass.resource[0].guid}</lpszKey></GetPrivateData2></v:Body></v:Envelope>`
+			console.log(reqstr)
+			let retval = requestSync("http://webservice.myi.cn/wmstudyservice/wsdl/GetPrivateData2", reqstr);
+			if (retval.responseText.indexOf(">1168<") != -1) {
+				console.log(1168)
+				return false;
+			}
+			retval = retval.responseText;
+			let psretval = retval.substring(retval.indexOf('<AS:szData>') + 11, retval.indexOf("</AS:szData>"));
+			return psretval;
+		} catch {}
+	}
+
 	function showFuture() {
 		if (!isFutureShown) {
 			let allstrs = ``
@@ -318,6 +324,10 @@
 			document.getElementById('future').innerHTML = ``
 			document.getElementById('futurebtn').value = "显示未来备课"
 		}
+	}
+
+	function openAnswerSheet(asstr) {
+		electron.ipcRenderer.sendToHost('openAsWindow', asstr)
 	}
 
 	//M
@@ -385,7 +395,20 @@
 					<span style="font-size: 12px;color: #555;display: block;height: 16px" class="DM_fontsmall">${fileDesc}</span>
 				</div>
 				<div style="vertical-align: top;display: inline;margin-left: 5px;">
-					<input type="button" value="另存为..." style="width: 95px;" onclick="loadData('${fileuri}','saveas')">&nbsp;<input type="button" value="${(fileuri.match(/\.(mp4|avi|wmv|mpg|mpeg|mov|rm|ram|swf|flv)/)?'在线预览':'打开文件')}" style="width: 95px;" onclick="loadData('${fileuri}','open')">
+				<!--${resguid}-->
+					<input type="button" value="另存为..." style="width: 95px;" onclick="loadData('${fileuri}','saveas','${filetitle}')">&nbsp;<input type="button" value="${/*(fileuri.match(/\.(mp4|avi|wmv|mpg|mpeg|mov|rm|ram|swf|flv)/)?'在线预览':'打开文件')*/'打开文件'}" style="width: 95px;" onclick="loadData('${fileuri}','open')">
+				</div>
+			</div>`
+	}
+
+	function model_answersheet(json) {
+		return `<div class="panelistic_panel" style="padding-bottom: 6px;background:#33c5">
+				<div style="vertical-align: top;display: inline-block;margin-left: 5px;width: 404px;height: 40px;">
+					<span style="vertical-align: top;font-size: 18px;font-weight: bold;-webkit-line-clamp: 1;display:-webkit-box;-webkit-box-orient: vertical;overflow: hidden;" class="DM_fonttitlel">答题卡</span>
+					<!--max-length-35chars-->
+					<span style="font-size: 12px;color: #555;display: block;height: 16px" class="DM_fontsmall">点击打开答题卡</span>
+				</div>
+				<div style="vertical-align: top;display: inline;margin-left: 5px;"><input type="button" value="打开" style="width: 95px;" onclick="openAnswerSheet('${escape(json)}')">
 				</div>
 			</div>`
 	}
@@ -399,28 +422,6 @@
 	}
 
 	let regExBtnMode = false;
-
-	function sortAllArrs(a, b) {
-		if (b.error) return -1;
-		if (a.error) return 1;
-		if (b.state == "0") return -1;
-		if (a.state == "0") return 1;
-		try {
-			if (a.scheduledate === b.scheduledate) {
-				// console.log('Equalled!', a.scheduledate)
-				return (getDigital(b.date) > getDigital(a.date)) ? 1 : -1
-			}
-		} catch {
-			// debugger;
-		}
-		try {
-			if (getDigital(b.scheduledate) > getDigital(a.scheduledate)) {
-				return 1;
-			} else {
-				return -1;
-			}
-		} catch {}
-	}
 
 	function search(textContent) {
 		let searchedArr = []
@@ -442,6 +443,7 @@
 			cannotLoad = true;
 			allstrs += model_dayEnd()
 			regExBtnMode = true;
+			document.getElementById('futurebtn').disabled = 'disabled'
 			document.getElementById('zzsearch').value = '清空结果'
 			document.getElementById('allbkdisplays').innerHTML = allstrs
 		}
@@ -488,7 +490,7 @@
 			newInput.select();
 			document.execCommand('copy');
 			document.body.removeChild(newInput)
-			electron.ipcRenderer.sendToHost('alert', "复制链接","链接已复制到剪贴板","确定");
+			electron.ipcRenderer.sendToHost('alert', "复制链接", "链接已复制到剪贴板", "确定");
 		} else {
 			electron.ipcRenderer.sendToHost('openryylink', finalLjString);
 		}

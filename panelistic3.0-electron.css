@@ -24,7 +24,7 @@ body {
 	font-family: "misans";
 	font-weight: normal;
 	user-select: none;
-/*	overflow: hidden;*/
+	/*	overflow: hidden;*/
 }
 
 ::selection {
@@ -183,7 +183,8 @@ h6 {
 }
 
 input,
-textarea {
+textarea,
+.btn {
 	outline: none;
 	border: 1px solid #cccccc99;
 	background-color: #ffffff88;
@@ -249,18 +250,37 @@ textarea {
 }
 
 input:hover,
-textarea:hover {
+textarea:hover,
+.btn:hover {
 	border: 1px solid #bbbbbb99;
 	background-color: #eeeeee88;
 }
 
+.btn_sel:hover {
+	background-color: #2a26;
+}
+
+.mobCapture:hover {
+	background-color: #22a6;
+}
+
 input:active,
-textarea:active {
+textarea:active,
+.btn:active {
 	border: 1px solid #aaaaaa99;
 	background-color: #cccccc88;
 }
 
-input[type="button"] {
+.btn_sel:active {
+	background-color: #1916;
+}
+
+.mobCapture:active {
+	background-color: #1196;
+}
+
+input[type="button"],
+.btn {
 	cursor: pointer;
 }
 
@@ -328,6 +348,18 @@ select option {
 	border: solid 1px #ffffff00;
 }
 
+.btn {
+	display: inline-block;
+}
+
+.btn_sel {
+	background-color: #3a36;
+}
+
+.mobCapture {
+	background-color: #33a6;
+}
+
 @media (prefers-color-scheme: dark) {
 	#panelistic_window {
 		color: white;
@@ -344,10 +376,21 @@ select option {
 	input,
 	select,
 	.panelistic_checkbox,
+	.btn,
 	textarea {
 		border: 1px solid #44444499;
 		background-color: #33333388;
 		color: white;
+	}
+
+	.btn_sel {
+		background-color: #3936;
+	}
+
+
+
+	.mobCapture {
+		background-color: #3396;
 	}
 
 	.panelistic_panel {
@@ -365,15 +408,33 @@ select option {
 	input:hover,
 	select:hover,
 	.panelistic_checkbox:hover,
+	.btn:hover,
 	textarea:hover {
 		background-color: #33333388;
+	}
+
+	.btn_sel:hover {
+		background-color: #1716;
+	}
+
+	.mobCapture:hover {
+		background-color: #1176;
 	}
 
 	input:active,
 	select:active,
 	.panelistic_checkbox:active,
+	.btn:active,
 	textarea:active {
 		background-color: #66666655;
+	}
+
+	.btn_sel:active {
+		background-color: #0606;
+	}
+
+	.mobCapture:active {
+		background-color: #0066;
 	}
 
 	#panelistic_content_sidebar {

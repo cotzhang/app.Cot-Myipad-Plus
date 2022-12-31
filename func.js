@@ -132,6 +132,15 @@ function getDigital(num) {
 	return Number(num.match(/\d+/g).join(''));
 }
 
+function findOrderInArr(arr, guid) {
+	for (var i = 0; i < arr.length; i++) {
+		if (guid == arr[i].questionguid) {
+			return i;
+		}
+	}
+	return arr.length
+}
+
 function parseDom(arg) {
 	var objE = document.createElement("div");
 	objE.innerHTML = arg;

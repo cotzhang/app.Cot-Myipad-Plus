@@ -257,7 +257,15 @@ textarea:hover,
 }
 
 .btn_sel:hover {
+	background-color: #22a6;
+}
+
+.btn_cor:hover {
 	background-color: #2a26;
+}
+
+.btn_err:hover {
+	background-color: #a226;
 }
 
 .mobCapture:hover {
@@ -271,8 +279,16 @@ textarea:active,
 	background-color: #cccccc88;
 }
 
-.btn_sel:active {
+.btn_cor:active {
 	background-color: #1916;
+}
+
+.btn_sel:active {
+	background-color: #1196;
+}
+
+.btn_err:active {
+	background-color: #9116;
 }
 
 .mobCapture:active {
@@ -352,8 +368,16 @@ select option {
 	display: inline-block;
 }
 
-.btn_sel {
+.btn_cor {
 	background-color: #3a36;
+}
+
+.btn_sel {
+	background-color: #33a6;
+}
+
+.btn_err {
+	background-color: #a336;
 }
 
 .mobCapture {
@@ -384,10 +408,16 @@ select option {
 	}
 
 	.btn_sel {
+		background-color: #3396;
+	}
+
+	.btn_cor {
 		background-color: #3936;
 	}
 
-
+	.btn_err {
+		background-color: #9336;
+	}
 
 	.mobCapture {
 		background-color: #3396;
@@ -413,8 +443,16 @@ select option {
 		background-color: #33333388;
 	}
 
-	.btn_sel:hover {
+	.btn_cor:hover {
 		background-color: #1716;
+	}
+
+	.btn_sel:hover {
+		background-color: #1176;
+	}
+
+	.btn_err:hover {
+		background-color: #7116;
 	}
 
 	.mobCapture:hover {
@@ -429,8 +467,16 @@ select option {
 		background-color: #66666655;
 	}
 
-	.btn_sel:active {
+	.btn_cor:active {
 		background-color: #0606;
+	}
+
+	.btn_err:active {
+		background-color: #6006;
+	}
+
+	.btn_sel:active {
+		background-color: #0066;
 	}
 
 	.mobCapture:active {

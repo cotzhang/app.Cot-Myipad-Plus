@@ -410,7 +410,7 @@ function getTotalAnswerSheet() {
 function generateArrayAnswersheet(prevasw) {
 	let retv = [];
 	for (let i = 0; i < prevasw.length; i++) {
-		retv.push({ guid: prevasw[i].guid, mMode: prevasw[i].mMode, syn_isdelete: prevasw[i].syn_isdelete, syn_timestamp: prevasw[i].syn_timestamp })
+		retv.push({ guid: prevasw[i].guid, syn_isdelete: prevasw[i].syn_isdelete, syn_timestamp: prevasw[i].syn_timestamp })
 	}
 	return retv;
 }
@@ -426,14 +426,19 @@ function generateHeaderOf200Answersheets(todownload, posStart, callBack) {
 	callBack(allheaders)
 }
 
+var modifyPos = 0;
+var modifiedASS = []
+
 function getTotalAnswerSheetStudent() {
 	answerSheetData = [];
 	let allAnswerSheets = [];
 	try {
 		allAnswerSheets = generateArrayAnswersheet(JSON.parse(fs.readFileSync(__dirname + '/answersheetsstudent')))
 	} catch {}
+	// console.log(allAnswerSheets)
 	let reqstr = JSON.stringify(allAnswerSheets);
 	autoRetryRequest('https://' + getGlobalServerAddr() + '/restfuldatasource/answersheetstudentanswer/', reqstr, [{ key: 'Set-Cookie', value: 'sessionid=' + getGlobalSessionId() + ';szUserGUID=' + getGlobalUserguid() + ';szUserName=' + globalAccountFile.account }], (data) => {
+		if (JSON.parse(data).download) { modifyPos = JSON.parse(data).download.length; }
 		let asToDownload = ((JSON.parse(data).download) ? JSON.parse(data).download : []).concat((JSON.parse(data).modified) ? JSON.parse(data).modified : []);
 		// console.log(asToDownload)
 		let reqAnssheetOrder = 0;
@@ -446,7 +451,16 @@ function getTotalAnswerSheetStudent() {
 				// debugger;
 				autoRetryRequest('https://' + getGlobalServerAddr() + '/restfuldatasource/answersheetstudentanswer/dummy.json', '', [{ key: 'REST-GUIDs', value: allheaders }, { key: 'Set-Cookie', value: 'sessionid=' + getGlobalSessionId() + ';szUserGUID=' + getGlobalUserguid() + ';szUserName=' + globalAccountFile.account }], (backdata) => {
 					// console.log('bd', JSON.parse(backdata))
-					answerSheetData = answerSheetData.concat(JSON.parse(backdata));
+					if (JSON.parse(data).modified) {
+						for (var i = 0; i < modifyPos; i++) {
+							answerSheetData.push(JSON.parse(backdata)[i]);
+						}
+						for (var i = 0; i < JSON.parse(data).modified.length; i++) {
+							modifiedASS.push(JSON.parse(backdata)[i])
+						}
+					} else {
+						answerSheetData = answerSheetData.concat(JSON.parse(backdata));
+					}
 					reqAnssheetOrder++;
 					if (reqAnssheetOrder == Math.ceil(asToDownload.length / 200)) {
 						storeAnswersheetsStudent()
@@ -462,7 +476,7 @@ function storeAnswersheets() {
 	try {
 		allAnswerSheets = JSON.parse(fs.readFileSync(__dirname + '/answersheets'))
 	} catch {}
-	fs.writeFileSync(__dirname + '/answersheets', JSON.stringify(allAnswerSheets.concat(answerSheetData)))
+	fs.writeFileSync(__dirname + '/answersheets', JSON.stringify(allAnswerSheets.concat(answerSheetData)).replaceAll(',{"result":0,"text":"操作成功完成。\\r\\n"}', ""))
 	console.log("Sync Section 4 Finished\n( fetch answersheet data )");
 
 	getTotalAnswerSheetStudent()
@@ -473,7 +487,10 @@ function storeAnswersheetsStudent() {
 	try {
 		allAnswerSheets = JSON.parse(fs.readFileSync(__dirname + '/answersheetsstudent'))
 	} catch {}
-	fs.writeFileSync(__dirname + '/answersheetsstudent', JSON.stringify(allAnswerSheets.concat(answerSheetData)))
+	for (var i = 0; i < modifiedASS.length; i++) {
+		allAnswerSheets[findOrderInArr(allAnswerSheets, modifiedASS[i].questionguid)] = modifiedASS[i];
+	}
+	fs.writeFileSync(__dirname + '/answersheetsstudent', JSON.stringify(allAnswerSheets.concat(answerSheetData)).replaceAll(`,{"result":0,"text":"操作成功完成。\\r\\n"}`, ""))
 	console.log("Sync Section 5 Finished\n( fetch answersheet student data )");
 	finishAllSyncProgress()
 }
@@ -612,45 +629,18 @@ window.onload = function() {
 		} else if (event.channel == "openryylink") {
 			openRyYunTo(event.args[0])
 		} else if (event.channel == "openAsWindow") {
-			const vibe = require('@pyke/vibe');
-			vibe.setup(remote.app);
-			let aswindow = new remote.BrowserWindow({
-				width: 380,
-				height: 650,
-				backgroundColor: '#00000000',
-				show: true,
-				resizable: false,
-				webPreferences: {
-					nodeIntegration: true,
-					enableRemoteModule: true,
-					contextIsolation: false,
-					webviewTag: true,
-					nodeIntegrationInWorker: true,
-					ignoreCertificateErrors: true
-				},
-			})
-			let reloadAble = true;
-			vibe.applyEffect(aswindow, 'acrylic', '#FFFFFF40');
-			aswindow.loadURL(__dirname + '/aswin.html');
-			aswindow.webContents.openDevTools({ mode: 'detach' })
-			aswindow.removeMenu();
-			aswindow.webContents.on('dom-ready', () => { aswindow.webContents.send('aswin', event.args[0]) })
-			let pin = false;
-			aswindow.webContents.on('ipc-message', (event, arg) => {
-				console.log(arg)
-				if (arg == "pin") {
-					if (pin) {
-						aswindow.setAlwaysOnTop(false)
-					} else {
-						aswindow.setAlwaysOnTop(true)
+			if (fs.existsSync(__dirname + "/secondlogin")) {
+				openAsWin(event)
+			}else{
+				panelistic.dialog.confirm('答题卡功能',"答题卡功能仍在测试中，部分功能不稳定，请勿过分依赖该功能","继续","取消",(cfr)=>{
+					if(cfr){
+						panelistic.dialog.alert('提示',"请勿同时在平板使用同一份答题卡作答，否则数据可能丢失。",'确定',()=>{
+							fs.writeFileSync(__dirname+'/secondlogin','');
+							openAsWin(event)
+						})
 					}
-					pin = !pin
-				} else if (arg == "upload") {
-					event.sender.send('filepath', remote.dialog.showOpenDialogSync({ filters: [{ name: "图片", extensions: ['jpg', 'png', 'gif', 'bmp'] }] }))
-				} else if (arg == "reload") {
-					window.location.reload()
-				}
-			});
+				})
+			}
 		}
 	})
 	webview.addEventListener('dom-ready', function() {
@@ -662,6 +652,48 @@ window.onload = function() {
 	checkUpd()
 }
 
+function openAsWin(event) {
+	const vibe = require('@pyke/vibe');
+	vibe.setup(remote.app);
+	let aswindow = new remote.BrowserWindow({
+		width: 380,
+		height: 650,
+		backgroundColor: '#00000000',
+		show: true,
+		resizable: false,
+		webPreferences: {
+			nodeIntegration: true,
+			enableRemoteModule: true,
+			contextIsolation: false,
+			webviewTag: true,
+			nodeIntegrationInWorker: true,
+			ignoreCertificateErrors: true
+		},
+	})
+	let reloadAble = true;
+	vibe.applyEffect(aswindow, 'acrylic', '#FFFFFF40');
+	aswindow.loadURL(__dirname + '/aswin.html');
+	aswindow.webContents.openDevTools({ mode: 'detach' })
+	aswindow.removeMenu();
+	aswindow.webContents.on('dom-ready', () => { aswindow.webContents.send('aswin', event.args[0]) })
+	let pin = false;
+	aswindow.webContents.on('ipc-message', (event, arg) => {
+		console.log(arg)
+		if (arg == "pin") {
+			if (pin) {
+				aswindow.setAlwaysOnTop(false)
+			} else {
+				aswindow.setAlwaysOnTop(true)
+			}
+			pin = !pin
+		} else if (arg == "upload") {
+			event.sender.send('filepath', remote.dialog.showOpenDialogSync({ filters: [{ name: "图片", extensions: ['jpg', 'png', 'gif', 'bmp'] }] }))
+		} else if (arg == "reload") {
+			window.location.reload()
+		}
+	});
+}
+
 // Exit
 function removeAllConfigs() {
 	try { fs.unlinkSync(__dirname + '/data') } catch {}
@@ -671,6 +703,7 @@ function removeAllConfigs() {
 	try { fs.unlinkSync(__dirname + '/ryyresources') } catch {}
 	try { fs.unlinkSync(__dirname + '/relogin') } catch {}
 	try { fs.unlinkSync(__dirname + '/answersheets') } catch {}
+	try { fs.unlinkSync(__dirname + '/secondlogin') } catch {}
 }
 
 // Ryy

@@ -11,20 +11,17 @@
 	<script type="text/javascript">
 	let panelistic;
 	const electron = require("electron");
-	window.onload = function() {
-		// document.getElementById('window_title').innerText=document.title;
-		panelistic = new Panelistic();
-		panelistic.initialize();
-	}
 	const remote = require("@electron/remote");
 	const path = require("path");
 	let asObj;
-	let autoCheck = false;
+	var autoCheck = false;
 	let ping = false;
 	let singleRecArr = [];
 	let capture = []
 	let oprObj;
 	let oprXb;
+	let allAnswerDataThisSession = []
+	let typeStr = ['(判断)', '(单选)', '(多选)', '', '']
 
 	function makeRelogin() {
 		fs.writeFileSync(__dirname + '/relogin', "error");
@@ -33,6 +30,9 @@
 	}
 
 	electron.ipcRenderer.on("aswin", (event, arg) => {
+		// document.getElementById('window_title').innerText=document.title;
+		panelistic = new Panelistic();
+		panelistic.initialize();
 		asObj = JSON.parse(unescape(arg));
 		console.log(asObj)
 		singleRecArr = parseRecToSingleDismension(asObj.category)
@@ -53,7 +53,7 @@
 					for (var k = 0; k < currsel.length; k++) {
 						totalStr += mulSelectBtn(asObj.category[i].questions[j].guid, currsel[k], currsel, currsel.length)
 					}
-					totalStr += "<br>"
+					totalStr += "&nbsp;<input type='button' style='height:40px' value='校对' onclick='checkOptionIfCorrect(\"" + asObj.category[i].questions[j].guid + "\")'><br>"
 				} else if (asObj.category[i].questions[j].type == '3' || asObj.category[i].questions[j].type == '4') {
 					totalStr += captBtn(asObj.category[i].questions[j].guid, currxiab) + '<br>'
 				}
@@ -63,6 +63,7 @@
 			totalStr += catEnd()
 		}
 		document.getElementById('panelistic_content_sidebar_in').innerHTML += totalStr
+		restoreOptions()
 	})
 
 	function parseRecToSingleDismension(recs) {
@@ -76,29 +77,27 @@
 	}
 
 	function storeItemToAss(guid, teacherid, asrguid, userid, scheduleguid, choice, qstguid, astext, ascamera) {
-		let template = `{
-			"answercamera": "${ascamera}",
-			"answerchoice": "${choice}",
-			"answerdate": "${new Date().Format('yyyy-MM-dd hh:mm:ss')}",
-			"answerhandwritedata": "",
-			"answerhandwritepreview": "",
-			"answerindex": 0,
-			"answersheetresourceguid": "${asrguid}",
-			"answertext": "${astext}",
-			"clientid": "myipad_${userid}",
-			"guid": "${guid}",
-			"notifyclientid": "${teacherid}_teacherpad",
-			"questionguid": "${qstguid}",
-			"scheduleguid": "${scheduleguid}",
-			"state": 0,
-			"studentname": "${getGlobalUsrname()}",
-			"syn_isdelete": 0,
-			"syn_timestamp": "${new Date().Format('yyyy-MM-dd hh:mm:ss')}",
-			"userclassguid": null,
-			"userclassname": null,
-			"username": "${globalAccountFile.account}",
-			"vote": 0}`
-		return template
+		return {
+			answercamera: ascamera,
+			answerchoice: choice,
+			answerdate: new Date().Format('yyyy-MM-dd hh:mm:ss'),
+			answerhandwritedata: "",
+			answerhandwritepreview: "",
+			answerindex: 0,
+			answersheetresourceguid: asrguid,
+			answertext: astext,
+			clientid: "myipad_" + userid,
+			guid: guid,
+			notifyclientid: teacherid + "_teacherpad",
+			questionguid: qstguid,
+			scheduleguid: scheduleguid,
+			state: 0,
+			studentname: getGlobalUsrname(),
+			syn_isdelete: 0,
+			syn_timestamp: new Date().Format('yyyy-MM-dd hh:mm:ss'),
+			userguid: getGlobalUserguid(),
+			username: globalAccountFile.account
+		}
 	}
 
 	function getChoiceByGUID(guid, xuanxiangs) {
@@ -115,13 +114,21 @@
 
 	function getAllAnswersAndSubmit() {
 		let retv = ""
+		let allforsubmit = []
 		for (var i = 0; i < singleRecArr.length; i++) {
 			if (singleRecArr[i].type == "1" || singleRecArr[i].type == "2" || singleRecArr[i].type == '0') {
-				submitAns("", getChoiceByGUID(singleRecArr[i].guid, singleRecArr[i].options), asObj.resguid, asObj.authorusername, singleRecArr[i].guid, asObj.schguid, "")
+				allforsubmit.push(["", getChoiceByGUID(singleRecArr[i].guid, singleRecArr[i].options), asObj.resguid, asObj.authorusername, singleRecArr[i].guid, asObj.schguid, ""])
 			} else if (singleRecArr[i].type == "3" || singleRecArr[i].type == "4") {
-				submitAns(capture[i], "", asObj.resguid, asObj.authorusername, singleRecArr[i].guid, asObj.schguid, getAstTextContent(i))
+				allforsubmit.push([capture[i], "", asObj.resguid, asObj.authorusername, singleRecArr[i].guid, asObj.schguid, getAstTextContent(i)])
 			}
 		}
+		let alrt = panelistic.dialog.salert('正在提交答案')
+		waitDo((i) => {
+			submitAns(allforsubmit[i][0], allforsubmit[i][1], allforsubmit[i][2], allforsubmit[i][3], allforsubmit[i][4], allforsubmit[i][5], allforsubmit[i][6])
+		}, allforsubmit.length, 200, () => {
+			panelistic.dialog.dismiss(alrt);
+			panelistic.dialog.alert('提示', '答案提交完成', '确定')
+		})
 	}
 
 	function submitAns(answercamera, answerchoice, asresguid, teacherid, currquestionguid, scheduleguid, answertext) {
@@ -145,33 +152,33 @@
 	}
 
 	function questionHead(queObj) {
-		return `<span style="font-size:13px">${queObj.index} [${queObj.score}分]</span><br>`
+		return `<span style="font-size:13px">${queObj.index} ${typeStr[new Number(queObj.type)]} [${queObj.score}分]<span id="span_${queObj.guid}"></span></span><br>`
 	}
 
 	function selectBtn(name, value, valuesel, count) {
-		return `<input type="radio" name="${name}" value="${name}" id="${name+value}" style="display:none"><label for="${name+value}"><span id="btn_${name+value}" class="btn" style="width:20px;text-align:center;margin:3px" onmousedown="clearAllBtnAndSel('${name}','${escape(JSON.stringify(valuesel))}','${count}',this.innerText)">${value}</span></label>`
+		return `<input type="radio" name="${name}" value="${name}" id="${name+value}" style="display:none"><label for="${name+value}"><span id="btn_${name+value}" class="btn" style="width:20px;text-align:center;margin:3px" onclick="clearAllBtnAndSel('${name}','${escape(JSON.stringify(valuesel))}','${count}',this.innerText)">${value}</span></label>`
 	}
 
 	function mulSelectBtn(name, value, valuesel, count) {
-		return `<input type="checkbox" name="${name}" value="${name}" id="${name+value}" style="display:none"><label for="${name+value}"><span id="btn_${name+value}" class="btn" style="width:20px;text-align:center;margin:3px" onmousedown="if(document.getElementById('${name+value}').checked){clearAllBtnSel('${name}','${escape(JSON.stringify(valuesel))}','${count}',this.innerText,false)}else{clearAllBtnSel('${name}','${escape(JSON.stringify(valuesel))}','${count}',this.innerText,true)}">${value}</span></label>`
+		return `<input type="checkbox" name="${name}" value="${name}" id="${name+value}" style="display:none"><label for="${name+value}"><span id="btn_${name+value}" class="btn" style="width:20px;text-align:center;margin:3px" onclick="if(document.getElementById('${name+value}').checked){clearAllBtnSel('${name}','${escape(JSON.stringify(valuesel))}','${count}',this.innerText,false)}else{clearAllBtnSel('${name}','${escape(JSON.stringify(valuesel))}','${count}',this.innerText,true)}">${value}</span></label>`
 	}
 
 	function clearAllBtnAndSel(name, valuesel, count, onc) {
-		storeOption(name, true)
 		valuesel = JSON.parse(unescape(valuesel))
 		for (var i = 0; i < count; i++) {
 			document.getElementById('btn_' + name + valuesel[i]).className = "btn";
 		}
 		document.getElementById('btn_' + name + onc).className = "btn btn_sel"
+		storeOption(name, true)
 	}
 
 	function clearAllBtnSel(name, valuesel, count, onc, rev) {
-		storeOption(name, true)
 		if (rev) {
 			document.getElementById('btn_' + name + onc).className = "btn btn_sel"
 		} else {
 			document.getElementById('btn_' + name + onc).className = "btn"
 		}
+		storeOption(name, true)
 	}
 
 	function captBtn(guid, xiab) {
@@ -260,7 +267,7 @@
 	}
 
 	function uploadFile(packageId, filePath) {
-		let diag = panelistic.dialog.salert('正在上传图片...请稍等')
+		// let upldiag = panelistic.dialog.salert('正在上传图片...请稍等')
 		let prsdb64 = parseB64(filePath);
 		let reqstr = `<v:Envelope xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns:d="http://www.w3.org/2001/XMLSchema" xmlns:c="http://schemas.xmlsoap.org/soap/encoding/" xmlns:v="http://schemas.xmlsoap.org/soap/envelope/"><v:Header /><v:Body><DataSynchronizePut xmlns="http://webservice.myi.cn/wmstudyservice/wsdl/" id="o0" c:root="1"><lpszClientID i:type="d:string">myipad_${JSON.parse(fs.readFileSync(__dirname+"/account")).account}</lpszClientID><szInputOutputXML i:type="d:string">&lt;wmStudy&gt;
    &lt;DataSynchronize skipcontent="true" version="1.1"&gt;
@@ -271,16 +278,79 @@
 `
 		autoRetryRequestWSDL('http://webservice.myi.cn/wmstudyservice/wsdl/DataSynchronizePut', reqstr, (data) => {
 			console.log(packageId)
-			panelistic.dialog.dismiss(diag)
+			// panelistic.dialog.dismiss(upldiag)
 			if (data.indexOf("<AS:DataSynchronizePutResult>0</AS:DataSynchronizePutResult>") != -1) {
 				panelistic.dialog.alert("提示", "上传成功", "确定");
-				storeOption(singleRecArr[oprXb].guid)
 				capture[oprXb] = packageId;
-				document.getElementById("img_" + singleRecArr[oprXb].guid).src = "data:image/jpeg;base64," + prsdb64;
+				storeOption(singleRecArr[oprXb].guid, undefined, undefined, oprXb)
+				document.getElementById("img_" + singleRecArr[oprXb].guid).src = filePath;
 			} else {
 				panelistic.dialog.alert("提示", "上传失败", "确定");
 			}
 		}, 2000, 5000)
+	}
+
+	function downloadFile(packageId, recall) {
+		// let diag = panelistic.dialog.salert('正在加载图片，请稍等')
+		if (fs.existsSync(__dirname + '/userfile/' + packageId)) {
+			recall(__dirname + '/userfile/' + packageId)
+		} else {
+			let reqstr = `<v:Envelope xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns:d="http://www.w3.org/2001/XMLSchema" xmlns:c="http://schemas.xmlsoap.org/soap/encoding/" xmlns:v="http://schemas.xmlsoap.org/soap/envelope/"><v:Header /><v:Body><DataSynchronizeGetSingleData xmlns="http://webservice.myi.cn/wmstudyservice/wsdl/" id="o0" c:root="1"><lpszClientID i:type="d:string">myipad_${JSON.parse(fs.readFileSync(__dirname+"/account")).account}</lpszClientID><lpszPackageID i:type="d:string">${packageId}</lpszPackageID></DataSynchronizeGetSingleData></v:Body></v:Envelope>`
+			autoRetryRequestWSDL('http://webservice.myi.cn/wmstudyservice/wsdl/DataSynchronizeGetSingleData', reqstr, (data) => {
+				// panelistic.dialog.dismiss(diag)
+				let base64 = data.substring(data.indexOf('<AS:szOutputData>') + 17, data.indexOf("</AS:szOutputData>"))
+				const dataBuffer = new Buffer.from(base64, 'base64'); 
+				console.log(base64)
+				fs.writeFile(__dirname + '/userfile/' + packageId, dataBuffer, function(err) {
+					if (err) {
+						console.log(err);
+					} else {
+						console.log('写入成功！');
+						recall(__dirname + '/userfile/' + packageId)
+					}
+				});
+			}, 2000, 50000)
+		}
+	}
+
+	function solidOption(guid, optionsstr, correct, corrscore, halfscore) {
+		let totalOpt = singleRecArr[findOrderInPhotoArr(guid)].options.slice('');
+		let score = corrscore;
+		for (var i = 0; i < totalOpt.length; i++) {
+			if (optionsstr.indexOf(totalOpt[i]) == -1) {
+				if (correct.indexOf(totalOpt[i]) != -1) {
+					console.log(totalOpt[i] + ': Mistaken, but should be chosen')
+					if (score != 0) { score = halfscore }
+					document.getElementById(guid + totalOpt[i]).checked = false;
+					document.getElementById('btn_' + guid + totalOpt[i]).className = "btn btn_cor"
+				} else {
+					console.log(totalOpt[i] + ': Correct, it shouldn\'t be chosen')
+				}
+			} else {
+				document.getElementById(guid + totalOpt[i]).checked = true;
+				if (correct.indexOf(totalOpt[i]) == -1) {
+					document.getElementById('btn_' + guid + totalOpt[i]).className = "btn btn_err"
+					console.log(totalOpt[i] + ': Mistaken, it shouldn\'t be chosen')
+					score = 0;
+				} else {
+					console.log(totalOpt[i] + ': Correct, it should be chosen')
+					document.getElementById('btn_' + guid + totalOpt[i]).className = "btn btn_cor"
+				}
+			}
+			document.getElementById('btn_' + guid + totalOpt[i]).onclick = null;
+		}
+		return score;
+	}
+
+	function setScore(guid, optionsstr, correct, score, isCorrect) {
+		document.getElementById('span_' + guid).innerHTML = (isCorrect ? '<span style="color:green">' : '<span style="color:red">') + " [得分: " + score + "] [选择: " + optionsstr + "] [答案: " + correct + "]" + '</span>'
+	}
+
+	function checkOptionIfCorrect(guid, isauto) {
+		let totalOpt = singleRecArr[findOrderInPhotoArr(guid)];
+		if (isauto && totalOpt.type == '2') return
+		let score = solidOption(guid, getChoiceByGUID(guid, totalOpt.options), totalOpt.correctanswer, new Number(totalOpt.score), new Number(totalOpt.missingscore));
+		setScore(guid, getChoiceByGUID(guid, totalOpt.options), totalOpt.correctanswer, score, score == totalOpt.score)
 	}
 
 	function getAstTextContent(givenxiab) {
@@ -299,15 +369,6 @@
 		return ""
 	}
 
-	function findOrderInArr(arr, guid) {
-		for (var i = 0; i < arr.length; i++) {
-			if (guid == arr[i].questionguid) {
-				return i;
-			}
-		}
-		return arr.length
-	}
-
 	function findOrderInPhotoArr(guid) {
 		for (var i = 0; i < singleRecArr.length; i++) {
 			if (guid == singleRecArr[i].guid) {
@@ -315,26 +376,122 @@
 			}
 		}
 		console.log(guid)
-		throw new Error()
+		throw new Error("Can't find in arr of guid " + guid)
 		return singleRecArr.length;
 	}
 
-	function storeOption(guid, type, randguid) {
-		let alreadyass = JSON.parse(fs.readFileSync(__dirname + '/answersheetsstudent'));
-		let change = findOrderInArr(alreadyass, guid);
-		let opt = ""
-		let text = ""
-		let ascamera = ""
-		if (type) {
-			opt = getChoiceByGUID(guid, singleRecArr[findOrderInPhotoArr(guid)].options)
-		} else {
-			text = getAstTextContentByGUID(guid)
-			ascamera = capture[findOrderInPhotoArr(guid)]
+	function setOption(guid, selName) {
+		let totalOpt = singleRecArr[findOrderInPhotoArr(guid)].options.slice('');
+		for (var i = 0; i < totalOpt.length; i++) {
+			if (selName.indexOf(totalOpt[i]) == -1) {
+				document.getElementById(guid + totalOpt[i]).checked = false;
+				document.getElementById('btn_' + guid + totalOpt[i]).className = "btn"
+			} else {
+				document.getElementById(guid + totalOpt[i]).checked = true;
+				document.getElementById('btn_' + guid + totalOpt[i]).className = "btn btn_sel"
+			}
 		}
-		alreadyass[change] = JSON.parse(storeItemToAss(randguid ? getRandomGUID() : randguid, asObj.authorusername, asObj.resguid, globalAccountFile.account, asObj.schguid, opt, guid, text, ascamera));
-		fs.writeFile(__dirname + '/answersheetsstudent', JSON.stringify(alreadyass), () => {
-			console.log("updated")
-		})
+		storeOption(guid, true)
+	}
+
+	function restoreSingleOption(guid, selName) {
+		let totalOpt = singleRecArr[findOrderInPhotoArr(guid)].options.slice('');
+		for (var i = 0; i < totalOpt.length; i++) {
+			if (selName.indexOf(totalOpt[i]) == -1) {
+				document.getElementById(guid + totalOpt[i]).checked = false;
+				document.getElementById('btn_' + guid + totalOpt[i]).className = "btn"
+			} else {
+				document.getElementById(guid + totalOpt[i]).checked = true;
+				document.getElementById('btn_' + guid + totalOpt[i]).className = "btn btn_sel"
+			}
+		}
+	}
+
+	function restoreImgOption(sgrc, recarr) {
+		if (recarr.answercamera != "") {
+			downloadFile(recarr.answercamera, (datab) => {
+				console.log(datab)
+				document.getElementById("img_" + sgrc.guid).src = datab;
+			})
+		} else {
+			console.log('rec')
+		}
+	}
+
+	function restoreOptions() {
+		for (var i = 0; i < singleRecArr.length; i++) {
+			let allass = JSON.parse(fs.readFileSync(__dirname + '/answersheetsstudent'))
+			let recarr = allass[findOrderInArr(allass, singleRecArr[i].guid)]
+			if (singleRecArr[i].type == "0" || singleRecArr[i].type == "1" || singleRecArr[i].type == "2") {
+				if (recarr) {
+					restoreSingleOption(recarr.questionguid, recarr.answerchoice);
+				}
+			} else {
+				if (recarr) {
+					restoreImgOption(singleRecArr[i], recarr)
+				}
+			}
+		}
+	}
+
+	function storeOption(guid, type, randguid, xb) {
+		setTimeout(() => {
+			if (autoCheck) {
+				checkOptionIfCorrect(guid, true)
+			}
+			let alreadyass = JSON.parse(fs.readFileSync(__dirname + '/answersheetsstudent'));
+			let change = findOrderInArr(alreadyass, guid);
+			let opt = ""
+			let text = ""
+			let ascamera = ""
+			if (type) {
+				opt = getChoiceByGUID(guid, singleRecArr[findOrderInPhotoArr(guid)].options)
+			} else {
+				text = getAstTextContentByGUID(guid)
+				ascamera = capture[xb]
+			}
+			let objsguid
+			try {
+				objsguid = randguid ? randguid : (alreadyass[change].guid ? alreadyass[change].guid : getRandomGUID())
+			} catch {
+				objsguid = randguid ? randguid : getRandomGUID()
+			}
+			alreadyass[change] = (storeItemToAss(objsguid, asObj.authorusername, asObj.resguid, globalAccountFile.account, asObj.schguid, opt, guid, text, ascamera));
+			allAnswerDataThisSession[findOrderInPhotoArr(guid)] = storeItemToAss(objsguid, asObj.authorusername, asObj.resguid, globalAccountFile.account, asObj.schguid, opt, guid, text, ascamera);
+			fs.writeFile(__dirname + '/answersheetsstudent', JSON.stringify(alreadyass), () => {
+				// console.log(alreadyass[change])
+			})
+			autoRetryRequest(`https://${getGlobalServerAddr()}/restfuldatasource/answersheetstudentanswer/dummy.json`, JSON.stringify(removeNull(allAnswerDataThisSession)), [{ key: 'Set-Cookie', value: 'sessionid=' + getGlobalSessionId() + ';userguid=ffffffffffffffffffffffffffffffff' }], (data) => {
+				console.log(JSON.stringify(removeNull(allAnswerDataThisSession)))
+			}, 500, 1000)
+		}, 50)
+	}
+
+	function removeNull(arr) {
+		let retarr = [];
+		for (var i = 0; i < arr.length; i++) {
+			if (arr[i]) {
+				retarr.push(arr[i])
+			}
+		}
+		return retarr
+	}
+
+	function waitDo(rec, cond, timeinterval, cb) {
+		let is = 0;
+		let cd = cond;
+		let tit = timeinterval
+		let reca = rec;
+		let itv = setInterval(function() {
+			console.log(is, cd)
+			if (is >= cd) {
+				clearInterval(itv)
+				if (cb) cb()
+			} else {
+				reca(is)
+				is++;
+			}
+		}, tit)
 	}
 	</script>
 </head>
@@ -345,7 +502,7 @@
 		<h1>答题卡</h1>
 		<h6>答题时间：<span id="answertime">0 小时 0 分钟 0 秒</span></h6>
 		<span class="panelistic_placeholder"></span>
-		<div class="panelistic_panel"><input type="button" value="开启自动校对" onclick="autoCheck=!autoCheck;this.value=(autoCheck)?'停止自动校对':'开启自动校对'">&nbsp;<input type="button" value="固定题板" onclick="electron.ipcRenderer.send('pin');ping=!ping;this.value=(ping)?'取消固定':'固定题板'">&nbsp;<input type="button" value="提交答案" onclick="getAllAnswersAndSubmit()"></div>
+		<div class="panelistic_panel"><input type="button" value="自动校对" onclick="autoCheck=!autoCheck;this.value=(autoCheck)?'停止校对':'自动校对'">&nbsp;<input type="button" value="固定题板" onclick="electron.ipcRenderer.send('pin');ping=!ping;this.value=(ping)?'取消固定':'固定题板'">&nbsp;<input type="button" value="提交答案" onclick="getAllAnswersAndSubmit()">&nbsp;<input type="button" value="自动完成" onclick="panelistic.dialog.confirm('自动完成','请独立思考完成题目','自动完成','取消',(opt)=>{if(opt){let prevopt = 0;waitDo((i)=>{panelistic.dialog.dismiss(prevopt);prevopt=panelistic.dialog.salert('正在完成题目 '+i+'/'+singleRecArr.length);setOption(singleRecArr[i].guid,singleRecArr[i].correctanswer)},singleRecArr.length,300,()=>{panelistic.dialog.dismiss(prevopt);})}})" id="autocompbtn"></div>
 	</div>
 </body>
 

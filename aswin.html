@@ -29,10 +29,13 @@
 		panelistic.dialog.alert('提示', "请重试操作", "确定")
 	}
 
-	electron.ipcRenderer.on("aswin", (event, arg) => {
-		// document.getElementById('window_title').innerText=document.title;
+	window.onload = function() {
 		panelistic = new Panelistic();
 		panelistic.initialize();
+	}
+
+	electron.ipcRenderer.on("aswin", (event, arg) => {
+		// document.getElementById('window_title').innerText=document.title;
 		asObj = JSON.parse(unescape(arg));
 		console.log(asObj)
 		singleRecArr = parseRecToSingleDismension(asObj.category)
@@ -124,7 +127,8 @@
 		}
 		let alrt = panelistic.dialog.salert('正在提交答案')
 		waitDo((i) => {
-			submitAns(allforsubmit[i][0], allforsubmit[i][1], allforsubmit[i][2], allforsubmit[i][3], allforsubmit[i][4], allforsubmit[i][5], allforsubmit[i][6])
+			submitAns(allforsubmit[i][0], allforsubmit[i][1], allforsubmit[i][2], allforsubmit[i][3], allforsubmit[i][4], allforsubmit[i][5], allforsubmit[i][6]);
+			checkOptionIfCorrect(allforsubmit[i][4], false)
 		}, allforsubmit.length, 200, () => {
 			panelistic.dialog.dismiss(alrt);
 			panelistic.dialog.alert('提示', '答案提交完成', '确定')
@@ -299,8 +303,9 @@
 			autoRetryRequestWSDL('http://webservice.myi.cn/wmstudyservice/wsdl/DataSynchronizeGetSingleData', reqstr, (data) => {
 				// panelistic.dialog.dismiss(diag)
 				let base64 = data.substring(data.indexOf('<AS:szOutputData>') + 17, data.indexOf("</AS:szOutputData>"))
-				const dataBuffer = new Buffer.from(base64, 'base64'); 
-				console.log(base64)
+				const dataBuffer = new Buffer.from(base64, 'base64');
+				console.log('dataBuffer是否是Buffer对象：' + Buffer.isBuffer(dataBuffer));
+				// console.log(base64)
 				fs.writeFile(__dirname + '/userfile/' + packageId, dataBuffer, function(err) {
 					if (err) {
 						console.log(err);
@@ -316,6 +321,7 @@
 	function solidOption(guid, optionsstr, correct, corrscore, halfscore) {
 		let totalOpt = singleRecArr[findOrderInPhotoArr(guid)].options.slice('');
 		let score = corrscore;
+		let corrchoice = 0;
 		for (var i = 0; i < totalOpt.length; i++) {
 			if (optionsstr.indexOf(totalOpt[i]) == -1) {
 				if (correct.indexOf(totalOpt[i]) != -1) {
@@ -334,11 +340,13 @@
 					score = 0;
 				} else {
 					console.log(totalOpt[i] + ': Correct, it should be chosen')
+					corrchoice++;
 					document.getElementById('btn_' + guid + totalOpt[i]).className = "btn btn_cor"
 				}
 			}
 			document.getElementById('btn_' + guid + totalOpt[i]).onclick = null;
 		}
+		if (corrchoice == 0) { score = 0 }
 		return score;
 	}
 
@@ -348,9 +356,11 @@
 
 	function checkOptionIfCorrect(guid, isauto) {
 		let totalOpt = singleRecArr[findOrderInPhotoArr(guid)];
-		if (isauto && totalOpt.type == '2') return
-		let score = solidOption(guid, getChoiceByGUID(guid, totalOpt.options), totalOpt.correctanswer, new Number(totalOpt.score), new Number(totalOpt.missingscore));
-		setScore(guid, getChoiceByGUID(guid, totalOpt.options), totalOpt.correctanswer, score, score == totalOpt.score)
+		if (totalOpt.type == '0' || totalOpt.type == '1' || totalOpt.type == '2') {
+			if (isauto && totalOpt.type == '2') return
+			let score = solidOption(guid, getChoiceByGUID(guid, totalOpt.options), totalOpt.correctanswer, new Number(totalOpt.score), new Number(totalOpt.missingscore));
+			setScore(guid, getChoiceByGUID(guid, totalOpt.options), totalOpt.correctanswer, score, score == totalOpt.score)
+		}
 	}
 
 	function getAstTextContent(givenxiab) {
@@ -408,7 +418,7 @@
 	}
 
 	function restoreImgOption(sgrc, recarr) {
-		if (recarr.answercamera != "") {
+		if (recarr.answercamera) {
 			downloadFile(recarr.answercamera, (datab) => {
 				console.log(datab)
 				document.getElementById("img_" + sgrc.guid).src = datab;
@@ -495,14 +505,14 @@
 	}
 	</script>
 </head>
-
 <body>
 	<div id="panelistic_content_sidebar_in">
 		<div id="panelistic_blur"></div>
 		<h1>答题卡</h1>
 		<h6>答题时间：<span id="answertime">0 小时 0 分钟 0 秒</span></h6>
 		<span class="panelistic_placeholder"></span>
-		<div class="panelistic_panel"><input type="button" value="自动校对" onclick="autoCheck=!autoCheck;this.value=(autoCheck)?'停止校对':'自动校对'">&nbsp;<input type="button" value="固定题板" onclick="electron.ipcRenderer.send('pin');ping=!ping;this.value=(ping)?'取消固定':'固定题板'">&nbsp;<input type="button" value="提交答案" onclick="getAllAnswersAndSubmit()">&nbsp;<input type="button" value="自动完成" onclick="panelistic.dialog.confirm('自动完成','请独立思考完成题目','自动完成','取消',(opt)=>{if(opt){let prevopt = 0;waitDo((i)=>{panelistic.dialog.dismiss(prevopt);prevopt=panelistic.dialog.salert('正在完成题目 '+i+'/'+singleRecArr.length);setOption(singleRecArr[i].guid,singleRecArr[i].correctanswer)},singleRecArr.length,300,()=>{panelistic.dialog.dismiss(prevopt);})}})" id="autocompbtn"></div>
+		<div class="panelistic_panel">
+			<input type="button" value="自动校对" onclick="autoCheck=!autoCheck;this.value=(autoCheck)?'停止校对':'自动校对'" id="autockbtn"> <input type="button" value="固定题板" onclick="electron.ipcRenderer.send('pin');ping=!ping;this.value=(ping)?'取消固定':'固定题板'">&nbsp;<input type="button" value="提交答案" onclick="getAllAnswersAndSubmit()">&nbsp;<input type="button" value="自动完成" onclick="panelistic.dialog.confirm('自动完成','请独立思考完成题目','自动完成','取消',(opt)=>{if(opt){let prevopt = 0;waitDo((i)=>{panelistic.dialog.dismiss(prevopt);prevopt=panelistic.dialog.salert('正在完成题目 '+i+'/'+singleRecArr.length);setOption(singleRecArr[i].guid,singleRecArr[i].correctanswer)},singleRecArr.length,300,()=>{panelistic.dialog.dismiss(prevopt);})}})" id="autocompbtn">&nbsp;<span class="panelistic_placeholder"></span><input type="button" value="清空答案" onclick="panelistic.dialog.confirm('清空答案','确定清空答案吗？您的数据将无法恢复。','确定','取消',(opt)=>{if(opt){autoCheck=false;document.getElementById('autockbtn').value=(autoCheck)?'停止校对':'自动校对';let prevopt = 0;waitDo((i)=>{panelistic.dialog.dismiss(prevopt);prevopt=panelistic.dialog.salert('正在清空 '+i+'/'+singleRecArr.length);setOption(singleRecArr[i].guid,'')},singleRecArr.length,300,()=>{panelistic.dialog.dismiss(prevopt);})}})" id="autocompbtn"></div>
 	</div>
 </body>
 

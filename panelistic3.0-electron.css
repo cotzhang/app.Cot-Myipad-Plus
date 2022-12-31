@@ -586,3 +586,7 @@ webview {
 .panelistic_panel_dlct {
 	margin: 3px;
 }
+
+.fx{
+	position: fixed;
+}

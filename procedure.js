@@ -4,6 +4,10 @@ const path = require('path');
 const electron = require('electron')
 const remote = require("@electron/remote");
 
+const getUserDataPath = () => {
+	return remote.app.getPath('userData').replaceAll('\\','/')
+}
+
 // Fs Promisfy
 fs.readFilePromise = function(path) {
 	return new Promise(function(resolve, reject) {
@@ -242,6 +246,11 @@ function getResourceByGUID(callback, thisProcess) {
 				const title = thisres.getAttribute("title");
 				fullDataSyncRetVal[thisProcess].resource.push({ guid, resourcetype, title });
 			}
+			if (JSON.parse(fs.readFileSync(__dirname + '/config')).newBkNotify && totalCounts) {
+				new Notification('发现新内容', { body: '[' + fullDataSyncRetVal[thisProcess].subject + '] ' + fullDataSyncRetVal[thisProcess].title }).onclick = () => {
+					electron.ipcRenderer.send('openwin')
+				}
+			}
 		} catch (err) {
 			// console.warn(err, allretval)
 			// debugger;
@@ -300,7 +309,7 @@ function requestFullClassPrepareParse(allrecords) {
 
 function recallParsing() {
 	if (currCountReal < totalCounts) {
-		if ((currCountReal + 1) % 50 == 0) {
+		if ((currCountReal) % 50 == 0) {
 			parse50Records(() => { recallParsing() })
 		}
 	}
@@ -348,7 +357,7 @@ function fetchAllRuiyiYun(callback) {
 			allRyy.push(parseRuiyiYunDataSync(totalPageData[i]));
 		}
 		callback(allRyy);
-	}, 20000, 1000, true)
+	}, 2000, 100, true)
 }
 
 function finishFetchAllRuiyiYun(allRyy) {
@@ -384,6 +393,12 @@ function getTotalAnswerSheet() {
 	} catch {}
 	let reqstr = JSON.stringify(allAnswerSheets);
 	autoRetryRequest('https://' + getGlobalServerAddr() + '/restfuldatasource/answersheetresult/', reqstr, [{ key: 'Set-Cookie', value: 'sessionid=' + getGlobalSessionId() + ';szUserGUID=' + getGlobalUserguid() + ';szUserName=' + globalAccountFile.account }], (data) => {
+		if (JSON.parse(fs.readFileSync(__dirname + '/config')).hwCheckedNotify && JSON.parse(data).download) {
+			// console.log(JSON.parse(data).download)
+			new Notification('答题卡', { body: '老师批改了你的作业' }).onclick = () => {
+				electron.ipcRenderer.send('openwin')
+			}
+		}
 		let asToDownload = ((JSON.parse(data).download) ? JSON.parse(data).download : []).concat((JSON.parse(data).modified) ? JSON.parse(data).modified : []);
 		// console.log(asToDownload)
 		let reqAnssheetOrder = 0;
@@ -418,7 +433,7 @@ function generateArrayAnswersheet(prevasw) {
 function generateHeaderOf200Answersheets(todownload, posStart, callBack) {
 	let allheaders = ""
 	for (let i = posStart; i < posStart + 200; i++) {
-		if (i + 1 >= todownload.length) {
+		if (i >= todownload.length) {
 			break;
 		}
 		allheaders += (todownload[i].guid) + ";"
@@ -503,6 +518,13 @@ window.onload = function() {
 
 	// Get main webview
 	webview = document.getElementById('webview');
+	webview.addEventListener('did-finish-load', () => {
+		webview.executeJavaScript(`
+          function getUserDataPath() {
+            return '${remote.app.getPath('userData').replaceAll('\\','/')}'
+          }
+        `)
+	})
 
 	// Read relogin file
 	fs.readFile(p('/relogin'), (err, data) => {
@@ -512,9 +534,10 @@ window.onload = function() {
 			fs.readFile(p('/account'), (err, data) => {
 				if (err) {
 					// This is the first time login
+					// Show welcome screen.
 					console.log("First login");
 					document.getElementById('panelistic_sidebar').style.pointerEvents = "none";
-					webview.src = __dirname + "/login.html"
+					webview.src = __dirname + "/welcome.html"
 				} else {
 					// No need for login
 					globalAccountFile = JSON.parse(data);
@@ -547,12 +570,6 @@ window.onload = function() {
 				if (result) {
 					try {
 						removeAllConfigs()
-					} catch {}
-					try {
-						deleteFolderRecursive(__dirname + '/downloads');
-					} catch {}
-					try {
-						deleteFolderRecursive(__dirname + '/userfile');
 					} catch {}
 					window.location.reload()
 				}
@@ -631,16 +648,30 @@ window.onload = function() {
 		} else if (event.channel == "openAsWindow") {
 			if (fs.existsSync(__dirname + "/secondlogin")) {
 				openAsWin(event)
-			}else{
-				panelistic.dialog.confirm('答题卡功能',"答题卡功能仍在测试中，部分功能不稳定，请勿过分依赖该功能","继续","取消",(cfr)=>{
-					if(cfr){
-						panelistic.dialog.alert('提示',"请勿同时在平板使用同一份答题卡作答，否则数据可能丢失。",'确定',()=>{
-							fs.writeFileSync(__dirname+'/secondlogin','');
-							openAsWin(event)
-						})
+			} else {
+				panelistic.dialog.confirm('答题卡功能', "请勿同时在平板使用同一份答题卡作答，否则数据可能丢失。", "继续", "取消", (cfr) => {
+					if (cfr) {
+						fs.writeFileSync(__dirname + '/secondlogin', '');
+						openAsWin(event)
 					}
 				})
 			}
+		} else if (event.channel == "clearTemp") {
+			getdirsize(__dirname + "/downloads", (bd, bd2) => {
+				getdirsize(__dirname + "/userfile", (bd3, bd4) => {
+					panelistic.dialog.confirm("清除缓存", "将要清除所有文件和图片缓存（" + optsize(bd2 + bd4) + "），所有未上传的文件更改将丢失", "清除缓存", "取消", (answ) => {
+						if (answ) {
+							try { deleteFolderRecursive(__dirname + "/downloads"); } catch {};
+							try { deleteFolderRecursive(__dirname + "/userfile"); } catch {};
+							panelistic.dialog.alert("完成", "缓存已清空", "确定")
+						}
+					})
+				})
+			})
+		} else if (event.channel == "firstloginwelcome") {
+			webview.src = __dirname + "/login.html"
+		} else if (event.channel == "startup") {
+			electron.ipcRenderer.send(event.args[0] ? 'openAutoStart' : 'closeAutoStart')
 		}
 	})
 	webview.addEventListener('dom-ready', function() {
@@ -652,12 +683,27 @@ window.onload = function() {
 	checkUpd()
 }
 
+// Tray events and main processes
+electron.ipcRenderer.on('sync', (event, message) => {
+	syncData();
+})
+electron.ipcRenderer.on('goto', (event, message) => {
+	webview.loadURL(__dirname + '/' + message + '.html')
+})
+electron.ipcRenderer.on('gotoryy', (event, message) => {
+	openRyYun('https://gzzxres.lexuewang.cn:8008/web/practice/index.html')
+})
+electron.ipcRenderer.on('gotoryy-xq', (event, message) => {
+	openRyYun('https://gzzxres.lexuewang.cn:8008/web/analyse/index.html#/AnalysisLists?backUrl=%2FNewHome', true)
+})
+
+
 function openAsWin(event) {
 	const vibe = require('@pyke/vibe');
 	vibe.setup(remote.app);
 	let aswindow = new remote.BrowserWindow({
 		width: 380,
-		height: 650,
+		height: 700,
 		backgroundColor: '#00000000',
 		show: true,
 		resizable: false,
@@ -690,8 +736,34 @@ function openAsWin(event) {
 			event.sender.send('filepath', remote.dialog.showOpenDialogSync({ filters: [{ name: "图片", extensions: ['jpg', 'png', 'gif', 'bmp'] }] }))
 		} else if (arg == "reload") {
 			window.location.reload()
+		} else if (arg == "openLargeImg") {
+			openLargeImg()
 		}
 	});
+}
+
+function openLargeImg() {
+	const vibe = require('@pyke/vibe');
+	vibe.setup(remote.app);
+	let largeImgWin = new remote.BrowserWindow({
+		backgroundColor: '#00000000',
+		show: true,
+		width: 1000,
+		height: 750,
+		webPreferences: {
+			nodeIntegration: true,
+			enableRemoteModule: true,
+			contextIsolation: false,
+			webviewTag: true,
+			nodeIntegrationInWorker: true,
+			ignoreCertificateErrors: true
+		}
+	})
+	let reloadAble = true;
+	vibe.applyEffect(largeImgWin, 'acrylic', '#FFFFFF40');
+	largeImgWin.loadURL(__dirname + '/imgpreview.html');
+	// largeImgWin.webContents.openDevTools({ mode: 'detach' })
+	largeImgWin.removeMenu();
 }
 
 // Exit
@@ -703,7 +775,14 @@ function removeAllConfigs() {
 	try { fs.unlinkSync(__dirname + '/ryyresources') } catch {}
 	try { fs.unlinkSync(__dirname + '/relogin') } catch {}
 	try { fs.unlinkSync(__dirname + '/answersheets') } catch {}
+	try { fs.unlinkSync(__dirname + '/answersheetsstudent') } catch {}
 	try { fs.unlinkSync(__dirname + '/secondlogin') } catch {}
+	try {
+		deleteFolderRecursive(__dirname + '/downloads');
+	} catch {}
+	try {
+		deleteFolderRecursive(__dirname + '/userfile');
+	} catch {}
 }
 
 // Ryy

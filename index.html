@@ -26,9 +26,7 @@
 				<div id="select1" class="panelistic_sidebar_selection" onclick="openRyYun('https://gzzxres.lexuewang.cn:8008/web/practice/index.html#/InterResetStudy')" onload="this.style.visibility=(serverADDR=='gzzx.lexuewang.cn:8003')?'visible':'hidden'">在线题库</div>
 				<div id="select2" class="panelistic_sidebar_selection" onclick="webview.loadURL(__dirname+'/mypad.html')">我的平板</div>
 				<!--div id="select1" class="panelistic_sidebar_selection" onclick="if(!fs.existsSync(__dirname+'/downloads')){fs.mkdirSync(__dirname+'/downloads')}electron.shell.openPath(__dirname+'/downloads')">下载的文件</div-->
-				<div id="select2" class="panelistic_sidebar_selection" onclick="webview.loadURL(__dirname+'/account.html')">账号设置</div>
-				<div id="select2" class="panelistic_sidebar_selection" onclick='getdirsize(__dirname+"/downloads",(bd,bd2)=>{panelistic.dialog.confirm("清除缓存","将要清除所有文件缓存（"+optsize(bd2)+"），所有未上传的更改将丢失","清除缓存","取消",(answ)=>{if(answ){try{deleteFolderRecursive(__dirname+"/downloads");}catch{};try{deleteFolderRecursive(__dirname+"/userfile");}catch{};panelistic.dialog.alert("完成","缓存已清空","确定")}})})'>清除缓存</div>
-				<div id="select2" class="panelistic_sidebar_selection" onclick="webview.loadURL(__dirname+'/about.html')">关于</div>
+				<div id="select2" class="panelistic_sidebar_selection" onclick="webview.loadURL(__dirname+'/account.html')">账号与设置</div>
 			</div>
 			<div id="panelistic_content_sidebar">
 				<webview id="webview" nodeintegration="true" disablewebsecurity webpreferences="contextIsolation=no" />

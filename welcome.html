@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<link rel="stylesheet" href="panelistic3.0-electron.css">
+	<script src="panelistic3.0-electron.js"></script>
+	<title>title</title>
+	<style type="text/css"></style>
+	<script type="text/javascript">
+	let $ = require('jquery');
+	let panelistic;
+	const fs = require('fs')
+	const electron = require("electron");
+	window.onload = function() {
+		panelistic = new Panelistic();
+		panelistic.initialize();
+		// document.getElementById('').innerText=;
+		setCheckboxes()
+	}
+	electron.ipcRenderer.on('syncdata', function(event, arg) {
+		console.log(arg);
+		document.getElementById('syncfileguid').innerText = "正在解析资源 " + arg;
+	});
+	electron.ipcRenderer.on('totdata', function(event, arg) {
+		console.log(arg);
+		document.getElementById('synctotdata').innerText = arg;
+	});
+	electron.ipcRenderer.on('itemdatal', function(event, args) {
+		console.log(args);
+		document.getElementById('progressbar').max = args;
+	});
+	electron.ipcRenderer.on('itemdatai', function(event, args) {
+		console.log(args);
+		document.getElementById('progressbar').value = args;
+	});
+
+	// electron.ipcRenderer.sendToHost('firstloginwelcome');
+	const remote = require("@electron/remote");
+
+	function getJsonConfigData() {
+		electron.ipcRenderer.sendToHost('startup', document.getElementById('startup').checked)
+		return {
+			startup: document.getElementById('startup').checked,
+			tray: document.getElementById('tray').checked,
+			newBkNotify: document.getElementById('newBkNotify').checked,
+			hwCheckedNotify: document.getElementById('hwCheckedNotify').checked,
+			newBkNotify: document.getElementById('newBkNotify').checked
+		}
+	}
+
+	function getInitJsonConfigData() {
+		let initjsondata = {
+			startup: true,
+			tray: true,
+			newBkNotify: true,
+			hwCheckedNotify: true,
+			newBkNotify: true
+		}
+		try {
+			initjsondata = JSON.parse(fs.readFileSync(__dirname + '/config'));
+		} catch {}
+		return initjsondata;
+	}
+
+	function setCheckboxes() {
+		let jsd = getInitJsonConfigData()
+		document.getElementById('startup').checked = jsd.startup
+		document.getElementById('tray').checked = jsd.tray
+		document.getElementById('newBkNotify').checked = jsd.newBkNotify
+		document.getElementById('hwCheckedNotify').checked = jsd.hwCheckedNotify
+		document.getElementById('newBkNotify').checked = jsd.newBkNotify
+	}
+
+	updateSettings = function() {
+		fs.writeFile(__dirname + '/config', JSON.stringify(getJsonConfigData()), () => {});
+	}
+
+	function finish() {
+		updateSettings();
+		electron.ipcRenderer.sendToHost('firstloginwelcome');
+	}
+	</script>
+</head>
+
+<body>
+	<div id="panelistic_content_sidebar_in" class="DM_fonttitlel">
+		<h1>欢迎</h1>
+		<h6>本应用支持以下功能，请选择所需开启</h6>
+		<span class="panelistic_placeholder"></span>
+		<div class="panelistic_panel">
+			<div class="panelistic_panel_name">程序设置</div><br><span class="panelistic_placeholder_large"></span>
+			<span style="font-size: 14px">部分更改需要重新打开程序后生效</span><span class="panelistic_placeholder"></span>
+			<div class="panelistic_checkbox"><input type="checkbox" selected onchange="updateSettings()" id="startup"><span class="panelistic_checkbox_text">开机自动启动</span></div>
+			<span class="panelistic_placeholder"></span>
+			<div class="panelistic_checkbox"><input type="checkbox" selected onchange="updateSettings()" id="tray"><span class="panelistic_checkbox_text">系统托盘运行</span></div>
+		</div>
+		<span class="panelistic_placeholder"></span>
+		<div class="panelistic_panel">
+			<div class="panelistic_panel_name">通知设置</div><br><span class="panelistic_placeholder_large"></span>
+			<div class="panelistic_checkbox"><input type="checkbox" selected onchange="updateSettings()" id="newBkNotify"><span class="panelistic_checkbox_text">新备课通知</span></div>
+			<span class="panelistic_placeholder"></span>
+			<div class="panelistic_checkbox"><input type="checkbox" selected onchange="updateSettings()" id="hwCheckedNotify"><span class="panelistic_checkbox_text">作业批改通知</span></div>
+			<!--span class="panelistic_placeholder"></span>
+			<div class="panelistic_checkbox"><input type="checkbox" selected onchange="updateSettings()"><span class="panelistic_checkbox_text">在线答疑通知</span></div-->
+		</div>
+		<span class="panelistic_placeholder"></span>
+		<div class="panelistic_panel">
+		<input type="button" value="保存并进入程序" onclick="finish()"></div>
+	</div>
+</body>
+
+</html>

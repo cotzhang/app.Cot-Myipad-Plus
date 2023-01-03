@@ -1,7 +1,7 @@
 {
 	"name": "pad_assistant",
 	"version": "1.0.0",
-	"description": "平板助手",
+	"description": "Pad assistant application",
 	"keywords": [
 		"panelistic",
 		"blur",
@@ -13,14 +13,40 @@
 	"icon": "./icon.png",
 	"scripts": {
 		"start": "electron .",
-		"build": "electron-packager . 平板助手 --platform=win32 --icon=icon.ico --app-version=1.0.0 --overwrite --out=../build"
+		"build": "electron-builder"
+	},
+	"build": {
+		"productName": "PadPlus",
+		"appId": "com.cot.padplus",
+		"copyright": "Cot 2023",
+		"directories": {
+			"output": "./build"
+		},
+		"win": {
+			"icon": "icon.ico",
+			"target": [{
+				"target": "nsis"
+			}]
+		},
+		"linux": {
+			"icon": "build/icons"
+		},
+		"nsis": {
+			"oneClick": false,
+			"allowElevation": true,
+			"allowToChangeInstallationDirectory": true,
+			"installerIcon": "./icon.ico",
+			"uninstallerIcon": "./icon.ico",
+			"installerHeaderIcon": "./icon.ico",
+			"createDesktopShortcut": true,
+			"createStartMenuShortcut": true,
+			"shortcutName": "平板+"
+		}
 	},
 	"dependencies": {
 		"@electron/remote": "^2.0.9",
 		"@pyke/vibe": "^0.3.1",
 		"download": "^8.0.0",
-		"electron-packager": "^17.1.1",
-		"electron-rebuild": "^3.2.9",
 		"jquery": "^3.6.1",
 		"node-gyp": "^9.3.0",
 		"qr-image": "^3.2.0"
@@ -30,7 +56,9 @@
 	},
 	"gypfile": true,
 	"devDependencies": {
-		"electron": "^16.0.4",
+		"electron": "^20.0.0",
+		"electron-rebuild": "^3.2.9",
+		"electron-builder": "^23.6.0",
 		"electron-is-dev": "^2.0.0"
 	}
 }

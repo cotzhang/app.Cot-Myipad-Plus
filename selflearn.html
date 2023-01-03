@@ -490,7 +490,7 @@
 			newInput.select();
 			document.execCommand('copy');
 			document.body.removeChild(newInput)
-			electron.ipcRenderer.sendToHost('alert', "复制链接", "链接已复制到剪贴板", "确定");
+			electron.ipcRenderer.sendToHost('alert', "复制链接", "链接已复制到剪贴板，请妥善保管，避免泄漏造成作答数据丢失。", "确定");
 		} else {
 			electron.ipcRenderer.sendToHost('openryylink', finalLjString);
 		}

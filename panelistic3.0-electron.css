@@ -24,7 +24,7 @@ body {
 	font-family: "misans";
 	font-weight: normal;
 	user-select: none;
-	/*	overflow: hidden;*/
+		overflow: hidden;
 }
 
 ::selection {
@@ -217,7 +217,7 @@ textarea {
 	padding-left: 7px;
 	font-size: 13px;
 	position: relative;
-	top: -2px;
+	top: -1px;
 }
 
 .panelistic_panel_name {
@@ -407,6 +407,10 @@ select option {
 		color: white;
 	}
 
+	h1,h6,span{
+		color: white;
+	}
+
 	.btn_sel {
 		background-color: #3396;
 	}
@@ -496,6 +500,7 @@ select option {
 	}
 
 	.panelistic_panel_name {
+		color: white;
 		background-color: #444444aa !important;
 	}
 

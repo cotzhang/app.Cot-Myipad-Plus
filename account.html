@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
 	<meta charset="utf-8">
 	<link rel="stylesheet" href="panelistic3.0-electron.css">
@@ -7,54 +8,159 @@
 	<title>title</title>
 	<style type="text/css"></style>
 	<script type="text/javascript">
-		let $ = document.querySelector;
-		let panelistic;
-		const fs = require('fs')
-		const electron = require("electron");
-		let accndata = JSON.parse(fs.readFileSync(__dirname+'/account'));
-		let alldata = JSON.parse(fs.readFileSync(__dirname+'/data'));
-		window.onload=function() {
-			panelistic = new Panelistic();
-			panelistic.initialize();
-			document.getElementById('usrname').innerText=accndata.account+" "+alldata.realname+"\n"+alldata.studentid;
-			document.getElementById('codearausrguid').innerText=alldata.sessionid;
-			document.getElementById('codeusrusrguid').innerText=alldata.userguid;
-			document.getElementById('mysch').innerText=alldata.schoolname+"\n"+alldata.schoolguid;
-			// document.getElementById('').innerText=;
+	let $ = document.querySelector;
+	let panelistic;
+	const fs = require('fs')
+	const electron = require("electron");
+	let accndata = JSON.parse(fs.readFileSync(__dirname + '/account'));
+	let alldata = JSON.parse(fs.readFileSync(__dirname + '/data'));
+	const VERSION = fs.readFileSync(__dirname + '/versionBUILD') + "";
+	window.onload = function() {
+		panelistic = new Panelistic();
+		panelistic.initialize();
+		document.getElementById('usrname').innerText = accndata.account + " " + alldata.realname + "\n" + alldata.studentid;
+		document.getElementById('codearausrguid').innerText = alldata.sessionid;
+		document.getElementById('codeusrusrguid').innerText = alldata.userguid;
+		document.getElementById('mysch').innerText = alldata.schoolname + "\n" + alldata.schoolguid;
+		// document.getElementById('').innerText=;
+		setCheckboxes()
+	}
+
+	function checkUpd() {
+		$.get('https://storage-1303195148.cos.ap-guangzhou.myqcloud.com/website/cmpVerInfo.txt', (data) => {
+			if (data > VERSION) {
+				console.log("New Update!")
+				electron.ipcRenderer.sendToHost('updable')
+			} else {
+				electron.ipcRenderer.sendToHost('alert', '检查更新', '无更新', '确定')
+			}
+		})
+	}
+
+	function delres() {
+		try {
+			// fs.unlinkSync(__dirname + '/data')
+			fs.unlinkSync(__dirname + '/resources')
+			fs.unlinkSync(__dirname + '/videosrc')
+		} catch {}
+		electron.ipcRenderer.sendToHost('reload')
+	}
+	const remote = require("@electron/remote");
+
+	function getJsonConfigData() {
+		electron.ipcRenderer.sendToHost('startup',document.getElementById('startup').checked)
+		return {
+			startup: document.getElementById('startup').checked,
+			tray: document.getElementById('tray').checked,
+			newBkNotify: document.getElementById('newBkNotify').checked,
+			hwCheckedNotify: document.getElementById('hwCheckedNotify').checked,
+			newBkNotify: document.getElementById('newBkNotify').checked
 		}
-		const remote = require("@electron/remote");
+	}
+
+	function getInitJsonConfigData() {
+		let initjsondata = {
+			startup: true,
+			tray: true,
+			newBkNotify: true,
+			hwCheckedNotify: true,
+			newBkNotify: true
+		}
+		try {
+			initjsondata = JSON.parse(fs.readFileSync(__dirname + '/config'));
+		} catch {}
+		return initjsondata;
+	}
+
+	function setCheckboxes() {
+		let jsd = getInitJsonConfigData()
+		document.getElementById('startup').checked = jsd.startup
+		document.getElementById('tray').checked = jsd.tray
+		document.getElementById('newBkNotify').checked = jsd.newBkNotify
+		document.getElementById('hwCheckedNotify').checked = jsd.hwCheckedNotify
+		document.getElementById('newBkNotify').checked = jsd.newBkNotify
+	}
+
+	updateSettings = function() {
+		fs.writeFile(__dirname + '/config', JSON.stringify(getJsonConfigData()), () => {});
+	}
 	</script>
 </head>
+
 <body>
 	<div id="panelistic_content_sidebar_in" class="DM_fonttitlel">
-		<h1>账号设置</h1>
-			<h6>当前状态：已登录</h6>
+		<h1>账号与设置</h1>
+		<h6>当前状态：已登录</h6>
+		<span class="panelistic_placeholder"></span>
+		<div class="panelistic_panel">
+			<div class="panelistic_panel_name">软件信息</div><br><span class="panelistic_placeholder_large"></span>
 			<span class="panelistic_placeholder"></span>
-			<div class="panelistic_panel">
-				<div class="panelistic_panel_name">个人信息</div><br><span class="panelistic_placeholder_large"></span>
-				<div class="panelistic_code"><code id="usrname">unknown</code></div>
-			</div>
+			<img src="snpicon.png">
 			<span class="panelistic_placeholder"></span>
-			<div class="panelistic_panel">
-				<div class="panelistic_panel_name">我的学校</div><br><span class="panelistic_placeholder_large"></span>
-				<div class="panelistic_code"><code id="mysch">unknown</code></div>
-			</div>
+			<span style="font-weight: bold;font-size: 15px;">平板+ PadPlus</span><br>
+			<span style="font-size: 14px;">版本 V1.1.1</span><br>
+			<span style="font-size: 14px;">开发 小喵COT</span><br>
+			<a style="font-size: 14px;cursor: pointer;color: blue;text-decoration: underline;" onclick="electron.shell.openExternal('https://www.apache.org/licenses/LICENSE-2.0.txt')">开放源代码软件 Under Apache Licence</a>
+		</div>
+		<span class="panelistic_placeholder"></span>
+		<div class="panelistic_panel">
+			<div class="panelistic_panel_name">程序设置</div><br><span class="panelistic_placeholder_large"></span>
+			<span style="font-size: 14px">部分更改需要重新打开程序后生效</span><span class="panelistic_placeholder"></span>
+			<div class="panelistic_checkbox"><input type="checkbox" onchange="updateSettings()" id="startup"><span class="panelistic_checkbox_text">开机自动启动</span></div>
 			<span class="panelistic_placeholder"></span>
-			<div class="panelistic_panel">
-				<div class="panelistic_panel_name">UserGUID</div><br><span class="panelistic_placeholder_large"></span>
-				<div class="panelistic_code"><code id="codeusrusrguid">unknown</code></div>
-			</div>
+			<div class="panelistic_checkbox"><input type="checkbox" onchange="updateSettings()" id="tray"><span class="panelistic_checkbox_text">系统托盘运行</span></div>
+		</div>
+		<span class="panelistic_placeholder"></span>
+		<div class="panelistic_panel">
+			<div class="panelistic_panel_name">通知设置</div><br><span class="panelistic_placeholder_large"></span>
+			<div class="panelistic_checkbox"><input type="checkbox" onchange="updateSettings()" id="newBkNotify"><span class="panelistic_checkbox_text">新备课通知</span></div>
 			<span class="panelistic_placeholder"></span>
-			<div class="panelistic_panel">
-				<div class="panelistic_panel_name">SessionID</div><br><span class="panelistic_placeholder_large"></span>
-				<div class="panelistic_code"><code id="codearausrguid">unknown</code></div>
-			</div>
-			<span class="panelistic_placeholder"></span>
-			<div class="panelistic_panel">
-				<div class="panelistic_panel_name">账号管理</div><br><span class="panelistic_placeholder_large"></span>
-				<input type="button" value="重新登录" onclick="electron.ipcRenderer.sendToHost('relogin',accndata.account,accndata.password)">
-				<input type="button" value="退出账号" onclick="electron.ipcRenderer.sendToHost('exitaccount')" name="">
-			</div>
+			<div class="panelistic_checkbox"><input type="checkbox" onchange="updateSettings()" id="hwCheckedNotify"><span class="panelistic_checkbox_text">作业批改通知</span></div>
+			<!--span class="panelistic_placeholder"></span>
+			<div class="panelistic_checkbox"><input type="checkbox" onchange="updateSettings()"><span class="panelistic_checkbox_text">在线答疑通知</span></div-->
+		</div>
+		<span class="panelistic_placeholder"></span>
+		<div class="panelistic_panel">
+			<div class="panelistic_panel_name">修复资源</div><br><span class="panelistic_placeholder_large"></span>
+			<input type="button" value="修复资源" onclick="delres()">
+			修复资源可以解决部分资源丢失、无法显示的问题。
+		</div>
+		<span class="panelistic_placeholder"></span>
+		<div class="panelistic_panel">
+			<div class="panelistic_panel_name">账号管理</div><br><span class="panelistic_placeholder_large"></span>
+			<input type="button" value="重新登录" onclick="electron.ipcRenderer.sendToHost('relogin',accndata.account,accndata.password)">
+			<input type="button" value="退出账号" onclick="electron.ipcRenderer.sendToHost('exitaccount')" name="">
+		</div>
+		<span class="panelistic_placeholder"></span>
+		<div class="panelistic_panel">
+			<div class="panelistic_panel_name">个人信息</div><br><span class="panelistic_placeholder_large"></span>
+			<div class="panelistic_code"><code id="usrname">登录失败！请重新打开主程序</code></div>
+		</div>
+		<span class="panelistic_placeholder"></span>
+		<div class="panelistic_panel">
+			<div class="panelistic_panel_name">我的学校</div><br><span class="panelistic_placeholder_large"></span>
+			<div class="panelistic_code"><code id="mysch">登录失败！请重新打开主程序</code></div>
+		</div>
+		<span class="panelistic_placeholder"></span>
+		<div class="panelistic_panel">
+			<div class="panelistic_panel_name">UserGUID</div><br><span class="panelistic_placeholder_large"></span>
+			<div class="panelistic_code"><code id="codeusrusrguid">登录失败！请重新打开主程序</code></div>
+		</div>
+		<span class="panelistic_placeholder"></span>
+		<div class="panelistic_panel">
+			<div class="panelistic_panel_name">SessionID</div><br><span class="panelistic_placeholder_large"></span>
+			<div class="panelistic_code"><code id="codearausrguid">登录失败！请重新打开主程序</code></div>
+		</div>
+		<span class="panelistic_placeholder"></span>
+		<div class="panelistic_panel">
+			<div class="panelistic_panel_name">更多操作</div><br><span class="panelistic_placeholder_large"></span>
+			<input type="button" value="检查更新" onclick="checkUpd()">
+			<input type="button" value="清除缓存" onclick="electron.ipcRenderer.sendToHost('clearTemp')">
+			<input type="button" value="意见反馈" onclick="electron.shell.openExternal('https://github.com/cotzhang/app.Cot-Myipad-Plus/issues')" name="">
+			<input type="button" value="进入测试模式" onclick="electron.ipcRenderer.sendToHost('testmode');">
+			<input type="button" value="Star me on Github" onclick="electron.shell.openExternal('https://github.com/cotzhang/app.Cot-Myipad-Plus')" name="">
+		</div>
 	</div>
 </body>
+
 </html>

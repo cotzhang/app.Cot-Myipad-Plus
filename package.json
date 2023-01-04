@@ -24,9 +24,11 @@
 		},
 		"win": {
 			"icon": "icon.ico",
-			"target": [{
-				"target": "nsis"
-			}]
+			"target": [
+				{
+					"target": "nsis"
+				}
+			]
 		},
 		"linux": {
 			"icon": "build/icons"
@@ -49,7 +51,8 @@
 		"download": "^8.0.0",
 		"jquery": "^3.6.1",
 		"node-gyp": "^9.3.0",
-		"qr-image": "^3.2.0"
+		"qr-image": "^3.2.0",
+		"wallpaper": "^6.1.1"
 	},
 	"engines": {
 		"node": ">=8.0.0"
@@ -57,8 +60,8 @@
 	"gypfile": true,
 	"devDependencies": {
 		"electron": "^20.0.0",
-		"electron-rebuild": "^3.2.9",
 		"electron-builder": "^23.6.0",
-		"electron-is-dev": "^2.0.0"
+		"electron-is-dev": "^2.0.0",
+		"electron-rebuild": "^3.2.9"
 	}
 }

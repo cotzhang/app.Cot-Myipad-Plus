@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+	<style type="text/css">
+	/*version: panelistic 3.0 for Electron apps*/
+	/*author: cotzhang@github*/
+
+	* {
+		transition: 0.2s;
+	}
+
+	@font-face {
+		font-family: 'misans';
+		src: url(./font/misans.ttf);
+	}
+
+
+	html {
+		height: 100%;
+	}
+
+	body {
+		margin: 0px;
+		top: 0px;
+		width: 100%;
+		bottom: 0px;
+		position: absolute;
+		font-family: "misans";
+		font-weight: normal;
+		user-select: none;
+		overflow: hidden;
+		-webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+		backdrop-filter: blur(5px);
+	}
+
+	body {
+		/*设置背景图片*/
+		background-image: url(./server/cmbg.jpg);
+		background-size: 100% 100%;
+		background-size: cover;
+		background-repeat: no-repeat;
+		background-attachment: fixed;
+		/*关键*/
+		background-position: center;
+	}
+
+	::selection {
+		background: #aacccc88;
+	}
+
+	#panelistic_blur {
+		z-index: 999998;
+		position: absolute;
+		top: 0px;
+		right: 0px;
+		left: 0px;
+		bottom: 0px;
+		backdrop-filter: blur(10px);
+		background-color: #00000044;
+	}
+
+	.panelistic_popup {
+		background-color: #ffffffaa;
+		position: absolute;
+		backdrop-filter: blur(8px);
+		width: 320px;
+		/*max-height: 80%;*/
+		margin: auto;
+		padding: 12px;
+		border-radius: 8px;
+		box-shadow: 0px 0px 10px 8px rgba(0, 0, 0, 0.2);
+		left: 50%;
+		top: 50%;
+		transform: translate(-50%, -50%)
+	}
+
+	.panelistic_popup_title {
+		font-size: 25px;
+		font-weight: bold;
+	}
+
+	.panelistic_popup_content {
+		font-size: 18px;
+		padding-top: 36px;
+		position: relative;
+	}
+
+	.panelistic_popup_layout {
+		text-align: left;
+	}
+
+	#panelistic_window {
+		margin: 0px;
+		height: 100%;
+		width: 100%;
+		bottom: 0px;
+		position: absolute;
+		color: black;
+	}
+
+	#panelistic_titlebar {
+		height: 20px;
+		-webkit-app-region: drag;
+		padding-top: 6px;
+		padding-bottom: 4px;
+		padding-left: 8px;
+		font-size: 14px;
+		z-index: 999999;
+	}
+
+	.panelistic_controlbtn {
+		position: absolute;
+		top: 0px;
+		filter: invert(100%);
+		-webkit-app-region: none;
+		z-index: 1000000;
+	}
+
+	#controlbtn_closebtn {
+		right: 0px;
+	}
+
+	#controlbtn_closebtn:hover {
+		filter: invert(0%);
+		background-color: #ff0000;
+	}
+
+	#controlbtn_closebtn:active {
+		filter: invert(0%);
+		background-color: #ff6666;
+	}
+
+	#controlbtn_minbtn:hover {
+		background-color: #111;
+	}
+
+	#controlbtn_minbtn:active {
+		background-color: #222;
+	}
+
+	#panelistic_blur {
+		position: absolute;
+		z-index: 999999;
+		visibility: hidden;
+	}
+
+	#controlbtn_minbtn {
+		right: 45px;
+	}
+
+	#panelistic_content {
+		padding: 8px;
+		height: calc(100% - 16px);
+		overflow: auto;
+	}
+
+	#panelistic_content_sidebar_in {
+		padding: 8px;
+		height: calc(100% - 16px);
+		overflow: auto;
+	}
+
+	::-webkit-scrollbar {
+		width: 8px;
+		height: 8px;
+	}
+
+	::-webkit-scrollbar-thumb {
+		background-color: #88888855;
+	}
+
+	::-webkit-scrollbar-track {
+		background-color: #00000000;
+	}
+
+	::-webkit-scrollbar-thumb:horizontal {
+		background-color: #88888855;
+	}
+
+	::-webkit-scrollbar-track:horizontal {
+		background-color: #00000000;
+	}
+
+	::-webkit-scrollbar-corner {
+		background-color: #00000000;
+	}
+
+	h1 {
+		font-family: "misans";
+		margin: 0px;
+		margin-top: 8px;
+		z-index: 1;
+		font-size: 40px;
+	}
+
+	h6 {
+		margin: 0px;
+		margin-left: 2px;
+		font-weight: normal;
+		font-size: 16px;
+	}
+
+	input,
+	textarea,
+	.btn {
+		outline: none;
+		border: 1px solid #cccccc99;
+		background-color: #ffffff88;
+		border-radius: 8px;
+		padding: 9px;
+		margin: 0px;
+		font-size: 16px;
+		font-family: "misans";
+	}
+
+	textarea {
+		max-width: calc(100% - 20px);
+	}
+
+	.panelistic_checkbox {
+		outline: none;
+		border: 1px solid #cccccc99;
+		background-color: #ffffff88;
+		border-radius: 8px;
+		padding: 8px;
+		padding-top: 5px;
+		margin: 0px;
+		font-family: "misans";
+	}
+
+	.panelistic_checkbox input {
+		margin-top: 5px;
+	}
+
+	.panelistic_checkbox_text {
+		padding-left: 7px;
+		font-size: 13px;
+		position: relative;
+		top: -1px;
+	}
+
+	.panelistic_panel_name {
+		background-color: #ffffffbb;
+		padding: 3px;
+		padding-left: 12px;
+		padding-right: 8px;
+		margin-left: -8px;
+		font-size: 17px;
+		margin-top: 2px;
+		border-top-right-radius: 8px;
+		border-bottom-right-radius: 8px;
+		width: auto;
+		float: left;
+	}
+
+	.panelistic_dialog_input {
+		display: block;
+		width: calc(100% - 20px);
+	}
+
+	.panelistic_checkbox:hover {
+		border: 1px solid #bbbbbb99;
+		background-color: #eeeeee88;
+	}
+
+	.panelistic_checkbox:active {
+		border: 1px solid #aaaaaa99;
+		background-color: #cccccc88;
+	}
+
+	input:hover,
+	textarea:hover,
+	.btn:hover {
+		border: 1px solid #bbbbbb99;
+		background-color: #eeeeee88;
+	}
+
+	.btn_sel:hover {
+		background-color: #22a6;
+	}
+
+	.btn_cor:hover {
+		background-color: #2a26;
+	}
+
+	.btn_err:hover {
+		background-color: #a226;
+	}
+
+	.mobCapture:hover {
+		background-color: #22a6;
+	}
+
+	input:active,
+	textarea:active,
+	.btn:active {
+		border: 1px solid #aaaaaa99;
+		background-color: #cccccc88;
+	}
+
+	.btn_cor:active {
+		background-color: #1916;
+	}
+
+	.btn_sel:active {
+		background-color: #1196;
+	}
+
+	.btn_err:active {
+		background-color: #9116;
+	}
+
+	.mobCapture:active {
+		background-color: #1196;
+	}
+
+	input[type="button"],
+	.btn {
+		cursor: pointer;
+	}
+
+	img:not(.panelistic_controlbtn) {
+		border-radius: 8px;
+	}
+
+	.panelistic_panel:hover {
+		box-shadow: 0 0 10px #00000022;
+	}
+
+	.panelistic_panel:active {
+		background-color: #ffffff55;
+	}
+
+	select {
+		outline: none;
+		padding: 8px;
+		border-radius: 8px;
+		border: 1px solid #cccccc99;
+		background-color: #ffffff88;
+		font-family: "misans";
+	}
+
+	select:hover {
+		border: 1px solid #bbbbbb99;
+		background-color: #eeeeee88;
+	}
+
+	select:active {
+		border: 1px solid #aaaaaa99;
+		background-color: #cccccc88;
+	}
+
+	select option {
+		color: black;
+		background-color: #ffffff88;
+		font-family: "misans";
+	}
+
+	.panelistic_placeholder {
+		height: 8px;
+		position: relative;
+		display: block;
+	}
+
+	.panelistic_placeholder_large {
+		height: 12px;
+		position: relative;
+		display: block;
+	}
+
+	.panelistic_code {
+		background-color: #303841;
+		border-radius: 8px;
+		padding: 8px;
+		color: white;
+		user-select: text;
+	}
+
+	.panelistic_panel {
+		background-color: #ffffff66;
+		padding: 8px;
+		border-radius: 10px;
+		border: solid 1px #ffffff00;
+	}
+
+	.btn {
+		display: inline-block;
+	}
+
+	.btn_cor {
+		background-color: #3a36;
+	}
+
+	.btn_sel {
+		background-color: #33a6;
+	}
+
+	.btn_err {
+		background-color: #a336;
+	}
+
+	.mobCapture {
+		background-color: #33a6;
+	}
+
+	@media (prefers-color-scheme: dark) {
+		body {
+			background-image: url(./server/cmbgd.jpg);
+		}
+
+		#panelistic_window {
+			color: white;
+		}
+
+		.panelistic_controlbtn {
+			filter: invert(0%);
+		}
+
+		#controlbtn_minbtn:active {
+			background-color: #888;
+		}
+
+		input,
+		select,
+		.panelistic_checkbox,
+		.btn,
+		textarea {
+			border: 1px solid #44444499;
+			background-color: #33333388;
+			color: white;
+		}
+
+		h1,
+		h6,
+		span {
+			color: white;
+		}
+
+		.btn_sel {
+			background-color: #3396;
+		}
+
+		.btn_cor {
+			background-color: #3936;
+		}
+
+		.btn_err {
+			background-color: #9336;
+		}
+
+		.mobCapture {
+			background-color: #3396;
+		}
+
+		.panelistic_panel {
+			background-color: #44444455;
+		}
+
+		.panelistic_panel:hover {
+			box-shadow: 0 0 10px #00000022;
+		}
+
+		.panelistic_panel:active {
+			background-color: #66666655;
+		}
+
+		input:hover,
+		select:hover,
+		.panelistic_checkbox:hover,
+		.btn:hover,
+		textarea:hover {
+			background-color: #33333388;
+		}
+
+		.btn_cor:hover {
+			background-color: #1716;
+		}
+
+		.btn_sel:hover {
+			background-color: #1176;
+		}
+
+		.btn_err:hover {
+			background-color: #7116;
+		}
+
+		.mobCapture:hover {
+			background-color: #1176;
+		}
+
+		input:active,
+		select:active,
+		.panelistic_checkbox:active,
+		.btn:active,
+		textarea:active {
+			background-color: #66666655;
+		}
+
+		.btn_cor:active {
+			background-color: #0606;
+		}
+
+		.btn_err:active {
+			background-color: #6006;
+		}
+
+		.btn_sel:active {
+			background-color: #0066;
+		}
+
+		.mobCapture:active {
+			background-color: #0066;
+		}
+
+		#panelistic_content_sidebar {
+			background-color: #33333333 !important;
+		}
+
+		.DM_fontsmall {
+			color: #ddd !important;
+		}
+
+		.DM_fonttitlel {
+			color: #fff !important;
+		}
+
+		.panelistic_panel_name {
+			color: white;
+			background-color: #444444aa !important;
+		}
+
+		a {
+			color: #ccf !important;
+		}
+
+		.panelistic_popup {
+			color: white !important;
+			background-color: #444444cc;
+		}
+	}
+
+	/* sidebar addon */
+
+
+	#panelistic_content_sidebar {
+		height: calc(100% - 8px);
+		position: absolute;
+		display: inline-block;
+		width: calc(100% - 200px);
+		background-color: #ffffff33;
+		vertical-align: top;
+		left: 200px;
+	}
+
+
+	#panelistic_sidebar {
+		position: absolute;
+		left: 0px;
+		bottom: 0px;
+		width: 200px;
+		height: calc(100% - 30px);
+		display: inline-block;
+		vertical-align: top;
+	}
+
+	.panelistic_sidebar_selection {
+		background-color: #eeeeee33;
+		padding: 8px;
+		font-size: 14px;
+	}
+
+	.panelistic_sidebar_selection:hover {
+		background-color: #eeeeee66;
+	}
+
+	.panelistic_sidebar_selection:active {
+		background-color: #eeeeee99;
+		padding: 6px;
+	}
+
+	.panelistic_sidebar_selection_selected {
+		background-color: # !important;
+	}
+
+	.panelistic_sidebar_placeholder {
+		height: 16px;
+		position: relative;
+		display: block;
+	}
+
+	.panelistic_sidebar_title {
+		margin: 8px;
+		margin-bottom: 0px;
+		font-weight: bold;
+		font-size: 20px;
+	}
+
+	.panelistic_sidebar_subtitle {
+		margin: 8px;
+		font-size: 14px;
+		margin-top: 0px;
+	}
+
+	webview {
+		min-height: 100%;
+		min-width: 100%;
+		display: inline-flex;
+		/* iframes are inline by default */
+		border: none;
+		/* Reset default border */
+		height: 100%;
+		/* Viewport-relative units */
+		width: 100%;
+	}
+
+	.panelistic_panel_dlct {
+		margin: 3px;
+	}
+
+	.fx {
+		position: fixed;
+	}
+	</style>
+	<title>平板+ 设备连接</title>
+	<script src="panelistic3.0-electron.js"></script>
+	<script type="text/javascript">
+	let panelistic;
+	window.onload = function() {
+		panelistic = new Panelistic();
+		panelistic.initialize();
+	}
+	function downloadapp() {
+		var ua = navigator.userAgent.toLowerCase();
+		var isWeixin = ua.indexOf('micromessenger') != -1;
+		if (isWeixin) {
+			panelistic.dialog.alert('微信提示','请点击右上角，在浏览器中打开','关闭')
+		} else {
+			window.open('android.apk', '_self');
+		}
+	}
+	</script>
+</head>
+
+<body>
+	<div id="panelistic_content_sidebar_in" class="DM_fonttitlel">
+		<div id="panelistic_blur"></div>
+		<span class="panelistic_placeholder_large"></span><span class="panelistic_placeholder_large"></span>
+		<h1>连接设备</h1>
+		<h6>要连接您的设备，请下载本应用</h6>
+		<span class="panelistic_placeholder"></span>
+		<span class="panelistic_placeholder"></span>
+		<div class="panelistic_panel">
+			<div class="panelistic_panel_name">下载应用</div><br><span class="panelistic_placeholder_large"></span><span class="panelistic_placeholder"></span>
+			<img src="icon.png" style="height: 64px;padding-left: 6px;">
+			<div style="display: inline-block;height: 64px;vertical-align: top;padding-top: 10px;"><span style="font-size: 20px;font-weight: bold;">平板+</span><br><span>平板+ 安卓辅助客户端</span></div>
+			<span class="panelistic_placeholder"></span>
+			<input type="button" value="点击下载安装包" style="margin: 4px;width: calc(100% - 8px)" onclick="downloadapp()">
+		</div>
+		<span class="panelistic_placeholder_large"></span>
+		<div class="panelistic_panel">
+			<div class="panelistic_panel_name">设备信息</div><br><span class="panelistic_placeholder_large"></span><span class="panelistic_placeholder"></span>
+			<span style="font-size: 17px;padding-left: 6px;display: block;">

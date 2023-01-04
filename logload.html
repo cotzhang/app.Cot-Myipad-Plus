@@ -13,8 +13,8 @@
 	const fs = require('fs')
 	const VERSION = fs.readFileSync(__dirname + '/versionBUILD') + "";
 	const electron = require("electron");
-	let accndata = JSON.parse(fs.readFileSync(__dirname + '/account'));
-	let alldata = JSON.parse(fs.readFileSync(__dirname + '/data'));
+	let accndata = JSON.parse(fs.readFileSync(getuserdatapath() + '/account'));
+	let alldata = JSON.parse(fs.readFileSync(getuserdatapath() + '/data'));
 	window.onload = function() {
 		panelistic = new Panelistic();
 		panelistic.initialize();

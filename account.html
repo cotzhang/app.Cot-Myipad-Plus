@@ -12,8 +12,8 @@
 	let panelistic;
 	const fs = require('fs')
 	const electron = require("electron");
-	let accndata = JSON.parse(fs.readFileSync(__dirname + '/account'));
-	let alldata = JSON.parse(fs.readFileSync(__dirname + '/data'));
+	let accndata = JSON.parse(fs.readFileSync(getuserdatapath() + '/account'));
+	let alldata = JSON.parse(fs.readFileSync(getuserdatapath() + '/data'));
 	const VERSION = fs.readFileSync(__dirname + '/versionBUILD') + "";
 	window.onload = function() {
 		panelistic = new Panelistic();
@@ -39,9 +39,9 @@
 
 	function delres() {
 		try {
-			// fs.unlinkSync(__dirname + '/data')
-			fs.unlinkSync(__dirname + '/resources')
-			fs.unlinkSync(__dirname + '/videosrc')
+			// fs.unlinkSync(getuserdatapath() + '/data')
+			fs.unlinkSync(getuserdatapath() + '/resources')
+			fs.unlinkSync(getuserdatapath() + '/videosrc')
 		} catch {}
 		electron.ipcRenderer.sendToHost('reload')
 	}
@@ -67,7 +67,7 @@
 			newBkNotify: true
 		}
 		try {
-			initjsondata = JSON.parse(fs.readFileSync(__dirname + '/config'));
+			initjsondata = JSON.parse(fs.readFileSync(getuserdatapath() + '/config'));
 		} catch {}
 		return initjsondata;
 	}
@@ -82,7 +82,7 @@
 	}
 
 	updateSettings = function() {
-		fs.writeFile(__dirname + '/config', JSON.stringify(getJsonConfigData()), () => {});
+		fs.writeFile(getuserdatapath() + '/config', JSON.stringify(getJsonConfigData()), () => {});
 	}
 	</script>
 </head>

@@ -58,7 +58,7 @@
 			newBkNotify: true
 		}
 		try {
-			initjsondata = JSON.parse(fs.readFileSync(__dirname + '/config'));
+			initjsondata = JSON.parse(fs.readFileSync(getuserdatapath() + '/config'));
 		} catch {}
 		return initjsondata;
 	}
@@ -73,7 +73,7 @@
 	}
 
 	updateSettings = function() {
-		fs.writeFile(__dirname + '/config', JSON.stringify(getJsonConfigData()), () => {});
+		fs.writeFile(getuserdatapath() + '/config', JSON.stringify(getJsonConfigData()), () => {});
 	}
 
 	function finish() {

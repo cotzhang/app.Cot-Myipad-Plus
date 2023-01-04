@@ -14,13 +14,14 @@ if (process.platform === 'win32') {
 	electron.app.setAppUserModelId('平板+')
 }
 
+function getuserdatapath() {
+	return require('path').join(process.env.appdata, 'cmp').replaceAll('\\', '/')
+}
+
+if (!fs.existsSync(getuserdatapath())) fs.mkdirSync(getuserdatapath())
+
 
 const isFirstInstance = electron.app.requestSingleInstanceLock()
-
-if (!isFirstInstance) {
-	alert('应用已经启动，请检查系统托盘')
-	electron.app.quit()
-}
 
 electron.app.on('ready', () => {
 	electron.app.commandLine.appendSwitch('ignore-certificate-errors')
@@ -32,11 +33,33 @@ electron.app.on('ready', () => {
 });
 
 function spawnWindow() {
+	if (!isFirstInstance) {
+		win = new electron.BrowserWindow({
+			width: 240,
+			height: 65,
+			backgroundColor: '#00000000',
+			resizable: false,
+			webPreferences: {
+				nodeIntegration: true,
+				enableRemoteModule: true,
+				contextIsolation: false,
+				webviewTag: true,
+				nodeIntegrationInWorker: true
+			},
+			icon: __dirname + '/icon.png',
+			show: false
+		});
+		vibe.applyEffect(win, 'acrylic', '#FFFFFF40');
+		win.loadFile('secondInstance.html')
+		win.removeMenu();
+		win.webContents.on('did-finish-load', () => {
+			win.show()
+		});
+		return;
+	}
 	win = new electron.BrowserWindow({
-		width: 800,
-		height: 600,
 		backgroundColor: '#00000000',
-		resizable: false,
+		// resizable: false,
 		webPreferences: {
 			nodeIntegration: true,
 			enableRemoteModule: true,
@@ -47,6 +70,7 @@ function spawnWindow() {
 		icon: __dirname + '/icon.png',
 		show: false
 	});
+	makeTray()
 	require('@electron/remote/main').initialize()
 	require('@electron/remote/main').enable(win.webContents)
 	win.loadFile('index.html')
@@ -73,27 +97,24 @@ function spawnWindow() {
 	if (electron.nativeTheme.shouldUseDarkColors) vibe.setDarkMode(win);
 
 	//win.setAlwaysOnTop("alwaysOnTop")
-	win.webContents.openDevTools({ mode: "detach" })
+	// win.webContents.openDevTools({ mode: "detach" })
 	remote.enable(win.webContents)
 	win.webContents.on('did-finish-load', () => {
 		if (!process.argv.includes('--boot')) {
 			win.show()
-		} else {
-			makeTray()
 		}
 	});
 	win.on('close', (e) => {
-		if (!JSON.parse(fs.readFileSync(__dirname + '/config')).tray) {
+		if (!JSON.parse(fs.readFileSync(getuserdatapath() + '/config')).tray) {
 			return;
 		}
 		e.preventDefault(); // 阻止退出程序
 		// win.setSkipTaskbar(true) // 取消任务栏显示
 		win.hide(); // 隐藏主程序窗口
-		makeTray()
 	})
-	win.on('show', (e) => {
-		delTray()
-	})
+	// win.on('show', (e) => {
+	// 	delTray()
+	// })
 
 	return win;
 }
@@ -115,6 +136,10 @@ electron.ipcMain.on('testmode', (event, ...args) => {
 electron.ipcMain.on('openwin', (event, ...args) => {
 	win.show()
 	console.log('Notification Clicked')
+})
+
+electron.ipcMain.on('exit', (event, ...args) => {
+	electron.app.exit()
 })
 
 // Boot Load On!
@@ -143,7 +168,7 @@ let tray = null
 function makeTray() {
 	tray = new electron.Tray(path.join(__dirname, 'snpicon.png'))
 	let contextMenu;
-	if (fs.existsSync(__dirname + '/account')) {
+	if (fs.existsSync(getuserdatapath() + '/account')) {
 		contextMenu = electron.Menu.buildFromTemplate([{
 			label: '自主学习',
 			click: function() {

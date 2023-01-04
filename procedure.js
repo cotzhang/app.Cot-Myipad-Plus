@@ -4,8 +4,8 @@ const path = require('path');
 const electron = require('electron')
 const remote = require("@electron/remote");
 
-const getUserDataPath = () => {
-	return remote.app.getPath('userData').replaceAll('\\','/')
+const getuserdatapath = () => {
+	return require('path').join(process.env.appdata, 'cmp').replaceAll('\\', '/')
 }
 
 // Fs Promisfy
@@ -69,7 +69,7 @@ fs.readdirPromise = function(path, options) {
 
 // Path configure function
 function p(pathname) {
-	return __dirname + pathname;
+	return getuserdatapath() + pathname;
 }
 
 // String methods
@@ -83,7 +83,7 @@ function unEscape(str) {
 
 // Relogin
 function makeRelogin() {
-	fs.writeFileSync(__dirname + '/relogin', "error");
+	fs.writeFileSync(getuserdatapath() + '/relogin', "error");
 	window.location.reload();
 }
 
@@ -121,8 +121,8 @@ function syncData() {
 	// Disable sidebar click
 	document.getElementById('panelistic_sidebar').style.pointerEvents = "none";
 	webview.src = __dirname + "/logload.html";
-	globalDataFile = JSON.parse(fs.readFileSync(__dirname + "/data"));
-	globalAccountFile = JSON.parse(fs.readFileSync(__dirname + "/account"));
+	globalDataFile = JSON.parse(fs.readFileSync(getuserdatapath() + '/data'));
+	globalAccountFile = JSON.parse(fs.readFileSync(getuserdatapath() + '/account'));
 
 	// Debug log
 	console.log("Sync sessionid " + getGlobalSessionId());
@@ -135,7 +135,7 @@ function syncData() {
 	let prevRecords = []
 	fullDataSyncRetVal = [];
 	try {
-		prevRecords = JSON.parse(fs.readFileSync(__dirname + '/resources'))
+		prevRecords = JSON.parse(fs.readFileSync(getuserdatapath() + '/resources'))
 	} catch (err) {
 		console.warn(err)
 	}
@@ -157,7 +157,9 @@ function requestFullClassPrepare(allrecords, callback) {
 			<szReturnXML i:type="d:string">${generateTextRecords(allrecords)}</szReturnXML>
 		</LessonsScheduleGetTableData>
 	</v:Body></v:Envelope>`
+	// console.log(requestBody)
 	autoRetryRequestWSDL("http://webservice.myi.cn/wmstudyservice/wsdl/LessonsScheduleGetTableData", requestBody, (data) => {
+		// console.log(data)
 		data = data + ""
 		var gotdatas = data.substring(data.indexOf('<AS:szReturnXML>') + 16, data.indexOf("</AS:szReturnXML>"));
 		gotdatas = unEscape(gotdatas);
@@ -246,7 +248,7 @@ function getResourceByGUID(callback, thisProcess) {
 				const title = thisres.getAttribute("title");
 				fullDataSyncRetVal[thisProcess].resource.push({ guid, resourcetype, title });
 			}
-			if (JSON.parse(fs.readFileSync(__dirname + '/config')).newBkNotify && totalCounts) {
+			if (JSON.parse(fs.readFileSync(getuserdatapath() + '/config')).newBkNotify && totalCounts) {
 				new Notification('发现新内容', { body: '[' + fullDataSyncRetVal[thisProcess].subject + '] ' + fullDataSyncRetVal[thisProcess].title }).onclick = () => {
 					electron.ipcRenderer.send('openwin')
 				}
@@ -321,14 +323,15 @@ function recallParsing() {
 function finishFullClassPrepareParse() {
 	let prevRecords = []
 	try {
-		prevRecords = JSON.parse(fs.readFileSync(__dirname + '/resources'))
+		prevRecords = JSON.parse(fs.readFileSync(getuserdatapath() + '/resources'))
 	} catch (err) {
 		console.warn(err)
 	}
 	let receivedArgs = prevRecords.concat(fullDataSyncRetVal);
 	console.log("Sync Section 2 Finished\n( fetch classprepare data )");
 	let sorted = receivedArgs.sort(sortAllArrs)
-	fs.writeFileSync(__dirname + '/resources', JSON.stringify(sorted));
+	let obj = {}
+	fs.writeFileSync(getuserdatapath() + '/resources', JSON.stringify(uniqueFunc(sorted, 'guid')));
 	fetchAllRuiyiYun(finishFetchAllRuiyiYun)
 }
 
@@ -362,7 +365,7 @@ function fetchAllRuiyiYun(callback) {
 
 function finishFetchAllRuiyiYun(allRyy) {
 	let sorted = allRyy.sort(sortAllArrs)
-	fs.writeFileSync(__dirname + '/ryyresources', JSON.stringify(sorted));
+	fs.writeFileSync(getuserdatapath() + '/ryyresources', JSON.stringify(sorted));
 	console.log("Sync Section 3 Finished\n( fetch ruiyiyun data )");
 
 	getTotalAnswerSheet()
@@ -389,16 +392,10 @@ function getTotalAnswerSheet() {
 	answerSheetData = [];
 	let allAnswerSheets = [];
 	try {
-		allAnswerSheets = generateArrayAnswersheet(JSON.parse(fs.readFileSync(__dirname + '/answersheets')))
+		allAnswerSheets = generateArrayAnswersheet(JSON.parse(fs.readFileSync(getuserdatapath() + '/answersheets')))
 	} catch {}
 	let reqstr = JSON.stringify(allAnswerSheets);
 	autoRetryRequest('https://' + getGlobalServerAddr() + '/restfuldatasource/answersheetresult/', reqstr, [{ key: 'Set-Cookie', value: 'sessionid=' + getGlobalSessionId() + ';szUserGUID=' + getGlobalUserguid() + ';szUserName=' + globalAccountFile.account }], (data) => {
-		if (JSON.parse(fs.readFileSync(__dirname + '/config')).hwCheckedNotify && JSON.parse(data).download) {
-			// console.log(JSON.parse(data).download)
-			new Notification('答题卡', { body: '老师批改了你的作业' }).onclick = () => {
-				electron.ipcRenderer.send('openwin')
-			}
-		}
 		let asToDownload = ((JSON.parse(data).download) ? JSON.parse(data).download : []).concat((JSON.parse(data).modified) ? JSON.parse(data).modified : []);
 		// console.log(asToDownload)
 		let reqAnssheetOrder = 0;
@@ -411,7 +408,17 @@ function getTotalAnswerSheet() {
 				// debugger;
 				autoRetryRequest('https://' + getGlobalServerAddr() + '/restfuldatasource/answersheetresult/dummy.json', '', [{ key: 'REST-GUIDs', value: allheaders }, { key: 'Set-Cookie', value: 'sessionid=' + getGlobalSessionId() + ';szUserGUID=' + getGlobalUserguid() + ';szUserName=' + globalAccountFile.account }], (backdata) => {
 					// console.log('bd', JSON.parse(backdata))
-					answerSheetData = answerSheetData.concat(JSON.parse(backdata));
+					let jsonbd = JSON.parse(backdata)
+					if (JSON.parse(fs.readFileSync(getuserdatapath() + '/config')).hwCheckedNotify) {
+						// console.log(JSON.parse(data).download)
+						let qcjson = uniqueFunc(jsonbd,'answersheetresourceguid')
+						for (var z = 0; z < qcjson.length; z++) {
+							new Notification('答题卡', { body: '老师批改了你的作业' }).onclick = () => {
+								electron.ipcRenderer.send('openwin')
+							}
+						}
+					}
+					answerSheetData = answerSheetData.concat(jsonbd);
 					reqAnssheetOrder++;
 					if (reqAnssheetOrder == Math.ceil(asToDownload.length / 200)) {
 						storeAnswersheets()
@@ -448,7 +455,7 @@ function getTotalAnswerSheetStudent() {
 	answerSheetData = [];
 	let allAnswerSheets = [];
 	try {
-		allAnswerSheets = generateArrayAnswersheet(JSON.parse(fs.readFileSync(__dirname + '/answersheetsstudent')))
+		allAnswerSheets = generateArrayAnswersheet(JSON.parse(fs.readFileSync(getuserdatapath() + '/answersheetsstudent')))
 	} catch {}
 	// console.log(allAnswerSheets)
 	let reqstr = JSON.stringify(allAnswerSheets);
@@ -489,9 +496,9 @@ function getTotalAnswerSheetStudent() {
 function storeAnswersheets() {
 	let allAnswerSheets = [];
 	try {
-		allAnswerSheets = JSON.parse(fs.readFileSync(__dirname + '/answersheets'))
+		allAnswerSheets = JSON.parse(fs.readFileSync(getuserdatapath() + '/answersheets'))
 	} catch {}
-	fs.writeFileSync(__dirname + '/answersheets', JSON.stringify(allAnswerSheets.concat(answerSheetData)).replaceAll(',{"result":0,"text":"操作成功完成。\\r\\n"}', ""))
+	fs.writeFileSync(getuserdatapath() + '/answersheets', JSON.stringify(allAnswerSheets.concat(answerSheetData)).replaceAll(',{"result":0,"text":"操作成功完成。\\r\\n"}', ""))
 	console.log("Sync Section 4 Finished\n( fetch answersheet data )");
 
 	getTotalAnswerSheetStudent()
@@ -500,12 +507,12 @@ function storeAnswersheets() {
 function storeAnswersheetsStudent() {
 	let allAnswerSheets = [];
 	try {
-		allAnswerSheets = JSON.parse(fs.readFileSync(__dirname + '/answersheetsstudent'))
+		allAnswerSheets = JSON.parse(fs.readFileSync(getuserdatapath() + '/answersheetsstudent'))
 	} catch {}
 	for (var i = 0; i < modifiedASS.length; i++) {
 		allAnswerSheets[findOrderInArr(allAnswerSheets, modifiedASS[i].questionguid)] = modifiedASS[i];
 	}
-	fs.writeFileSync(__dirname + '/answersheetsstudent', JSON.stringify(allAnswerSheets.concat(answerSheetData)).replaceAll(`,{"result":0,"text":"操作成功完成。\\r\\n"}`, ""))
+	fs.writeFileSync(getuserdatapath() + '/answersheetsstudent', JSON.stringify(allAnswerSheets.concat(answerSheetData)).replaceAll(`,{"result":0,"text":"操作成功完成。\\r\\n"}`, ""))
 	console.log("Sync Section 5 Finished\n( fetch answersheet student data )");
 	finishAllSyncProgress()
 }
@@ -518,13 +525,6 @@ window.onload = function() {
 
 	// Get main webview
 	webview = document.getElementById('webview');
-	webview.addEventListener('did-finish-load', () => {
-		webview.executeJavaScript(`
-          function getUserDataPath() {
-            return '${remote.app.getPath('userData').replaceAll('\\','/')}'
-          }
-        `)
-	})
 
 	// Read relogin file
 	fs.readFile(p('/relogin'), (err, data) => {
@@ -545,8 +545,8 @@ window.onload = function() {
 				}
 			})
 		} else {
-			fs.readFile(__dirname + "/account", (err, data) => {
-				fs.unlink(__dirname + "/relogin", () => {})
+			fs.readFile(getuserdatapath() + '/account', (err, data) => {
+				fs.unlink(getuserdatapath() + '/relogin', () => {})
 				initlogin(JSON.parse(data).account, JSON.parse(data).password, JSON.parse(data).server)
 			});
 		}
@@ -580,14 +580,14 @@ window.onload = function() {
 				disableSync = false;
 			});
 		} else if (event.channel == "loaddata") {
-			if (!fs.existsSync(__dirname + '/downloads')) {
-				fs.mkdirSync(__dirname + '/downloads')
+			if (!fs.existsSync(getuserdatapath() + '/downloads')) {
+				fs.mkdirSync(getuserdatapath() + '/downloads')
 			}
 			if (event.args[1] == 'saveas') {
-				downloadFile(event.args[0], __dirname + '/downloads/' + event.args[2] + "." + event.args[0].split('.')[event.args[0].split('.').length - 1])
+				downloadFile(event.args[0], getuserdatapath() + '/downloads/' + event.args[2] + "." + event.args[0].split('.')[event.args[0].split('.').length - 1])
 			} else {
 				if ( /*event.args[0].match(/\.(mp4|avi|wmv|mpg|mpeg|mov|rm|ram|swf|flv)/)*/ false) {
-					fs.writeFileSync(__dirname + '/videosrc', event.args[0])
+					fs.writeFileSync(getuserdatapath() + '/videosrc', event.args[0])
 					let vidwin = new remote.BrowserWindow({
 						width: 750,
 						height: 500,
@@ -610,9 +610,9 @@ window.onload = function() {
 				} else {
 					let panelisticid = panelistic.dialog.salert('请稍等');
 					(async () => {
-						fs.writeFile(__dirname + '/downloads/' + event.args[0].split('/')[event.args[0].split('/').length - 1], await download(event.args[0]), () => {
+						fs.writeFile(getuserdatapath() + '/downloads/' + event.args[0].split('/')[event.args[0].split('/').length - 1], await download(event.args[0]), () => {
 							panelistic.dialog.dismiss(panelisticid);
-							electron.shell.openExternal(__dirname + '/downloads/' + event.args[0].split('/')[event.args[0].split('/').length - 1])
+							electron.shell.openExternal(getuserdatapath() + '/downloads/' + event.args[0].split('/')[event.args[0].split('/').length - 1])
 						})
 					})();
 				}
@@ -641,28 +641,28 @@ window.onload = function() {
 		} else if (event.channel == "reload") {
 			window.location.reload()
 		} else if (event.channel == "relogin") {
-			fs.writeFileSync(__dirname + '/relogin', "error");
+			fs.writeFileSync(getuserdatapath() + '/relogin', "error");
 			window.location.reload();
 		} else if (event.channel == "openryylink") {
 			openRyYunTo(event.args[0])
 		} else if (event.channel == "openAsWindow") {
-			if (fs.existsSync(__dirname + "/secondlogin")) {
+			if (fs.existsSync(getuserdatapath() + '/secondlogin')) {
 				openAsWin(event)
 			} else {
 				panelistic.dialog.confirm('答题卡功能', "请勿同时在平板使用同一份答题卡作答，否则数据可能丢失。", "继续", "取消", (cfr) => {
 					if (cfr) {
-						fs.writeFileSync(__dirname + '/secondlogin', '');
+						fs.writeFileSync(getuserdatapath() + '/secondlogin', '');
 						openAsWin(event)
 					}
 				})
 			}
 		} else if (event.channel == "clearTemp") {
-			getdirsize(__dirname + "/downloads", (bd, bd2) => {
-				getdirsize(__dirname + "/userfile", (bd3, bd4) => {
+			getdirsize(getuserdatapath() + '/downloads', (bd, bd2) => {
+				getdirsize(getuserdatapath() + '/userfile', (bd3, bd4) => {
 					panelistic.dialog.confirm("清除缓存", "将要清除所有文件和图片缓存（" + optsize(bd2 + bd4) + "），所有未上传的文件更改将丢失", "清除缓存", "取消", (answ) => {
 						if (answ) {
-							try { deleteFolderRecursive(__dirname + "/downloads"); } catch {};
-							try { deleteFolderRecursive(__dirname + "/userfile"); } catch {};
+							try { deleteFolderRecursive(getuserdatapath() + '/downloads'); } catch {};
+							try { deleteFolderRecursive(getuserdatapath() + '/userfile'); } catch {};
 							panelistic.dialog.alert("完成", "缓存已清空", "确定")
 						}
 					})
@@ -702,8 +702,8 @@ function openAsWin(event) {
 	const vibe = require('@pyke/vibe');
 	vibe.setup(remote.app);
 	let aswindow = new remote.BrowserWindow({
-		width: 380,
-		height: 700,
+		width: 387,
+		height: 750,
 		backgroundColor: '#00000000',
 		show: true,
 		resizable: false,
@@ -719,7 +719,7 @@ function openAsWin(event) {
 	let reloadAble = true;
 	vibe.applyEffect(aswindow, 'acrylic', '#FFFFFF40');
 	aswindow.loadURL(__dirname + '/aswin.html');
-	aswindow.webContents.openDevTools({ mode: 'detach' })
+	// aswindow.webContents.openDevTools({ mode: 'detach' })
 	aswindow.removeMenu();
 	aswindow.webContents.on('dom-ready', () => { aswindow.webContents.send('aswin', event.args[0]) })
 	let pin = false;
@@ -768,26 +768,27 @@ function openLargeImg() {
 
 // Exit
 function removeAllConfigs() {
-	try { fs.unlinkSync(__dirname + '/data') } catch {}
-	try { fs.unlinkSync(__dirname + '/account') } catch {}
-	try { fs.unlinkSync(__dirname + '/resources') } catch {}
-	try { fs.unlinkSync(__dirname + '/videosrc') } catch {}
-	try { fs.unlinkSync(__dirname + '/ryyresources') } catch {}
-	try { fs.unlinkSync(__dirname + '/relogin') } catch {}
-	try { fs.unlinkSync(__dirname + '/answersheets') } catch {}
-	try { fs.unlinkSync(__dirname + '/answersheetsstudent') } catch {}
-	try { fs.unlinkSync(__dirname + '/secondlogin') } catch {}
+	try { fs.unlinkSync(getuserdatapath() + '/data') } catch {}
+	try { fs.unlinkSync(getuserdatapath() + '/config') } catch {}
+	try { fs.unlinkSync(getuserdatapath() + '/account') } catch {}
+	try { fs.unlinkSync(getuserdatapath() + '/resources') } catch {}
+	try { fs.unlinkSync(getuserdatapath() + '/videosrc') } catch {}
+	try { fs.unlinkSync(getuserdatapath() + '/ryyresources') } catch {}
+	try { fs.unlinkSync(getuserdatapath() + '/relogin') } catch {}
+	try { fs.unlinkSync(getuserdatapath() + '/answersheets') } catch {}
+	try { fs.unlinkSync(getuserdatapath() + '/answersheetsstudent') } catch {}
+	try { fs.unlinkSync(getuserdatapath() + '/secondlogin') } catch {}
 	try {
-		deleteFolderRecursive(__dirname + '/downloads');
+		deleteFolderRecursive(getuserdatapath() + '/downloads');
 	} catch {}
 	try {
-		deleteFolderRecursive(__dirname + '/userfile');
+		deleteFolderRecursive(getuserdatapath() + '/userfile');
 	} catch {}
 }
 
 // Ryy
 function openRyYun(site, atrl) {
-	let allcfgs = JSON.parse(fs.readFileSync(__dirname + "/data"));
+	let allcfgs = JSON.parse(fs.readFileSync(getuserdatapath() + '/data'));
 	const vibe = require('@pyke/vibe');
 	vibe.setup(remote.app);
 	let ryy = new remote.BrowserWindow({
@@ -874,7 +875,7 @@ function openRyYun(site, atrl) {
 }
 
 function openRyYunTo(site, atrl) {
-	let allcfgs = JSON.parse(fs.readFileSync(__dirname + "/data"));
+	let allcfgs = JSON.parse(fs.readFileSync(getuserdatapath() + '/data'));
 	const vibe = require('@pyke/vibe');
 	vibe.setup(remote.app);
 	let ryy = new remote.BrowserWindow({
@@ -968,7 +969,7 @@ Flavor: normal</lpszHardwareKey></UsersLoginJson></v:Body></v:Envelope>`
 	if (serverADDR) {
 		globalAccountFile = { account: id, password: pwmd5, server: serverADDR };
 	} else {
-		globalAccountFile = JSON.parse(fs.readFileSync(__dirname + "/account"));
+		globalAccountFile = JSON.parse(fs.readFileSync(getuserdatapath() + '/account'));
 	}
 	requestWSDL("http://webservice.myi.cn/wmstudyservice/wsdl/UsersLoginJson", reqstr, (retval) => {
 		panelistic.dialog.dismiss(currdiag)
@@ -986,8 +987,8 @@ Flavor: normal</lpszHardwareKey></UsersLoginJson></v:Body></v:Envelope>`
 			var output = temp.innerText || temp.textContent;
 			temp = null;
 			let allcfgs = JSON.parse(output);
-			fs.writeFileSync(__dirname + '/account', JSON.stringify({ account: id, password: pwmd5, server: serverADDR }))
-			fs.writeFile(__dirname + '/data', output, () => {
+			fs.writeFileSync(getuserdatapath() + '/account', JSON.stringify({ account: id, password: pwmd5, server: serverADDR }))
+			fs.writeFile(getuserdatapath() + '/data', output, () => {
 				syncData();
 			});
 		}

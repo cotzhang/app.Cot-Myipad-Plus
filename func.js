@@ -9,12 +9,21 @@ let getGlobalServerAddr = () => { return globalAccountFile.server };
 let getGlobalSessionId = () => { return globalDataFile.sessionid };
 let getDisplayName = () => { return cutString(globalDataFile.schoolname.replaceAll(/.*省|.*市|.*区^(学|校)/g, ''), 16) + " | " + globalAccountFile.account }
 
+function uniqueFunc(arr, uniId){
+  const res = new Map();
+  return arr.filter((item) => !res.has(item[uniId]) && res.set(item[uniId], 1));
+}
+
+getuserdatapath = function() {
+	return require('path').join(process.env.appdata, 'cmp').replaceAll('\\', '/')
+}
+
 try {
-	globalAccountFile = JSON.parse(fs.readFileSync(__dirname + "/account"))
-} catch {}
+	globalAccountFile = JSON.parse(fs.readFileSync(getuserdatapath() + '/account'))
+} catch(err) {console.log(err)}
 try {
-	globalDataFile = JSON.parse(fs.readFileSync(__dirname + "/data"))
-} catch {}
+	globalDataFile = JSON.parse(fs.readFileSync(getuserdatapath() + '/data'))
+} catch {console.log('failed!')}
 
 // Functions about request
 function simpleRequest(url, body, header, successcallback, errorcallback, timeout, method) {

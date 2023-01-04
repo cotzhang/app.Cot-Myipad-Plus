@@ -11,20 +11,20 @@
 	<script type="text/javascript">
 	let panelistic;
 	const electron = require("electron");
-	let serverADDR = JSON.parse(fs.readFileSync(__dirname + "/account")).server;
-	let allcfgs = JSON.parse(fs.readFileSync(__dirname + "/data"));
+	let serverADDR = JSON.parse(fs.readFileSync(getuserdatapath() + '/account')).server;
+	let allcfgs = JSON.parse(fs.readFileSync(getuserdatapath() + '/data'));
 	let sessionid = allcfgs.sessionid;
 	let isFutureShown = false;
-	let fulldata = JSON.parse(fs.readFileSync(__dirname + "/resources")).concat(JSON.parse(fs.readFileSync(__dirname + "/ryyresources"))).sort(sortAllArrs);
+	let fulldata = JSON.parse(fs.readFileSync(getuserdatapath() + '/resources')).concat(JSON.parse(fs.readFileSync(getuserdatapath() + '/ryyresources'))).sort(sortAllArrs);
 	let cannotLoad = false;
-	let fullAnswerSheet = JSON.parse(fs.readFileSync(__dirname + "/answersheets"))
-	let fullAnswerSheetStudent = JSON.parse(fs.readFileSync(__dirname + "/answersheetsstudent"))
+	let fullAnswerSheet = JSON.parse(fs.readFileSync(getuserdatapath() + '/answersheets'))
+	let fullAnswerSheetStudent = JSON.parse(fs.readFileSync(getuserdatapath() + '/answersheetsstudent'))
 	globalSsid = sessionid;
 	window.onload = function() {
 		panelistic = new Panelistic();
 		panelistic.initialize();
 		renderPageInit()
-		document.getElementById('lastSyncTime').innerText = new Date(fs.statSync(__dirname + '/resources').ctime).Format('MM月dd日 hh:mm:ss');
+		document.getElementById('lastSyncTime').innerText = new Date(fs.statSync(getuserdatapath() + '/resources').ctime).Format('MM月dd日 hh:mm:ss');
 
 		document.getElementById('panelistic_content_sidebar_in').onscroll = function() {
 			if (((document.getElementById('panelistic_content_sidebar_in').scrollHeight - document.getElementById('panelistic_content_sidebar_in').scrollTop) < 1200) && !cannotLoad) {
@@ -124,6 +124,7 @@
 	}
 
 	var futureRecords = []
+	var nodisp = false;
 
 	function readRecord(minAmount) {
 		if (recordCount >= fulldata.length) {
@@ -134,7 +135,11 @@
 		let allcounts = 0;
 		let ii = 0;
 		while (getNowTimeStamp() < fulldata[recordCount].scheduledate) {
-			futureRecords.push(fulldata[recordCount]);
+			if ((fulldata[recordCount].title.indexOf('考试') == -1 && fulldata[recordCount].title.indexOf('试卷') == -1 && fulldata[recordCount].title.indexOf('试题') == -1 && fulldata[recordCount].title.indexOf('测试') == -1 && fulldata[recordCount].title.indexOf('测验') == -1 && fulldata[recordCount].title.indexOf('答题卡') == -1) || fulldata[recordCount].title.indexOf('答案') != -1) {
+				futureRecords.push(fulldata[recordCount]);
+			} else {
+				nodisp = true;
+			}
 			recordCount++;
 		}
 		while ((allcounts < minAmount) && (recordCount < fulldata.length) && (fulldata[recordCount].error != 1) && (fulldata[recordCount].author != undefined)) {
@@ -205,7 +210,7 @@
 		let gotdata = requestSync("http://webservice.myi.cn/wmstudyservice/wsdl/GetResourceByGUID", reqstrs);
 		if ((gotdata.responseText).indexOf("<faultstring>Error -4063</faultstring") != -1) {
 			console.log("Wrong Sessionid");
-			fs.writeFileSync(__dirname + '/relogin', "error");
+			fs.writeFileSync(getuserdatapath() + '/relogin', "error");
 			electron.ipcRenderer.sendToHost('reload')
 		} else {
 			return gotdata;
@@ -239,6 +244,7 @@
 			answersheet = JSON.parse(answersheet);
 			answersheet.resguid = prepareClass.resource[0].guid;
 			answersheet.schguid = prepareClass.guid
+			answersheet.title = "[" + prepareClass.subject + "] " + prepareClass.title
 			answersheet = JSON.stringify(answersheet)
 			element.innerHTML += '<span class="panelistic_placeholder"></span>' + model_answersheet(answersheet);
 			console.log("answersheet detected")
@@ -253,7 +259,7 @@
 			thisallreturnval = getResByGUIDSync(guid).responseText;
 			let maxretries = 60;
 			if ((thisallreturnval + "").indexOf("-4063") != -1) {
-				fs.writeFileSync(__dirname + '/relogin', "error");
+				fs.writeFileSync(getuserdatapath() + '/relogin', "error");
 				console.log(thisallreturnval)
 				window.location.reload();
 			} else {
@@ -311,6 +317,9 @@
 		if (!isFutureShown) {
 			let allstrs = ``
 			allstrs += model_futureStart('未来的备课')
+			if (nodisp) {
+				allstrs += model_note('未来备课包含考试相关内容，不予显示')
+			}
 			for (let i = 0; i < futureRecords.length; i++) {
 				// futureRecords[i]
 				allstrs += model_classprepareStart(futureRecords[i].syn_isdelete, futureRecords[i].subject, futureRecords[i].title, futureRecords[i].resourceguid, futureRecords[i].author, futureRecords[i].scheduledate, futureRecords[i].scheduleenddate, i, futureRecords[i]) + model_classprepareEnd();
@@ -353,7 +362,7 @@
 			return `<span class="panelistic_placeholder"></span><div class="panelistic_panel" style="${(isdel=="1")?'background:#c335':''}">
 			<div class="panelistic_panel_name"><!--span style="background: #a00c;padding-left: 8px;padding-right: 8px;margin-right: 8px;"-->${((isdel=="1")?'[已被删除] ':'')+subject}<!--/span--><!--Moredatas here--></div><br><span class="panelistic_placeholder_large"></span>
 			<img src="https://${serverADDR}/getresourcethumbnail?guid=${bkguid}" ondragstart="return false" style="display:inline;" height="80px" width="80px">
-			<div style="vertical-align: top;display: inline-block;margin-left: 5px;width: 330px;height: 80px;">
+			<div style="vertical-align: top;display: inline-block;margin-left: 5px;width: calc(100% - 198px);height: 80px;">
 				<span style="vertical-align: top;font-size: 18px;font-weight: bold;position:relative;-webkit-line-clamp: 1;display:-webkit-box;-webkit-box-orient: vertical;overflow: hidden;" class="DM_fonttitlel">${bktitle}</span>
 				<!--max-length-35chars-->
 				<span style="font-size: 12px;color: #555;display: block;height: 16px;" class="DM_fontsmall">发布者 ${bkauthor}</span>
@@ -370,7 +379,7 @@
 			return `<span class="panelistic_placeholder"></span><div class="panelistic_panel" style="${(isdel=="1")?'background:#c335':''}">
 			<div class="panelistic_panel_name"><!--span style="background: #a00c;padding-left: 8px;padding-right: 8px;margin-right: 8px;"-->${((isdel=="1")?'[已被删除] ':'')+subject}<!--/span--><!--Moredatas here--></div><br><span class="panelistic_placeholder_large"></span>
 			<img src="./src/img/ic_placehold.jpg" ondragstart="return false" style="display:inline;" height="80px" width="80px">
-			<div style="vertical-align: top;display: inline-block;margin-left: 5px;width: 330px;height: 80px;">
+			<div style="vertical-align: top;display: inline-block;margin-left: 5px;width: calc(100% - 198px);height: 80px;">
 				<span style="vertical-align: top;font-size: 18px;font-weight: bold;position:relative;-webkit-line-clamp: 1;display:-webkit-box;-webkit-box-orient: vertical;overflow: hidden;" class="DM_fonttitlel">${bktitle}</span>
 				<!--max-length-35chars-->
 				<span style="font-size: 12px;color: #555;display: block;height: 16px;" class="DM_fontsmall">完成情况 已完成${(new Number(fullRec.submitCount))} 总人数${(new Number(fullRec.studentCount))} 提交比例${(((new Number(fullRec.submitCount))/(new Number(fullRec.studentCount)))*100).toFixed(2)}%</span>
@@ -389,7 +398,7 @@
 	function model_file(resguid, filetitle, fileuri, fileDesc) {
 		return `<div class="panelistic_panel" style="padding-bottom: 1px;">
 				<img src="https://${serverADDR}/getresourcethumbnail?guid=${resguid}" ondragstart="return false" style="display:inline;" height="40px" width="40px">
-				<div style="vertical-align: top;display: inline-block;margin-left: 5px;width: 258px;height: 40px;">
+				<div style="vertical-align: top;display: inline-block;margin-left: 5px;width: calc(100% - 259px);height: 40px;">
 					<span style="vertical-align: top;font-size: 18px;font-weight: bold;-webkit-line-clamp: 1;display:-webkit-box;-webkit-box-orient: vertical;overflow: hidden;" class="DM_fonttitlel">${filetitle}</span>
 					<!--max-length-35chars-->
 					<span style="font-size: 12px;color: #555;display: block;height: 16px" class="DM_fontsmall">${fileDesc}</span>
@@ -401,9 +410,13 @@
 			</div>`
 	}
 
+	function model_note(msg) {
+		return `<span class="panelistic_placeholder"></span><div class="panelistic_panel" style="font-size:14px">${msg}</div>`
+	}
+
 	function model_answersheet(json) {
 		return `<div class="panelistic_panel" style="padding-bottom: 6px;background:#33c5">
-				<div style="vertical-align: top;display: inline-block;margin-left: 5px;width: 404px;height: 40px;">
+				<div style="vertical-align: top;display: inline-block;margin-left: 5px;width: calc(100% - 114px);height: 40px;">
 					<span style="vertical-align: top;font-size: 18px;font-weight: bold;-webkit-line-clamp: 1;display:-webkit-box;-webkit-box-orient: vertical;overflow: hidden;" class="DM_fonttitlel">答题卡</span>
 					<!--max-length-35chars-->
 					<span style="font-size: 12px;color: #555;display: block;height: 16px" class="DM_fontsmall">点击打开答题卡</span>
@@ -503,7 +516,7 @@
 		<h1>自主学习</h1>
 		<h6>最近一次同步时间：<span id="lastSyncTime"></span></h6>
 		<span class="panelistic_placeholder"></span>
-		<div class="panelistic_panel" style="white-space: nowrap;"><input type="text" name="" placeholder="搜索内容..." style="width: 235px" id="searchStr">&nbsp;<input type="button" value="搜索" onclick="search(document.getElementById('searchStr').value)">&nbsp;<input type="button" value="正则搜索" onclick="searchExp(document.getElementById('searchStr').value)" id="zzsearch">&nbsp;<div style="width: 1px;height: 38px;display: inline;position:relative;border-right: solid 1px #aaac"></div>&nbsp;<input type="button" value="同步" onclick="electron.ipcRenderer.sendToHost('sync');">&nbsp;<input type="button" value="显示未来备课" onclick="showFuture();" id="futurebtn"></div>
+		<div class="panelistic_panel" style="white-space: nowrap;width: calc(100% - 18px);text-align: right;"><input type="text" name="" placeholder="搜索内容..." style="width: calc(100% - 315px)" id="searchStr">&nbsp;<input type="button" value="搜索" onclick="search(document.getElementById('searchStr').value)">&nbsp;<input type="button" value="正则搜索" onclick="searchExp(document.getElementById('searchStr').value)" id="zzsearch">&nbsp;<div style="width: 1px;height: 38px;display: inline;position:relative;border-right: solid 1px #aaac"></div>&nbsp;<input type="button" value="同步" onclick="electron.ipcRenderer.sendToHost('sync');">&nbsp;<input type="button" value="显示未来备课" onclick="showFuture();" id="futurebtn"></div>
 		<span id="future"></span>
 		<span id="allbkdisplays"></span>
 	</div>

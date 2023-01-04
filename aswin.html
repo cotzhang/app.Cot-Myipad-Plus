@@ -24,8 +24,12 @@
 	let allAnswerDataThisSession = []
 	let typeStr = ['(判断)', '(单选)', '(多选)', '', '']
 
+	const getuserdatapath = () => {
+		return require('path').join(process.env.appdata, 'cmp').replaceAll('\\', '/')
+	}
+
 	function makeRelogin() {
-		fs.writeFileSync(__dirname + '/relogin', "error");
+		fs.writeFileSync(getuserdatapath() + '/relogin', "error");
 		electron.ipcRenderer.send('reload')
 		panelistic.dialog.alert('提示', "请重试操作", "确定")
 	}
@@ -37,13 +41,14 @@
 
 	electron.ipcRenderer.on("aswin", (event, arg) => {
 		// document.getElementById('window_title').innerText=document.title;
-		if (!fs.existsSync(__dirname + '/userfile')) {
-			fs.mkdirSync(__dirname + '/userfile')
+		if (!fs.existsSync(getuserdatapath() + '/userfile')) {
+			fs.mkdirSync(getuserdatapath() + '/userfile')
 		}
 		asObj = JSON.parse(unescape(arg));
 		console.log(asObj)
 		singleRecArr = parseRecToSingleDismension(asObj.category)
 		let totalStr = '';
+		document.getElementById('namesec').innerText = asObj.title;
 		let currxiab = 0;
 		for (var i = 0; i < asObj.category.length; i++) {
 			totalStr += catStart(asObj.category[i].name)
@@ -258,16 +263,16 @@
 
 	electron.ipcRenderer.on('filepath', (event, args) => {
 		transFile(args[0], (pkgid) => {
-			uploadFile(pkgid, __dirname + '/userfile/' + pkgid)
+			uploadFile(pkgid, getuserdatapath() + '/userfile/' + pkgid)
 		});
 	})
 
 	function transFile(src, calb) {
 		let pkgid = oprObj;
-		if (!fs.existsSync(__dirname + '/userfile/')) {
-			fs.mkdirSync(__dirname + '/userfile/')
+		if (!fs.existsSync(getuserdatapath() + '/userfile/')) {
+			fs.mkdirSync(getuserdatapath() + '/userfile/')
 		}
-		fs.copyFile(src, __dirname + '/userfile/' + pkgid, (err) => {
+		fs.copyFile(src, getuserdatapath() + '/userfile/' + pkgid, (err) => {
 			// console.log(src)
 			if (err) {
 				console.log(error)
@@ -302,10 +307,10 @@
 
 	function downloadFile(packageId, recall) {
 		// let diag = panelistic.dialog.salert('正在加载图片，请稍等')
-		if (fs.existsSync(__dirname + '/userfile/' + packageId)) {
-			recall(__dirname + '/userfile/' + packageId)
+		if (fs.existsSync(getuserdatapath() + '/userfile/' + packageId)) {
+			recall(getuserdatapath() + '/userfile/' + packageId)
 		} else {
-			let reqstr = `<v:Envelope xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns:d="http://www.w3.org/2001/XMLSchema" xmlns:c="http://schemas.xmlsoap.org/soap/encoding/" xmlns:v="http://schemas.xmlsoap.org/soap/envelope/"><v:Header /><v:Body><DataSynchronizeGetSingleData xmlns="http://webservice.myi.cn/wmstudyservice/wsdl/" id="o0" c:root="1"><lpszClientID i:type="d:string">myipad_${JSON.parse(fs.readFileSync(__dirname+"/account")).account}</lpszClientID><lpszPackageID i:type="d:string">${packageId}</lpszPackageID></DataSynchronizeGetSingleData></v:Body></v:Envelope>`
+			let reqstr = `<v:Envelope xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns:d="http://www.w3.org/2001/XMLSchema" xmlns:c="http://schemas.xmlsoap.org/soap/encoding/" xmlns:v="http://schemas.xmlsoap.org/soap/envelope/"><v:Header /><v:Body><DataSynchronizeGetSingleData xmlns="http://webservice.myi.cn/wmstudyservice/wsdl/" id="o0" c:root="1"><lpszClientID i:type="d:string">myipad_${JSON.parse(fs.readFileSync(getuserdatapath()+"/account")).account}</lpszClientID><lpszPackageID i:type="d:string">${packageId}</lpszPackageID></DataSynchronizeGetSingleData></v:Body></v:Envelope>`
 			autoRetryRequestWSDL('http://webservice.myi.cn/wmstudyservice/wsdl/DataSynchronizeGetSingleData', reqstr, (data) => {
 				// panelistic.dialog.dismiss(diag)
 				let base64 = 'data:image/jpeg;base64,' + data.substring(data.indexOf('<AS:szOutputData>') + 17, data.indexOf("</AS:szOutputData>"))
@@ -314,12 +319,12 @@
 				// const dataBuffer = new Buffer.from(base64, 'base64');
 				// console.log('dataBuffer是否是Buffer对象：' + Buffer.isBuffer(dataBuffer));
 				// // console.log(base64)
-				// fs.writeFile(__dirname + '/userfile/' + packageId, dataBuffer, function(err) {
+				// fs.writeFile(getuserdatapath() + '/userfile/' + packageId, dataBuffer, function(err) {
 				// 	if (err) {
 				// 		console.log(err);
 				// 	} else {
 				// 		console.log('写入成功！');
-				// 		recall(__dirname + '/userfile/' + packageId)
+				// 		recall(getuserdatapath() + '/userfile/' + packageId)
 				// 	}
 				// });
 			}, 2000, 50000)
@@ -451,7 +456,7 @@
 	let totalScore = 0;
 
 	function restoreOptions() {
-		let allass = JSON.parse(fs.readFileSync(__dirname + '/answersheetsstudent'))
+		let allass = JSON.parse(fs.readFileSync(getuserdatapath() + '/answersheetsstudent'))
 		for (var i = 0; i < singleRecArr.length; i++) {
 			let recarr = allass[findOrderInArr(allass, singleRecArr[i].guid)]
 			if (singleRecArr[i].type == "0" || singleRecArr[i].type == "1" || singleRecArr[i].type == "2") {
@@ -478,7 +483,7 @@
 			if (autoCheck) {
 				checkOptionIfCorrect(guid, true)
 			}
-			let alreadyass = JSON.parse(fs.readFileSync(__dirname + '/answersheetsstudent'));
+			let alreadyass = JSON.parse(fs.readFileSync(getuserdatapath() + '/answersheetsstudent'));
 			let change = findOrderInArr(alreadyass, guid);
 			let opt = ""
 			let text = ""
@@ -497,7 +502,7 @@
 			}
 			alreadyass[change] = (storeItemToAss(objsguid, asObj.authorusername, asObj.resguid, globalAccountFile.account, asObj.schguid, opt, guid, text, ascamera));
 			allAnswerDataThisSession[findOrderInPhotoArr(guid)] = storeItemToAss(objsguid, asObj.authorusername, asObj.resguid, globalAccountFile.account, asObj.schguid, opt, guid, text, ascamera);
-			fs.writeFile(__dirname + '/answersheetsstudent', JSON.stringify(alreadyass), () => {
+			fs.writeFile(getuserdatapath() + '/answersheetsstudent', JSON.stringify(alreadyass), () => {
 				// console.log(alreadyass[change])
 			})
 			autoRetryRequest(`https://${getGlobalServerAddr()}/restfuldatasource/answersheetstudentanswer/dummy.json`, JSON.stringify(removeNull(allAnswerDataThisSession)), [{ key: 'Set-Cookie', value: 'sessionid=' + getGlobalSessionId() + ';userguid=ffffffffffffffffffffffffffffffff' }], (data) => {
@@ -534,16 +539,18 @@
 	}
 
 	function checkAllIfInAsList() {
-		let allas = JSON.parse(fs.readFileSync(__dirname + '/answersheets'))
+		let allas = JSON.parse(fs.readFileSync(getuserdatapath() + '/answersheets'))
 		for (var i = 0; i < singleRecArr.length; i++) {
 			let recarr = allas[findOrderInArr(allas, singleRecArr[i].guid)]
+			if (recarr) {
+				timerDisabled = true;
+			}
 			if (singleRecArr[i].type == "0" || singleRecArr[i].type == "1" || singleRecArr[i].type == "2") {
 				if (recarr) {
-					checkOptionIfCorrect(recarr.questionguid, true);
+					checkOptionIfCorrect(recarr.questionguid, false);
 				}
 			} else {
 				if (recarr) {
-					timerDisabled = true;
 					// console.log(recarr)
 					let sgrca = singleRecArr[i];
 					solidOption34(sgrca.guid)
@@ -569,8 +576,8 @@
 	function openLargeImg(packageId) {
 		let limg = panelistic.dialog.salert('正在加载')
 		downloadFile(packageId, (b64) => {
-			fs.writeFile(__dirname + "/userfile/tempimg", b64, () => {
-				electron.ipcRenderer.send('openLargeImg')
+			fs.writeFile(getuserdatapath() + '/userfile/tempimg', b64, () => {
+				electron.ipcRenderer.send('openLargeImg');
 				panelistic.dialog.dismiss(limg)
 			});
 		})
@@ -582,10 +589,10 @@
 	<div id="panelistic_content_sidebar_in">
 		<div id="panelistic_blur"></div>
 		<h1>答题卡</h1>
-		<h6><span id="answertime">0 小时 0 分钟 0 秒</span></h6>
+		<h6 id="namesec"></h6>
 		<span class="panelistic_placeholder"></span>
 		<div class="panelistic_panel" id="modulepanel">
-			<input type="button" value="自动校对" onclick="autoCheck=!autoCheck;this.value=(autoCheck)?'停止校对':'自动校对'" id="autockbtn"> <input type="button" value="固定题板" onclick="electron.ipcRenderer.send('pin');ping=!ping;this.value=(ping)?'取消固定':'固定题板'">&nbsp;<input type="button" value="提交答案" onclick="getAllAnswersAndSubmit()">&nbsp;<input type="button" value="自动完成" onclick="panelistic.dialog.confirm('自动完成','请独立思考完成题目','自动完成','取消',(opt)=>{if(opt){let prevopt = 0;waitDo((i)=>{panelistic.dialog.dismiss(prevopt);prevopt=panelistic.dialog.salert('正在完成题目 '+i+'/'+singleRecArr.length);if(singleRecArr[i].type!='3'&&singleRecArr[i].type!='4'){setOption(singleRecArr[i].guid,singleRecArr[i].correctanswer)}else{console.log('Skipped')}},singleRecArr.length,300,()=>{panelistic.dialog.dismiss(prevopt);})}})" id="autocompbtn">&nbsp;<span class="panelistic_placeholder"></span><input type="button" value="清空答案" onclick="panelistic.dialog.confirm('清空答案','确定清空答案吗？您的数据将无法恢复。','确定','取消',(opt)=>{if(opt){autoCheck=false;document.getElementById('autockbtn').value=(autoCheck)?'停止校对':'自动校对';let prevopt = 0;waitDo((i)=>{panelistic.dialog.dismiss(prevopt);prevopt=panelistic.dialog.salert('正在清空 '+i+'/'+singleRecArr.length);setOption(singleRecArr[i].guid,'')},singleRecArr.length,300,()=>{panelistic.dialog.dismiss(prevopt);exit = true;window.location.reload()})}})" id="autocompbtn"></div>
+			<input type="button" value="开启自动校对" onclick="autoCheck=!autoCheck;this.value=(autoCheck)?'停止自动校对':'开启自动校对'" id="autockbtn"> <input type="button" value="固定题板" onclick="electron.ipcRenderer.send('pin');ping=!ping;this.value=(ping)?'取消固定':'固定题板'">&nbsp;<input type="button" value="提交答卷" onclick="getAllAnswersAndSubmit()">&nbsp;<input type="button" value="自动完成" onclick="panelistic.dialog.confirm('自动完成','请独立思考完成题目','自动完成','取消',(opt)=>{if(opt){let prevopt = 0;waitDo((i)=>{panelistic.dialog.dismiss(prevopt);prevopt=panelistic.dialog.salert('正在完成题目 '+i+'/'+singleRecArr.length);if(singleRecArr[i].type!='3'&&singleRecArr[i].type!='4'){setOption(singleRecArr[i].guid,singleRecArr[i].correctanswer)}else{console.log('Skipped')}},singleRecArr.length,300,()=>{panelistic.dialog.dismiss(prevopt);})}})" id="autocompbtn"><span class="panelistic_placeholder"></span><input type="button" value="清空答案" onclick="panelistic.dialog.confirm('清空答案','确定清空答案吗？您的数据将无法恢复。','确定','取消',(opt)=>{if(opt){autoCheck=false;document.getElementById('autockbtn').value=(autoCheck)?'停止校对':'自动校对';let prevopt = 0;waitDo((i)=>{panelistic.dialog.dismiss(prevopt);prevopt=panelistic.dialog.salert('正在清空 '+i+'/'+singleRecArr.length);setOption(singleRecArr[i].guid,'')},singleRecArr.length,300,()=>{panelistic.dialog.dismiss(prevopt);exit = true;window.location.reload()})}})" id="autocompbtn"><span id="answertime" style="font-size:14px;width: 256px;text-align: right;display: inline-block;">0 小时 0 分钟 0 秒</span></div>
 	</div>
 </body>
 

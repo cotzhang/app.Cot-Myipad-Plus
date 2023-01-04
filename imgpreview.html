@@ -14,7 +14,8 @@
     left: 0px;
   }
 
-  html, body{
+  html,
+  body {
     height: 100%;
     margin: 0;
     padding: 0;
@@ -28,20 +29,23 @@
     cursor: grab;
   }
 
-  div img:active{
+  div img:active {
     cursor: grabbing;
   }
 
-* {
-  transition-duration: 0.2s;
-  transition-property: transform;
-}
+  * {
+    transition-duration: 0.2s;
+    transition-property: transform;
+  }
   </style>
 </head>
 
 <body>
   <div id="div" onmousewheel="return bbimg(this)"></div>
   <script language="javascript">
+  const getuserdatapath = () => {
+    return require('path').join(process.env.appdata, 'cmp').replaceAll('\\', '/')
+  }
   var params = {
     zoomVal: 1,
     left: 0,
@@ -54,7 +58,7 @@
   let panelistic;
   const fs = require('fs')
   const electron = require("electron");
-  let imgData = fs.readFileSync(remote.app.getPath('userData') + "/userfile/tempimg")
+  let imgData = fs.readFileSync(getuserdatapath() + "/userfile/tempimg")
   document.getElementById('div').innerHTML = `<img id="img" style="display:block;vertical-align: middle;" onerror="if(this.src!=''){this.src='src/img/warn.png';this.style.cursor='not-allowed';}" ondragstart="return false" src="${imgData}">`
   window.onload = function() {}
   //图片缩放

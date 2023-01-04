@@ -16,22 +16,23 @@
 		window.onload=function() {
 			panelistic = new Panelistic();
 			panelistic.initialize();
-			fs.writeFileSync(__dirname+'/qr.png',(qr.imageSync("cotpad://smartconnect."+JSON.parse(fs.readFileSync(__dirname+"/account")).account+"."+new Date().getTime()+"/"+ip.address()+"?"+"pw="+JSON.parse(fs.readFileSync(__dirname+"/account")).password)))
-			document.getElementById('smart_code').src="qr.png";
+			fs.writeFileSync(getuserdatapath()+'/qr.png',(qr.imageSync("http://"+ip.address()+":307/#"+JSON.parse(fs.readFileSync(getuserdatapath()+"/account")).account+"."+new Date().getTime()+"/"+"?"+"pw="+JSON.parse(fs.readFileSync(getuserdatapath()+"/account")).password)))
+		}
+
+		function cnnew() {
+			electron.ipcRenderer.sendToHost('alert','连接新设备','请扫描二维码连接设备<br>请确保设备处于同一局域网<span class="panelistic_placeholder_large"></span><img id="smart_code" src="'+getuserdatapath()+'/qr.png'+'" ondragstart="return false;" text="图片加载中" style="user-drag: none;">','关闭')
 		}
 		const remote = require("@electron/remote");
 	</script>
 </head>
 <body>
 	<div id="panelistic_content_sidebar_in" class="DM_fonttitlel">
-		<h1>我的平板</h1>
+		<h1>我的设备</h1>
 			<h6>Lenovo-TBx605M</h6>
 			<span class="panelistic_placeholder"></span>
 			<div class="panelistic_panel">
 				<div class="panelistic_panel_name">扫码连接</div><br><span class="panelistic_placeholder_large"></span>
-				设备未连接<br>请使用平板智慧课堂扫描二维码连接
-				<span class="panelistic_placeholder"></span>
-				<img id="smart_code" ondragstart="return false;" text="图片加载中" style="user-drag: none;">
+				<input type="button" onclick="cnnew()" value="连接新设备">
 			</div>
 	</div>
 </body>

@@ -73,7 +73,7 @@
 	}
 
 	updateSettings = function() {
-		fs.writeFile(getuserdatapath() + '/config', JSON.stringify(getJsonConfigData()), () => {});
+		fs.writeFileSync(getuserdatapath() + '/config', JSON.stringify(getJsonConfigData()));
 	}
 
 	function finish() {

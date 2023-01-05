@@ -60,6 +60,8 @@ function spawnWindow() {
 	win = new electron.BrowserWindow({
 		backgroundColor: '#00000000',
 		// resizable: false,
+		minWidth: 800,
+		minHeight: 600,
 		webPreferences: {
 			nodeIntegration: true,
 			enableRemoteModule: true,
@@ -105,9 +107,11 @@ function spawnWindow() {
 		}
 	});
 	win.on('close', (e) => {
-		if (!JSON.parse(fs.readFileSync(getuserdatapath() + '/config')).tray) {
-			return;
-		}
+		try {
+			if (!JSON.parse(fs.readFileSync(getuserdatapath() + '/config')).tray) {
+				return;
+			}
+		} catch { return }
 		e.preventDefault(); // 阻止退出程序
 		// win.setSkipTaskbar(true) // 取消任务栏显示
 		win.hide(); // 隐藏主程序窗口

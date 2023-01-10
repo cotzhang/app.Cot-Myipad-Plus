@@ -20,6 +20,7 @@ A desktop application for myipad.
 - [x] 新备课提醒
 - [x] 作业批改提醒
 - [x] GUID查看
+
 等等功能...
 ## Screenshots
 ### 浅色模式预览

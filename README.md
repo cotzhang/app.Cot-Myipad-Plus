@@ -3,6 +3,24 @@ A desktop application for myipad.
 睿易少年派桌面客户端
 
 [![Security Status](https://www.murphysec.com/platform3/v3/badge/1612608646819643392.svg)](https://www.murphysec.com/accept?code=4954f30599db5571f81fb98a731f2cdd&type=1&from=2)
+## What can it do?
+- [x] 查看老师的所有备课（包括已隐藏，已删除，未来课件）
+- [x] 导出老师的所有备课课件与视频
+- [x] 查看睿易云
+- [x] 完成睿易云练习
+- [x] 将睿易云练习的链接导出
+- [x] 查看睿易云学情分析
+- [x] 进行自主学习题目作答
+- [x] 进行自主学习题目自动校对（做一题校对一题）
+- [x] 进行自主学习题目自动完成
+- [x] 查看老师的作业批改
+- [x] 查看考试分数
+- [x] 开机启动
+- [x] 托盘运行
+- [x] 新备课提醒
+- [x] 作业批改提醒
+- [x] GUID查看
+等等功能...
 ## Screenshots
 ### 浅色模式预览
 ![image](https://user-images.githubusercontent.com/107354861/211434387-4129d8be-9146-4419-8b13-dbf54ce8b22f.png)

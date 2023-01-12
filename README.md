@@ -22,6 +22,8 @@ A desktop application for myipad.
 - [x] 新备课提醒
 - [x] 作业批改提醒
 - [x] GUID查看
+- [x] 课堂实录导出
+- [x] 课堂实录节点播放
 
 等等功能...
 ## Screenshots

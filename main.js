@@ -11,6 +11,10 @@ const ex = process.execPath;
 
 let win;
 
+function isWin10() {
+	return (process.getSystemVersion().startsWith('10.0') && new Number(process.getSystemVersion().split('.')[2]) <= 19045)||(process.getSystemVersion().startsWith('11.0') && new Number(process.getSystemVersion().split('.')[2]) <= 19045)
+}
+
 const { session } = require('electron')
 
 if (process.platform === 'win32') {
@@ -52,7 +56,9 @@ function spawnWindow() {
 			icon: __dirname + '/icon.png',
 			show: false
 		});
-		vibe.applyEffect(win, 'acrylic', '#FFFFFF40');
+		if (!isWin10()) {
+			vibe.applyEffect(win, 'acrylic', '#FFFFFF40');
+		}
 		win.loadFile('secondInstance.html')
 		win.removeMenu();
 		win.webContents.on('did-finish-load', () => {
@@ -101,7 +107,9 @@ function spawnWindow() {
 	win.webContents.session.setCertificateVerifyProc((request, callback) => {
 		callback(0)
 	})
-	vibe.applyEffect(win, 'acrylic', '#FFFFFF40');
+	if (!isWin10()) {
+		vibe.applyEffect(win, 'acrylic', '#FFFFFF40');
+	}
 	if (electron.nativeTheme.shouldUseDarkColors) vibe.setDarkMode(win);
 
 	//win.setAlwaysOnTop("alwaysOnTop")

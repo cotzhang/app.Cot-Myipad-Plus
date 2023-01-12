@@ -270,3 +270,19 @@ function sortAllArrs(a, b) {
 		}
 	} catch {}
 }
+
+function add_css(str_css) { //Copyright @ rainic.com
+	try { //IE下可行
+		var style = document.createStyleSheet();
+		style.cssText = str_css;
+	} catch (e) { //Firefox,Opera,Safari,Chrome下可行
+		var style = document.createElement("style");
+		style.type = "text/css";
+		style.textContent = str_css;
+		document.getElementsByTagName("HEAD").item(0).appendChild(style);
+	}
+}
+
+function isWin10() {
+	return (process.getSystemVersion().startsWith('10.0') && new Number(process.getSystemVersion().split('.')[2]) <= 19045)||(process.getSystemVersion().startsWith('11.0') && new Number(process.getSystemVersion().split('.')[2]) <= 19045)
+}

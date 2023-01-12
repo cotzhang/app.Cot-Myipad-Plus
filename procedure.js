@@ -3,6 +3,7 @@ let panelistic;
 const path = require('path');
 const electron = require('electron')
 const remote = require("@electron/remote");
+const os = require('os')
 
 const getuserdatapath = () => {
 	return require('path').join(process.env.appdata, 'cmp').replaceAll('\\', '/')
@@ -699,7 +700,9 @@ window.onload = function() {
 				webSecurity: false,
 				show: false
 			})
-			vibe.applyEffect(rcwin, 'acrylic', '#FFFFFF40');
+			if (!isWin10()) {
+				vibe.applyEffect(rcwin, 'acrylic', '#FFFFFF40');
+			}
 			// rcwin.webContents.openDevTools({ mode: "detach" })
 			rcwin.loadFile('recordclass.html', { session: ses });
 			rcwin.webContents.on('did-finish-load', () => {
@@ -754,7 +757,9 @@ function openAsWin(event) {
 		},
 	})
 	let reloadAble = true;
-	vibe.applyEffect(aswindow, 'acrylic', '#FFFFFF40');
+	if (!isWin10()) {
+		vibe.applyEffect(aswindow, 'acrylic', '#FFFFFF40');
+	}
 	aswindow.loadURL(__dirname + '/aswin.html');
 	// aswindow.webContents.openDevTools({ mode: 'detach' })
 	aswindow.removeMenu();
@@ -797,7 +802,9 @@ function openLargeImg() {
 		}
 	})
 	let reloadAble = true;
-	vibe.applyEffect(largeImgWin, 'acrylic', '#FFFFFF40');
+	if (!isWin10()) {
+		vibe.applyEffect(largeImgWin, 'acrylic', '#FFFFFF40');
+	}
 	largeImgWin.loadURL(__dirname + '/imgpreview.html');
 	// largeImgWin.webContents.openDevTools({ mode: 'detach' })
 	largeImgWin.removeMenu();
@@ -835,7 +842,9 @@ function openRyYun(site, atrl) {
 		show: false
 	})
 	let reloadAble = true;
-	vibe.applyEffect(ryy, 'acrylic', '#FFFFFF40');
+	if (!isWin10()) {
+		vibe.applyEffect(ryy, 'acrylic', '#FFFFFF40');
+	}
 	ryy.loadURL('https://gzzxres.lexuewang.cn:8008/login/home/goLogin?userid=' + allcfgs.userguid);
 	// ryy.webContents.openDevTools({ mode: 'detach' })
 	ryy.removeMenu();
@@ -922,7 +931,9 @@ function openRyYunTo(site, atrl) {
 		show: false
 	})
 	let reloadAble = false;
-	vibe.applyEffect(ryy, 'acrylic', '#FFFFFF40');
+	if (!isWin10()) {
+		vibe.applyEffect(ryy, 'acrylic', '#FFFFFF40');
+	}
 	ryy.loadURL(site);
 	// ryy.webContents.openDevTools({ mode: 'detach' })
 	ryy.removeMenu();
@@ -1071,4 +1082,27 @@ function downloadFile(url, filePath) {
 	(async () => {
 		fs.writeFile(remote.dialog.showSaveDialogSync({ title: '保存文件', defaultPath: filePath }), await download(url), () => { panelistic.dialog.alert('提示', "文件下载完成", "确定") })
 	})();
+}
+
+
+// Windows 10 detection
+if (isWin10()) {
+	add_css(`body{
+		background-image: url(src/cmbg/light.jpg) !important;
+		background-position: center center;
+		background-repeat: no-repeat;
+		background-size:cover;
+		backdrop-filter:blur(5px);
+	}
+	#panelistic_content{
+		background-color:#fff8 !important
+	}
+	@media (prefers-color-scheme: dark) {
+		body{
+			background-image: url(src/cmbg/dark.jpg) !important
+		}
+		#panelistic_content{
+			background-color:#0008 !important
+		}
+	}`)
 }

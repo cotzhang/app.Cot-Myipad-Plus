@@ -375,7 +375,7 @@
 		let totalOpt = singleRecArr[findOrderInPhotoArr(guid)];
 		if (totalOpt.type == '0' || totalOpt.type == '1' || totalOpt.type == '2') {
 			if (isauto && totalOpt.type == '2') return
-			if (totalOpt.correctanswer==''){panelistic.dialog.alert('提示','该答题卡不支持自动校对','关闭自动校对',()=>{autoCheck=false})}
+			if (totalOpt.correctanswer == '') { panelistic.dialog.alert('提示', '该答题卡不支持自动校对', '关闭自动校对', () => { autoCheck = false }) }
 			let score = solidOption(guid, getChoiceByGUID(guid, totalOpt.options), totalOpt.correctanswer, new Number(totalOpt.score), new Number(totalOpt.missingscore));
 			getScore += new Number(score);
 			totalScore += new Number(totalOpt.score);
@@ -582,6 +582,28 @@
 				panelistic.dialog.dismiss(limg)
 			});
 		})
+	}
+
+	// Windows 10 detection
+	if (isWin10()) {
+		add_css(`body{
+		background-image: url(src/cmbg/light.jpg) !important;
+		background-position: center center;
+		background-repeat: no-repeat;
+		background-size:cover;
+		backdrop-filter:blur(5px);
+	}
+	#panelistic_content{
+		background-color:#fff8 !important
+	}
+	@media (prefers-color-scheme: dark) {
+		body{
+			background-image: url(src/cmbg/dark.jpg) !important
+		}
+		#panelistic_content{
+			background-color:#0008 !important
+		}
+	}`)
 	}
 	</script>
 </head>

@@ -1,31 +1,33 @@
 <!DOCTYPE html>
 <html>
+
 <head>
 	<meta charset="utf-8">
 	<link rel="stylesheet" href="panelistic3.0-electron.css">
 	<script src="panelistic3.0-electron.js"></script>
 	<title>视频预览</title>
 	<style type="text/css"></style>
+	<script src="func.js"></script>
 	<script type="text/javascript">
-		let $ = document.querySelector;
-		let panelistic;
-		const fs = require('fs')
-		const electron = require("electron");
-		let accndata = JSON.parse(fs.readFileSync(__dirname+'/account'));
-		let alldata = JSON.parse(fs.readFileSync(__dirname+'/data'));
-		window.onload=function() {
-			panelistic = new Panelistic();
-			panelistic.initialize();
-			videosrc=fs.readFileSync(__dirname+'/videosrc');
-			// document.getElementById('').innerText=;
-			document.getElementById('mainvideo').src=videosrc
-		}
-		const remote = require("@electron/remote");
+	let panelistic;
+	const electron = require("electron");
+	let accndata = JSON.parse(fs.readFileSync(getuserdatapath() + '/account'));
+	let alldata = JSON.parse(fs.readFileSync(getuserdatapath() + '/data'));
+	window.onload = function() {
+		panelistic = new Panelistic();
+		panelistic.initialize();
+		videosrc = fs.readFileSync(getuserdatapath() + '/videosrc');
+		// document.getElementById('').innerText=;
+		document.getElementById('mainvideo').src = videosrc
+	}
+	const remote = require("@electron/remote");
 	</script>
 </head>
+
 <body style="background: #000;outline: none;">
 	<div id="panelistic_content_sidebar_in" class="DM_fonttitlel">
 		<video id="mainvideo" style="top: 0px;left: 0px;right: 0px;left: 0px;position: absolute;margin: 0px;height: 100%;width: 100%;outline: none;" controls></video>
 	</div>
 </body>
+
 </html>

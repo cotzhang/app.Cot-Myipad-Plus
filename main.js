@@ -5,10 +5,13 @@ const path = require('path');
 const os = require('os')
 const fs = require('fs')
 const remote = require("@electron/remote/main")
+
 const ex = process.execPath;
 // const isDev = require('electron-is-dev')
 
 let win;
+
+const { session } = require('electron')
 
 if (process.platform === 'win32') {
 	electron.app.setAppUserModelId('平板+')
@@ -23,14 +26,12 @@ if (!fs.existsSync(getuserdatapath())) fs.mkdirSync(getuserdatapath())
 
 const isFirstInstance = electron.app.requestSingleInstanceLock()
 
-electron.app.on('ready', () => {
-	electron.app.commandLine.appendSwitch('ignore-certificate-errors')
-	electron.app.commandLine.appendSwitch('ignore-ssl-errors')
+electron.app.whenReady().then(() => {
 	setTimeout(
 		spawnWindow,
 		process.platform == "linux" ? 1000 : 0
 	);
-});
+})
 
 function spawnWindow() {
 	if (!isFirstInstance) {
@@ -44,7 +45,9 @@ function spawnWindow() {
 				enableRemoteModule: true,
 				contextIsolation: false,
 				webviewTag: true,
-				nodeIntegrationInWorker: true
+				nodeIntegrationInWorker: true,
+				acceptInsecureCerts: true,
+				disableHSTS: true
 			},
 			icon: __dirname + '/icon.png',
 			show: false
@@ -95,6 +98,9 @@ function spawnWindow() {
 	// let m = Menu.buildFromTemplate(template);
 	// Menu.setApplicationMenu(m);
 	win.removeMenu();
+	win.webContents.session.setCertificateVerifyProc((request, callback) => {
+		callback(0)
+	})
 	vibe.applyEffect(win, 'acrylic', '#FFFFFF40');
 	if (electron.nativeTheme.shouldUseDarkColors) vibe.setDarkMode(win);
 
@@ -190,6 +196,12 @@ function makeTray() {
 				win.webContents.send('gotoryy-xq')
 			}
 		}, {
+			label: '课堂实录',
+			click: function() {
+				win.webContents.send('goto', 'classrecord')
+				win.show()
+			}
+		}, {
 			label: '我的设备',
 			click: function() {
 				win.webContents.send('goto', 'mypad')
@@ -259,3 +271,5 @@ function delTray() {
 		tray.destroy()
 	} catch { console.log("no tray to destroy") }
 }
+
+const { ipcMain } = require('electron')

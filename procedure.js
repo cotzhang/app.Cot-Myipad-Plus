@@ -96,15 +96,9 @@ let fullDataSyncRetVal = [];
 let disableSync = false;
 let baseRecordCount = 0;
 
+let currDiagId = 0;
+
 // Data procedures
-function getClassGUIDs() {
-	let classstr = "";
-	for (var i = 0; i < globalDataFile.classes.length; i++) {
-		classstr += globalDataFile.classes[i].guid + ",";
-	}
-	classstr += getGlobalUserguid();
-	return classstr;
-}
 
 function generateTextRecords(fullrec) {
 	let finalstr = "enablesegment=3;"
@@ -411,7 +405,7 @@ function getTotalAnswerSheet() {
 					let jsonbd = JSON.parse(backdata)
 					if (JSON.parse(fs.readFileSync(getuserdatapath() + '/config')).hwCheckedNotify) {
 						// console.log(JSON.parse(data).download)
-						let qcjson = uniqueFunc(jsonbd,'answersheetresourceguid')
+						let qcjson = uniqueFunc(jsonbd, 'answersheetresourceguid')
 						for (var z = 0; z < qcjson.length; z++) {
 							new Notification('答题卡', { body: '老师批改了你的作业' }).onclick = () => {
 								electron.ipcRenderer.send('openwin')
@@ -586,8 +580,11 @@ window.onload = function() {
 			if (event.args[1] == 'saveas') {
 				downloadFile(event.args[0], getuserdatapath() + '/downloads/' + event.args[2] + "." + event.args[0].split('.')[event.args[0].split('.').length - 1])
 			} else {
-				if ( /*event.args[0].match(/\.(mp4|avi|wmv|mpg|mpeg|mov|rm|ram|swf|flv)/)*/ false) {
+				if (event.args[0].match(/\.(mp4|avi|wmv|mpg|mpeg|mov|rm|ram|swf|flv)/)) {
 					fs.writeFileSync(getuserdatapath() + '/videosrc', event.args[0])
+					// Create new session
+					const { session } = remote;
+					let ses = session.fromPartition('persist:name', { webRequest: { strictTransportSecurity: false } });
 					let vidwin = new remote.BrowserWindow({
 						width: 750,
 						height: 500,
@@ -597,16 +594,19 @@ window.onload = function() {
 							contextIsolation: false,
 							webviewTag: true,
 							nodeIntegrationInWorker: true,
-							ignoreCertificateErrors: true
+							ignoreCertificateErrors: true,
+							acceptInsecureCerts: true,
+							disableHSTS: true,
+							session: ses
 						},
 						webSecurity: false
 					})
-					vidwin.loadFile('video.html');
+					// vidwin.webContents.openDevTools({ mode: "detach" })
+					vidwin.loadFile('video.html', { session: ses });
 					vidwin.on('close', () => {
 						vidwin = null
 					})
 					vidwin.removeMenu();
-					// vidwin.webContents.openDevTools({ mode: "detach" })
 				} else {
 					let panelisticid = panelistic.dialog.salert('请稍等');
 					(async () => {
@@ -672,6 +672,43 @@ window.onload = function() {
 			webview.src = __dirname + "/login.html"
 		} else if (event.channel == "startup") {
 			electron.ipcRenderer.send(event.args[0] ? 'openAutoStart' : 'closeAutoStart')
+		} else if (event.channel == 'salert') {
+			currDiagId = panelistic.dialog.salert(event.args[0])
+		} else if (event.channel == 'dismisssalert') {
+			panelistic.dialog.dismiss(currDiagId)
+		} else if (event.channel == "recordclass") {
+			const vibe = require('@pyke/vibe');
+			vibe.setup(remote.app);
+			const { session } = remote;
+			let ses = session.fromPartition('persist:name', { webRequest: { strictTransportSecurity: false } });
+			let rcwin = new remote.BrowserWindow({
+				width: 1200,
+				height: 680,
+				backgroundColor: '#00000000',
+				webPreferences: {
+					nodeIntegration: true,
+					enableRemoteModule: true,
+					contextIsolation: false,
+					webviewTag: true,
+					nodeIntegrationInWorker: true,
+					ignoreCertificateErrors: true,
+					acceptInsecureCerts: true,
+					disableHSTS: true,
+					session: ses
+				},
+				webSecurity: false,
+				show: false
+			})
+			vibe.applyEffect(rcwin, 'acrylic', '#FFFFFF40');
+			// rcwin.webContents.openDevTools({ mode: "detach" })
+			rcwin.loadFile('recordclass.html', { session: ses });
+			rcwin.webContents.on('did-finish-load', () => {
+				rcwin.show()
+			});
+			rcwin.on('close', () => {
+				rcwin = null
+			})
+			rcwin.removeMenu();
 		}
 	})
 	webview.addEventListener('dom-ready', function() {
@@ -974,7 +1011,12 @@ Flavor: normal</lpszHardwareKey></UsersLoginJson></v:Body></v:Envelope>`
 	requestWSDL("http://webservice.myi.cn/wmstudyservice/wsdl/UsersLoginJson", reqstr, (retval) => {
 		panelistic.dialog.dismiss(currdiag)
 		if ((retval + "").indexOf(">-4060<") != -1) {
-			panelistic.dialog.alert("登录失败", "用户名或密码错误", "确定")
+			panelistic.dialog.alert("登录失败", "用户名或密码错误", "确定", () => {
+				try {
+					fs.unlinkSync(getuserdatapath() + '/account')
+				} catch {}
+				window.location.reload()
+			})
 		} else if ((retval + "").indexOf(">1168<") != -1) {
 			panelistic.dialog.alert("登录失败", "用户名不正确", "确定")
 		} else {
@@ -1012,8 +1054,8 @@ function checkUpd() {
 			panelistic.dialog.confirm("更新", "有新版本可用<br>" + upditems, "更新", "取消", (cf) => {
 				if (cf) {
 					(async () => {
-						fs.writeFile(__dirname + '/installer.exe', await download('https://storage-1303195148.cos.ap-guangzhou.myqcloud.com/app/cmp_inst.exe'), () => {
-							electron.shell.openExternal(__dirname + '/installer.exe')
+						fs.writeFile(getuserdatapath() + '/installer.exe', await download('https://storage-1303195148.cos.ap-guangzhou.myqcloud.com/app/cmp_inst.exe'), () => {
+							electron.shell.openExternal(getuserdatapath() + '/installer.exe')
 						})
 					})();
 				}

@@ -375,6 +375,7 @@
 		let totalOpt = singleRecArr[findOrderInPhotoArr(guid)];
 		if (totalOpt.type == '0' || totalOpt.type == '1' || totalOpt.type == '2') {
 			if (isauto && totalOpt.type == '2') return
+			if (totalOpt.correctanswer==''){panelistic.dialog.alert('提示','该答题卡不支持自动校对','关闭自动校对',()=>{autoCheck=false})}
 			let score = solidOption(guid, getChoiceByGUID(guid, totalOpt.options), totalOpt.correctanswer, new Number(totalOpt.score), new Number(totalOpt.missingscore));
 			getScore += new Number(score);
 			totalScore += new Number(totalOpt.score);

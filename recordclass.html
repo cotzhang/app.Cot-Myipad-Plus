@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<link rel="stylesheet" href="panelistic3.0-electron.css">
+	<script src="panelistic3.0-electron.js"></script>
+	<script src="func.js"></script>
+	<title>课堂实录</title>
+	<style type="text/css"></style>
+	<script type="text/javascript">
+	let panelistic;
+	let vidcfg
+	const electron = require("electron");
+	const remote = require("@electron/remote");
+	const path = require("path");
+	let actionArea
+
+	window.onload = function() {
+		panelistic = new Panelistic();
+		panelistic.initialize();
+		vidcfg = JSON.parse(fs.readFileSync(getuserdatapath() + '/classrecord'));
+		document.getElementById('classname').innerText = vidcfg.LESSONCLASS["@attributes"].title;
+		document.getElementById('teachername').innerText = vidcfg.LESSONCLASS["@attributes"].author;
+		document.getElementById('classid').innerText = vidcfg.LESSONCLASS["@attributes"].userclassname;
+		actionArea = document.getElementById('actionArea');
+		iterateActions(vidcfg)
+		iterateMedias(vidcfg)
+	}
+
+	function showPanel() {
+		document.getElementById('panp').style.transform = ""
+	}
+
+	function hidePanel() {
+		document.getElementById('panp').style.transform = "translate(0px,calc(-100% - 36px))"
+	}
+
+	function hmsToSecondsOnly(str) {
+		var p = str.split(':'),
+			s = 0,
+			m = 1;
+		while (p.length > 0) {
+			s += m * parseInt(p.pop(), 10);
+			m *= 60;
+		}
+		return s;
+	}
+
+	function goToTimeline(arg) {
+		document.getElementById('video').currentTime = arg
+	}
+
+	function iterateMedias(jsonObj) {
+		for (const key in jsonObj) {
+			if (jsonObj.hasOwnProperty(key)) {
+				const element = jsonObj[key];
+				if (key === "MEDIA") {
+					console.log(element);
+					if (element["@attributes"].type == "Screen") {
+						document.getElementById('video').src = element["@attributes"].filename
+					}
+				}
+				if (typeof element === "object") {
+					iterateMedias(element);
+				}
+			}
+		}
+	}
+
+	function iterateActions(jsonObj) {
+		for (const key in jsonObj) {
+			if (jsonObj.hasOwnProperty(key)) {
+				const element = jsonObj[key];
+				if (key === "ACTION") {
+					try {
+						actionArea.innerHTML += `<div class="panelistic_panel" onclick="goToTimeline(hmsToSecondsOnly('${element["@attributes"].timeoffset}'))"><span style="font-size:14px">${element["@attributes"].title}</span><br><span style="font-size: 12px;color: #aaac;">${element["@attributes"].timeoffset}</span></div><span class="panelistic_placeholder"></span>`
+					} catch (err) {
+						console.error(element)
+					}
+					// console.log(element["@attributes"])
+				}
+				if (typeof element === "object") {
+					iterateActions(element);
+				}
+			}
+		}
+	}
+	</script>
+</head>
+
+<body>
+	<div id="panelistic_content_sidebar_in" style="border:0;margin: 0;">
+		<div id="panelistic_blur"></div>
+		<span class="panelistic_placeholder"></span>
+		<video style="left: 0px;top:0px;width: calc(100% - 260px);height: 100%;position: absolute;display: block;background-color: #000;outline: none;" id="video" controls></video>
+		<div class="panelistic_panel" id="panp" style="overflow: auto;position:absolute;padding-bottom: 2px;left: calc(100% - 250px);width: calc(250px - 28px);top: 8px;height: calc(100% - 28px);">
+			<span style="display: inline-block;font-size: 24px;font-weight: bold;margin-top: 8px;margin-left: 4px;width: calc(100% - 52px);position:relative;-webkit-line-clamp: 1;display:-webkit-box;-webkit-box-orient: vertical;overflow: hidden;" id="classname">课程名称</span><!-- <input type="button" value="隐藏" onclick="hidePanel()"> -->
+			<span style="display: block;font-size: 14px;margin-top: 4px;margin-left: 4px;" id="teachername">老师名称</span>
+			<span style="display: block;font-size: 14px;margin-top: 4px;margin-left: 4px;margin-bottom: 12px;" id="classid">授课班级</span>
+			<hr style="background-color:#aaac; height:1px; border:none;">
+			<span id="actionArea"></span>
+		</div>
+	</div>
+</body>
+
+</html>

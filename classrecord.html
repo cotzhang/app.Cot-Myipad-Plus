@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<link rel="stylesheet" href="panelistic3.0-electron.css">
+	<script src="panelistic3.0-electron.js"></script>
+	<script src="func.js"></script>
+	<title>title</title>
+	<style type="text/css"></style>
+	<script type="text/javascript">
+	let panelistic;
+	const electron = require("electron");
+	window.onload = function() {
+		panelistic = new Panelistic();
+		panelistic.initialize();
+		requestForCr(7)
+	}
+
+	var retpsds;
+	const remote = require("@electron/remote");
+	const { ipcRenderer } = require('electron');
+
+	function getDayByVal(valname) {
+		let tolist = [7, 14, 31, 61, 182, -1];
+		return tolist[valname]
+	}
+
+	function requestForCr(date) {
+		ipcRenderer.sendToHost('salert', '正在查询数据')
+		let reqstr = `<v:Envelope xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns:d="http://www.w3.org/2001/XMLSchema" xmlns:c="http://schemas.xmlsoap.org/soap/encoding/" xmlns:v="http://schemas.xmlsoap.org/soap/envelope/"><v:Header /><v:Body><JsonTableAccess xmlns="http://webservice.myi.cn/wmstudyservice/wsdl/" id="o0" c:root="1"><lpszJsonInputData i:type="d:string">{"operation":"read","tableName":"resources","searchKeywords":"","teacherGUID":"","subjectID":-1,"timeOffset":${date},"sql":"%SQL_LessonClassView_Search%"}</lpszJsonInputData></JsonTableAccess></v:Body></v:Envelope>`
+		requestWSDL('http://webservice.myi.cn/wmstudyservice/wsdl/JsonTableAccess', reqstr, (retval) => {
+			ipcRenderer.sendToHost('dismisssalert');
+			var temp = document.createElement("div");
+			temp.innerHTML = retval.substring(retval.indexOf('<AS:szJsonResult>') + 17, retval.indexOf("</AS:szJsonResult>"));
+			var retval = temp.innerText || temp.textContent;
+			temp = null;
+			retpsds = (JSON.parse(retval)).data;
+			console.log(retpsds)
+			document.getElementById('ffbkccnt').innerText = '显示全校课程（' + retpsds.length + '条）'
+			renderCr(retpsds)
+		}, (err) => {
+			console.error(err);
+			ipcRenderer.sendToHost('dismisssalert');
+			ipcRenderer.sendToHost('alert', '提示', '获取失败，请重试', '确定')
+		}, 60000);
+	}
+
+	function getResourceByGUID(resourceguid, callback) {
+		let retv = {}
+		let reqstrs = `<v:Envelope xmlns:v="http://schemas.xmlsoap.org/soap/envelope/" xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns:d="http://www.w3.org/2001/XMLSchema" xmlns:c="http://schemas.xmlsoap.org/soap/encoding/">
+	<v:Header/>
+	<v:Body>
+		<GetResourceByGUID xmlns="http://webservice.myi.cn/wmstudyservice/wsdl/" id="o0" c:root="1">
+			<lpszResourceGUID i:type="d:string">${resourceguid}</lpszResourceGUID>
+		</GetResourceByGUID>
+	</v:Body></v:Envelope>`;
+		autoRetryRequestWSDL("http://webservice.myi.cn/wmstudyservice/wsdl/GetResourceByGUID", reqstrs, (allretval) => {
+			try {
+				// console.log(reqstrs)
+				let psretval = allretval.substring(allretval.indexOf('<AS:szXMLContent>') + 17, allretval.indexOf("</AS:szXMLContent>"));
+				var temp = document.createElement("div");
+				temp.innerHTML = psretval;
+				psretval = temp.innerText || temp.textContent;
+				temp = null;
+				allrecs = xmlToJson(parseDom(psretval)[0]);
+				globalTestVar = allrecs;
+				callback(allrecs)
+			} catch (err) {
+				console.warn(err, allretval)
+				electron.ipcRenderer.sendToHost('alert', '出错', '录课获取失败', '确定')
+				// debugger;
+				retv.error = 1;
+				retv.scheduledate = "0";
+				retv.date = "0";
+			}
+		}, 500, 500)
+	}
+
+	function openVideo(videoId) {
+		getResourceByGUID(retpsds[videoId].guid, (jsonrc) => {
+			fs.writeFileSync(getuserdatapath() + '/classrecord', JSON.stringify(jsonrc));
+			electron.ipcRenderer.sendToHost('recordclass')
+		})
+	}
+
+	function downloadVideo(videoId) {
+		getResourceByGUID(retpsds[videoId].guid, (jsonrc) => {
+			iterateMedias(jsonrc)
+		})
+	}
+
+	function iterateMedias(jsonObj) {
+		for (const key in jsonObj) {
+			if (jsonObj.hasOwnProperty(key)) {
+				const element = jsonObj[key];
+				if (key === "MEDIA") {
+					console.log(element);
+					if (element["@attributes"].type == "Screen") {
+						electron.ipcRenderer.sendToHost('loaddata', element["@attributes"].filename, 'saveas',globalTestVar.LESSONCLASS["@attributes"].title)
+					}
+				}
+				if (typeof element === "object") {
+					iterateMedias(element);
+				}
+			}
+		}
+	}
+
+	changeIfOnlyMyClass = () => {
+		renderCr(retpsds)
+	}
+
+	function renderCr(retpsd) {
+		let totalstr = "";
+		let iscked = document.getElementById('startup').checked;
+		let userclassguids = getClassGUIDs().split(',')
+		for (var i = 0; i < retpsd.length; i++) {
+			if (!iscked && userclassguids.indexOf(retpsd[i].userclassguid) == -1) { continue }
+			totalstr += model_cr(retpsd[i].title, retpsd[i].starttime, retpsd[i].author, retpsd[i].userclassname, i)
+		}
+		if (totalstr == "") {
+			totalstr = `没有符合要求的课堂实录数据，请修改筛选条件
+			<span class="panelistic_placeholder"></span>`
+		}
+		document.getElementById('allktsls').innerHTML = totalstr;
+	}
+
+	function model_cr(bktitle, bkdate, bkauthor, bkclass, bknumber) {
+		return `<div class="panelistic_panel"><span class="panelistic_placeholder_large"></span>
+				<div style="vertical-align: top;display: inline-block;margin-left: 5px;width: calc(100% - 113px);height: 80px;">
+					<span style="vertical-align: top;font-size: 18px;font-weight: bold;position:relative;-webkit-line-clamp: 1;display:-webkit-box;-webkit-box-orient: vertical;overflow: hidden;" class="DM_fonttitlel">${bktitle}</span>
+					<!--max-length-35chars-->
+					<span style="font-size: 12px;color: #555;display: block;height: 16px;" class="DM_fontsmall">日期 ${bkdate}</span>
+					<span style="font-size: 12px;color: #555;display: block;height: 16px" class="DM_fontsmall">讲课教师 ${bkauthor}</span>
+					<span style="font-size: 12px;color: #555;display: block;height: 16px" class="DM_fontsmall">讲课班级 ${bkclass}</span>
+				</div>
+				<div style="vertical-align: top;display: inline-block;margin-left: 5px;">
+					<input type="button" value="打开" style="width: 95px;" onclick="openVideo(${bknumber})">
+					<span class="panelistic_placeholder" style="height: 5px;"></span>
+					<input type="button" value="导出视频" style="width: 95px;" onclick="downloadVideo(${bknumber})" id="expandBtn${bknumber}">
+				</div>
+			</div><span class='panelistic_placeholder'></span>`
+	}
+	</script>
+</head>
+
+<body>
+	<div id="panelistic_content_sidebar_in" class="DM_fonttitlel">
+		<h1>课堂实录</h1>
+		<h6>请修改筛选条件</h6>
+		<span class="panelistic_placeholder"></span>
+		<div class="panelistic_panel">
+			<div class="panelistic_panel_name">录课筛选</div><br><span class="panelistic_placeholder_large"></span>
+			<select id="school" onchange="requestForCr(getDayByVal(document.getElementById('school').selectedIndex))">
+				<option>一星期内</option>
+				<option>两星期内</option>
+				<option>一个月内</option>
+				<option>两个月内</option>
+				<option>半年内</option>
+				<option>全部时间</option>
+			</select>
+			<input type="button" value="刷新" onclick="requestForCr(getDayByVal(document.getElementById('school').selectedIndex))">
+		</div>
+		<span class="panelistic_placeholder"></span>
+		<div class="panelistic_panel">
+			<div class="panelistic_panel_name">选项</div><br><span class="panelistic_placeholder_large"></span>
+			<div class="panelistic_checkbox"><input type="checkbox" onchange="changeIfOnlyMyClass()" id="startup"><span class="panelistic_checkbox_text" id="ffbkccnt">显示非本班课程</span></div>
+		</div>
+		<span class="panelistic_placeholder"></span>
+		<div class="panelistic_panel" id="allktsls" style="font-size: 14px;padding-bottom: 0;">
+			没有符合要求的课堂实录数据，请修改筛选条件
+			<span class="panelistic_placeholder"></span>
+		</div>
+	</div>
+</body>
+
+</html>

@@ -24,7 +24,8 @@ body {
 	font-family: "misans";
 	font-weight: normal;
 	user-select: none;
-		overflow: hidden;
+	overflow: hidden;
+	background-color: #0000;
 }
 
 ::selection {
@@ -407,7 +408,9 @@ select option {
 		color: white;
 	}
 
-	h1,h6,span{
+	h1,
+	h6,
+	span {
 		color: white;
 	}
 
@@ -540,8 +543,9 @@ select option {
 
 .panelistic_sidebar_selection {
 	background-color: #eeeeee33;
-	padding: 8px;
+	padding: 9px;
 	font-size: 14px;
+	vertical-align: middle;
 }
 
 .panelistic_sidebar_selection:hover {
@@ -550,7 +554,7 @@ select option {
 
 .panelistic_sidebar_selection:active {
 	background-color: #eeeeee99;
-	padding: 6px;
+	/*padding: 8px;*/
 }
 
 .panelistic_sidebar_selection_selected {
@@ -565,9 +569,9 @@ select option {
 
 .panelistic_sidebar_title {
 	margin: 8px;
-	margin-bottom: 0px;
+	margin-bottom: 4px;
 	font-weight: bold;
-	font-size: 20px;
+	font-size: 22px;
 }
 
 .panelistic_sidebar_subtitle {
@@ -592,6 +596,6 @@ webview {
 	margin: 3px;
 }
 
-.fx{
+.fx {
 	position: fixed;
 }

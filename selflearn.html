@@ -320,6 +320,9 @@
 			if (nodisp) {
 				allstrs += model_note('未来备课包含考试相关内容，不予显示')
 			}
+			if (futureRecords.length == 0) {
+				allstrs += model_note('无未来备课')
+			}
 			for (let i = 0; i < futureRecords.length; i++) {
 				// futureRecords[i]
 				allstrs += model_classprepareStart(futureRecords[i].syn_isdelete, futureRecords[i].subject, futureRecords[i].title, futureRecords[i].resourceguid, futureRecords[i].author, futureRecords[i].scheduledate, futureRecords[i].scheduleenddate, i, futureRecords[i]) + model_classprepareEnd();
@@ -405,7 +408,7 @@
 				</div>
 				<div style="vertical-align: top;display: inline;margin-left: 5px;">
 				<!--${resguid}-->
-					<input type="button" value="另存为..." style="width: 95px;" onclick="loadData('${fileuri}','saveas','${filetitle}')">&nbsp;<input type="button" value="${/*(fileuri.match(/\.(mp4|avi|wmv|mpg|mpeg|mov|rm|ram|swf|flv)/)?'在线预览':'打开文件')*/'打开文件'}" style="width: 95px;" onclick="loadData('${fileuri}','open')">
+					<input type="button" value="另存为..." style="width: 95px;" onclick="loadData('${fileuri}','saveas','${filetitle}')">&nbsp;<input type="button" value="${(fileuri.match(/\.(mp4|avi|wmv|mpg|mpeg|mov|rm|ram|swf|flv)/)?'在线预览':'打开文件')}" style="width: 95px;" onclick="loadData('${fileuri}','open')">
 				</div>
 			</div>`
 	}

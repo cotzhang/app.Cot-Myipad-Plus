@@ -20,7 +20,8 @@
 		}
 
 		function cnnew() {
-			electron.ipcRenderer.sendToHost('alert','连接新设备','请扫描二维码连接设备<br>请确保设备处于同一局域网<span class="panelistic_placeholder_large"></span><img id="smart_code" src="'+getuserdatapath()+'/qr.png'+'" ondragstart="return false;" text="图片加载中" style="user-drag: none;">','关闭')
+			// electron.ipcRenderer.sendToHost('alert','连接新设备','请扫描二维码连接设备<br>请确保设备处于同一局域网<span class="panelistic_placeholder_large"></span><img id="smart_code" src="'+getuserdatapath()+'/qr.png'+'" ondragstart="return false;" text="图片加载中" style="user-drag: none;">','关闭')
+			electron.ipcRenderer.sendToHost('alert','该功能正在开发中','确定')
 		}
 		const remote = require("@electron/remote");
 	</script>

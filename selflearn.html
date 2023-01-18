@@ -498,7 +498,9 @@
 	}
 
 	function makeRyyIntoLive(urlBack, copy) {
-		let finalLjString = 'https://gzzxres.lexuewang.cn:8008/login/home/goLogin?userid=' + allcfgs.userguid + '&url=' + urlBack;
+		let server = JSON.parse(fs.readFileSync(getuserdatapath() + '/account')).server
+		site = 'https://' + (server.split('.')[0] + 'res.' + server.split('.')[1] + '.' + server.split('.')[2]).split(':')[0] + ':8008';
+		let finalLjString = site + '/login/home/goLogin?userid=' + allcfgs.userguid + '&url=' + urlBack;
 		if (copy) {
 			const newInput = document.createElement('input');
 			document.body.appendChild(newInput)

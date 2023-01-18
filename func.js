@@ -1,5 +1,7 @@
 const $ = require('jquery');
 let fs = require('fs');
+const xml2js = require('xml2js');
+
 
 let globalAccountFile = {};
 let globalDataFile = {};
@@ -16,6 +18,7 @@ function uniqueFunc(arr, uniId) {
 
 function getClassGUIDs() {
 	let classstr = "";
+	if (!globalDataFile.classes) { return getGlobalUserguid() }
 	for (var i = 0; i < globalDataFile.classes.length; i++) {
 		classstr += globalDataFile.classes[i].guid + ",";
 	}
@@ -57,6 +60,102 @@ function simpleRequest(url, body, header, successcallback, errorcallback, timeou
 	})
 }
 
+function simpleRequestOctet(url, body, header, successcallback, errorcallback, timeout) {
+	$.ajax({
+		url: url,
+		data: body,
+		type: "put",
+		dataType: "binary",
+		async: true,
+		processData: false,
+		xhrFields: {
+			withCredentials: true
+		},
+		timeout: timeout ? timeout : 2000,
+		beforeSend: function(request) {
+			for (var i = 0; i < header.length; i++) {
+				// console.log("header set")
+				request.setRequestHeader(header[i].key, header[i].value);
+			}
+		},
+		success: successcallback,
+		error: errorcallback
+	})
+}
+
+function simpleRequestPgrs(url, body, header, successcallback, errorcallback, timeout, method, opgress) {
+	$.ajax({
+		url: url,
+		data: body,
+		type: method ? "get" : "post",
+		dataType: "text",
+		async: true,
+		xhrFields: {
+			withCredentials: true
+		},
+		xhr: function() {
+			var xhr = new XMLHttpRequest();
+			//使用XMLHttpRequest.upload监听上传过程，注册progress事件，打印回调函数中的event事件
+			xhr.upload.addEventListener('progress', function(e) {
+				//loaded代表上传了多少
+				//total代表总数为多少
+				opgress(e.loaded, e.total)
+			})
+
+			return xhr;
+		},
+		timeout: timeout ? timeout : 2000,
+		beforeSend: function(request) {
+			for (var i = 0; i < header.length; i++) {
+				// console.log("header set")
+				request.setRequestHeader(header[i].key, header[i].value);
+			}
+		},
+		success: successcallback,
+		error: errorcallback
+	})
+}
+
+function xmlToJson(xml) {
+	var obj = {};
+	if (xml.nodeType == 1) {
+		// 处理属性
+		if (xml.attributes.length > 0) {
+			obj["@attributes"] = {};
+			for (var j = 0; j < xml.attributes.length; j++) {
+				var attribute = xml.attributes.item(j);
+				obj["@attributes"][attribute.nodeName] = attribute.nodeValue;
+			}
+		}
+	} else if (xml.nodeType == 3) {
+		obj = xml.nodeValue;
+	}
+	var textNodes = [].slice.call(xml.childNodes).filter(function(node) {
+		return node.nodeType === 3;
+	});
+	if (xml.hasChildNodes() && xml.childNodes.length === textNodes.length) {
+		obj = [].slice.call(xml.childNodes).reduce(function(text, node) {
+			return text + node.nodeValue;
+		}, "");
+	} else if (xml.hasChildNodes()) {
+		for (var i = 0; i < xml.childNodes.length; i++) {
+			var item = xml.childNodes.item(i);
+			var nodeName = item.nodeName;
+			if (typeof obj[nodeName] == "undefined") {
+				obj[nodeName] = xmlToJson(item);
+			} else {
+				if (typeof obj[nodeName].push == "undefined") {
+					var old = obj[nodeName];
+					obj[nodeName] = [];
+					obj[nodeName].push(old);
+				}
+				obj[nodeName].push(xmlToJson(item));
+			}
+		}
+	}
+	return obj;
+}
+
 function autoRetryRequest(url, body, header, successcallback, timewait, timeout, method) {
 	simpleRequest(url, body, header, successcallback, (ax, bx, cx) => {
 		if ((ax.responseText + "").indexOf("faultstring>Error -4063</faultstring") != -1) {
@@ -66,12 +165,93 @@ function autoRetryRequest(url, body, header, successcallback, timewait, timeout,
 	}, timeout, method)
 }
 
+function autoRetryRequestOctet(url, body, header, successcallback, timewait, timeout, method) {
+	simpleRequestOctet(url, body, header, successcallback, (ax, bx, cx) => {
+		if ((ax.responseText + "").indexOf("faultstring>Error -4063</faultstring") != -1) {
+			makeRelogin();
+		}
+		if (ax.status == 200) { successcallback(); return; }
+		setTimeout(function() {
+			console.warn(ax.status);
+			autoRetryRequestOctet(url, body, header, successcallback, timewait, timeout, method)
+		}, timewait)
+	}, timeout, method)
+}
+
+function autoRetryProgressRequest(url, body, header, successcallback, timewait, timeout, method, opgress) {
+	simpleRequestPgrs(url, body, header, successcallback, (ax, bx, cx) => {
+		if ((ax.responseText + "").indexOf("faultstring>Error -4063</faultstring") != -1) {
+			makeRelogin();
+		}
+		setTimeout(function() {
+			console.warn(ax);
+			autoRetryProgressRequest(url, body, header, successcallback, timewait, timeout, method, opgress)
+		}, timewait)
+	}, timeout, method, opgress)
+}
+
+function getContentType(base64) {
+	if (base64.match(/^(?:[A-Za-z0-9+\/]{4})*(?:[A-Za-z0-9+\/]{2}==|[A-Za-z0-9+\/]{3}=)?$/)) {
+		return ('image/png');
+	} else if (base64.match(/^(?:[A-Za-z0-9+\/]{4})*(?:[A-Za-z0-9+\/]{3}=|[A-Za-z0-9+\/]{2}==)?$/)) {
+		return ('image/jpeg');
+	} else if (base64.match(/^(?:[0-9a-zA-Z+/]{4})*(?:([0-9a-zA-Z+/]{2}==)|([0-9a-zA-Z+/]{3}=))?$/)) {
+		return ('application/pdf');
+	} else if (base64.match(/^UEs.*/)) {
+		return ('application/zip');
+	} else if (base64.match(/^Rar.*/)) {
+		return ('application/x-rar-compressed');
+	} else if (base64.match(/^RIFF.*/)) {
+		return ('audio/wav');
+	} else if (base64.match(/^FWS.*/)) {
+		return ('application/x-shockwave-flash');
+	} else if (base64.match(/^(?:0|[1-9]\d*);.*/)) {
+		return ('application/vnd.rn-realmedia-vbr');
+	} else if (base64.match(/^GIF8.*/)) {
+		return ('image/gif');
+	} else if (base64.match(/^RIFF.*AVI.*/)) {
+		return ('video/avi');
+	} else {
+		return ('unknown');
+	}
+
+}
+
 function autoRetryRequestWSDL(position, body, successcallback, timewait, timeout) {
 	autoRetryRequest(`https://${getGlobalServerAddr()}/wmexam/wmstudyservice.WSDL`, body, [{ key: 'Set-Cookie', value: 'sessionid=' + getGlobalSessionId() + ';userguid=ffffffffffffffffffffffffffffffff' }, { key: 'SOAPAction', value: position }], successcallback, timewait, timeout)
 }
 
+function autoRetryProgressRequestWSDL(position, body, successcallback, timewait, timeout, opgress) {
+	autoRetryProgressRequest(`https://${getGlobalServerAddr()}/wmexam/wmstudyservice.WSDL`, body, [{ key: 'Set-Cookie', value: 'sessionid=' + getGlobalSessionId() + ';userguid=ffffffffffffffffffffffffffffffff' }, { key: 'SOAPAction', value: position }], successcallback, timewait, timeout, false, opgress)
+}
+
 function requestWSDL(position, body, successcallback, err, timewait, timeout) {
 	simpleRequest(`https://${getGlobalServerAddr()}/wmexam/wmstudyservice.WSDL`, body, [{ key: 'Set-Cookie', value: 'sessionid=' + getGlobalSessionId() + ';userguid=ffffffffffffffffffffffffffffffff' }, { key: 'SOAPAction', value: position }], successcallback, err, timewait, timeout)
+}
+
+function parseB64(file) {
+	let filePath = path.resolve(file);
+	let data = fs.readFileSync(filePath);
+	data = Buffer.from(data).toString('base64');
+	return data;
+}
+
+function genPackageId() {
+	var crypto = require('crypto');
+	var md5 = crypto.createHash('md5');
+	return 'Photoupload_' + md5.update(new Date().getTime() + 'Cot Random Md5').digest('hex') + '.jpg';
+}
+
+function getRandomGUID() {
+	var crypto = require('crypto');
+	var md5 = crypto.createHash('md5');
+	return md5.update(new Date().getTime() + 'Cot Random Md5').digest('hex');
+}
+
+function getRandomGUID2() {
+	var crypto = require('crypto');
+	var md5 = crypto.createHash('md5');
+	return md5.update(new Date().getTime() + 'Cot Random Md5_2').digest('hex');
 }
 
 function sendToDb(key, value) {
@@ -166,9 +346,11 @@ function parseDom(arg) {
 };
 
 function xmlToJson(xml) {
+	// Create the return object
 	var obj = {};
-	if (xml.nodeType == 1) {
-		// 处理属性
+
+	if (xml.nodeType == 1) { // element
+		// do attributes
 		if (xml.attributes.length > 0) {
 			obj["@attributes"] = {};
 			for (var j = 0; j < xml.attributes.length; j++) {
@@ -176,24 +358,19 @@ function xmlToJson(xml) {
 				obj["@attributes"][attribute.nodeName] = attribute.nodeValue;
 			}
 		}
-	} else if (xml.nodeType == 3) {
+	} else if (xml.nodeType == 3) { // text
 		obj = xml.nodeValue;
 	}
-	var textNodes = [].slice.call(xml.childNodes).filter(function(node) {
-		return node.nodeType === 3;
-	});
-	if (xml.hasChildNodes() && xml.childNodes.length === textNodes.length) {
-		obj = [].slice.call(xml.childNodes).reduce(function(text, node) {
-			return text + node.nodeValue;
-		}, "");
-	} else if (xml.hasChildNodes()) {
+
+	// do children
+	if (xml.hasChildNodes()) {
 		for (var i = 0; i < xml.childNodes.length; i++) {
 			var item = xml.childNodes.item(i);
 			var nodeName = item.nodeName;
-			if (typeof obj[nodeName] == "undefined") {
+			if (typeof(obj[nodeName]) == "undefined") {
 				obj[nodeName] = xmlToJson(item);
 			} else {
-				if (typeof obj[nodeName].push == "undefined") {
+				if (typeof(obj[nodeName].push) == "undefined") {
 					var old = obj[nodeName];
 					obj[nodeName] = [];
 					obj[nodeName].push(old);
@@ -204,6 +381,7 @@ function xmlToJson(xml) {
 	}
 	return obj;
 }
+
 
 function deleteFolderRecursive(path) {
 	if (fs.existsSync(path)) {
@@ -284,5 +462,5 @@ function add_css(str_css) { //Copyright @ rainic.com
 }
 
 function isWin10() {
-	return (process.getSystemVersion().startsWith('10.0') && new Number(process.getSystemVersion().split('.')[2]) <= 19045)||(process.getSystemVersion().startsWith('11.0') && new Number(process.getSystemVersion().split('.')[2]) <= 19045)
+	return (process.getSystemVersion().startsWith('10.0') && new Number(process.getSystemVersion().split('.')[2]) <= 19045) || (process.getSystemVersion().startsWith('11.0') && new Number(process.getSystemVersion().split('.')[2]) <= 19045)
 }

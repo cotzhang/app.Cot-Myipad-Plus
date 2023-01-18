@@ -209,10 +209,16 @@ function makeTray() {
 				win.webContents.send('goto', 'classrecord')
 				win.show()
 			}
-		}, {
+		}/*, {
 			label: '我的设备',
 			click: function() {
 				win.webContents.send('goto', 'mypad')
+				win.show()
+			}
+		}*/, {
+			label: '我的资源库',
+			click: function() {
+				win.webContents.send('goto', 'library')
 				win.show()
 			}
 		}, {

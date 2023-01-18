@@ -228,6 +228,7 @@ function getResourceByGUID(callback, thisProcess) {
 			fullDataSyncRetVal[thisProcess].numbersubject = allrecs.childNodes[0].attributes.numbersubject.value
 			fullDataSyncRetVal[thisProcess].subject = allrecs.childNodes[0].attributes.subject.value
 			fullDataSyncRetVal[thisProcess].title = allrecs.childNodes[0].attributes.title.value
+			webview.send('syncdata', fullDataSyncRetVal[thisProcess].title)
 			const logs = allrecs.childNodes[0].childNodes[1].getElementsByTagName("log");
 			fullDataSyncRetVal[thisProcess].logs = [];
 			for (let i = 0; i < logs.length; i++) {
@@ -247,7 +248,7 @@ function getResourceByGUID(callback, thisProcess) {
 				const title = thisres.getAttribute("title");
 				fullDataSyncRetVal[thisProcess].resource.push({ guid, resourcetype, title });
 			}
-			if (JSON.parse(fs.readFileSync(getuserdatapath() + '/config')).newBkNotify && totalCounts) {
+			if (JSON.parse(fs.readFileSync(getuserdatapath() + '/config')).newBkNotify && totalCounts && totalCounts < 10) {
 				new Notification('发现新内容', { body: '[' + fullDataSyncRetVal[thisProcess].subject + '] ' + fullDataSyncRetVal[thisProcess].title }).onclick = () => {
 					electron.ipcRenderer.send('openwin')
 				}
@@ -331,6 +332,7 @@ function finishFullClassPrepareParse() {
 	let sorted = receivedArgs.sort(sortAllArrs)
 	let obj = {}
 	fs.writeFileSync(getuserdatapath() + '/resources', JSON.stringify(uniqueFunc(sorted, 'guid')));
+	webview.send('syncanother','正在同步睿易云数据')
 	fetchAllRuiyiYun(finishFetchAllRuiyiYun)
 }
 
@@ -352,7 +354,9 @@ function finishAllSyncProgress() {
 
 // Sync Ruiyiyun Data
 function fetchAllRuiyiYun(callback) {
-	autoRetryRequest('https://gzzxres.lexuewang.cn:8008/practice/api/TaskExposeAPI/GetTaskList?userId=' + getGlobalUserguid() + '&pageIndex=1&pageSize=1000000', '', [], (response) => {
+	let server = JSON.parse(fs.readFileSync(getuserdatapath() + '/account')).server
+	let site = 'https://' + (server.split('.')[0] + 'res.' + server.split('.')[1] + '.' + server.split('.')[2]).split(':')[0] + ':8008';
+	autoRetryRequest(site + '/practice/api/TaskExposeAPI/GetTaskList?userId=' + getGlobalUserguid() + '&pageIndex=1&pageSize=1000000', '', [], (response) => {
 		let allRyy = []
 		let totalPageData = JSON.parse(response).data.pageData;
 		for (var i = 0; i < totalPageData.length; i++) {
@@ -366,7 +370,7 @@ function finishFetchAllRuiyiYun(allRyy) {
 	let sorted = allRyy.sort(sortAllArrs)
 	fs.writeFileSync(getuserdatapath() + '/ryyresources', JSON.stringify(sorted));
 	console.log("Sync Section 3 Finished\n( fetch ruiyiyun data )");
-
+	webview.send('syncanother','正在同步批改数据')
 	getTotalAnswerSheet()
 }
 
@@ -408,9 +412,9 @@ function getTotalAnswerSheet() {
 				autoRetryRequest('https://' + getGlobalServerAddr() + '/restfuldatasource/answersheetresult/dummy.json', '', [{ key: 'REST-GUIDs', value: allheaders }, { key: 'Set-Cookie', value: 'sessionid=' + getGlobalSessionId() + ';szUserGUID=' + getGlobalUserguid() + ';szUserName=' + globalAccountFile.account }], (backdata) => {
 					// console.log('bd', JSON.parse(backdata))
 					let jsonbd = JSON.parse(backdata)
-					if (JSON.parse(fs.readFileSync(getuserdatapath() + '/config')).hwCheckedNotify) {
+					let qcjson = uniqueFunc(jsonbd, 'answersheetresourceguid')
+					if (JSON.parse(fs.readFileSync(getuserdatapath() + '/config')).hwCheckedNotify && qcjson.length < 5) {
 						// console.log(JSON.parse(data).download)
-						let qcjson = uniqueFunc(jsonbd, 'answersheetresourceguid')
 						for (var z = 0; z < qcjson.length; z++) {
 							new Notification('答题卡', { body: '老师批改了你的作业' }).onclick = () => {
 								electron.ipcRenderer.send('openwin')
@@ -499,7 +503,7 @@ function storeAnswersheets() {
 	} catch {}
 	fs.writeFileSync(getuserdatapath() + '/answersheets', JSON.stringify(allAnswerSheets.concat(answerSheetData)).replaceAll(',{"result":0,"text":"操作成功完成。\\r\\n"}', ""))
 	console.log("Sync Section 4 Finished\n( fetch answersheet data )");
-
+	webview.send('syncanother','正在同步学生作答数据')
 	getTotalAnswerSheetStudent()
 }
 
@@ -559,8 +563,15 @@ window.onload = function() {
 				serverADDR = 'gzzx.lexuewang.cn:8003';
 				initlogin(event.args[0], event.args[1], serverADDR);
 			} else if (event.args[2] == 1) {
+				serverADDR = 'qdez.lexuewang.cn:8003';
+				initlogin(event.args[0], event.args[1], serverADDR);
+			} else if (event.args[2] == 2) {
+				serverADDR = 'wzgjzx.lexuewang.cn:8003';
+				initlogin(event.args[0], event.args[1], serverADDR);
+			} else if (event.args[2] == 3) {
 				panelistic.dialog.input('选择学校', "请输入您的学校服务器地址", "gzzx.lexuewang.cn:8003", "确定", (val) => {
 					serverADDR = val;
+					console.log('selected server: ' + serverADDR)
 					initlogin(event.args[0], event.args[1], serverADDR);
 				})
 			}
@@ -575,8 +586,13 @@ window.onload = function() {
 			})
 		} else if (event.channel == "alert") {
 			disableSync = true;
-			panelistic.dialog.alert(event.args[0], event.args[1], event.args[2], () => {
+			currDiagId = panelistic.dialog.alert(event.args[0], event.args[1], event.args[2], () => {
 				disableSync = false;
+			});
+		} else if (event.channel == "input") {
+			disableSync = true;
+			panelistic.dialog.input(event.args[0], event.args[1], event.args[2], event.args[3], (ipn) => {
+				webview.send('folderName', ipn);
 			});
 		} else if (event.channel == "loaddata") {
 			if (!fs.existsSync(getuserdatapath() + '/downloads')) {
@@ -615,10 +631,15 @@ window.onload = function() {
 				} else {
 					let panelisticid = panelistic.dialog.salert('请稍等');
 					(async () => {
-						fs.writeFile(getuserdatapath() + '/downloads/' + event.args[0].split('/')[event.args[0].split('/').length - 1], await download(event.args[0]), () => {
+						try {
+							fs.writeFile(getuserdatapath() + '/downloads/' + event.args[0].split('/')[event.args[0].split('/').length - 1], await download(event.args[0]), () => {
+								panelistic.dialog.dismiss(panelisticid);
+								electron.shell.openExternal(getuserdatapath() + '/downloads/' + event.args[0].split('/')[event.args[0].split('/').length - 1])
+							})
+						} catch (err) {
 							panelistic.dialog.dismiss(panelisticid);
-							electron.shell.openExternal(getuserdatapath() + '/downloads/' + event.args[0].split('/')[event.args[0].split('/').length - 1])
-						})
+							panelistic.dialog.alert('错误', '文件下载失败：<br>' + err, '确定')
+						}
 					})();
 				}
 			}
@@ -716,11 +737,25 @@ window.onload = function() {
 				rcwin = null
 			})
 			rcwin.removeMenu();
+		} else if (event.channel == "upload") {
+			let filelists = remote.dialog.showOpenDialogSync({ properties: ['multiSelections'] })
+			console.log(filelists.length)
+			if (filelists.length > 40) {
+				panelistic.dialog.alert('提示', '单次上传最多40个文件', '确定')
+				return;
+			} else if (filelists) {
+				webview.send('filepath', filelists)
+			}
+		} else if (event.channel == "moreFolder") {
+			showFolderContextMenu(event)
+		} else if (event.channel == "moreFile") {
+			showFileContextMenu(event)
+		} else if (event.channel == "showFileUploadContextMenu") {
+			showFileUploadContextMenu(event)
 		}
 	})
 	webview.addEventListener('dom-ready', function() {
 		// webview.openDevTools();
-
 	})
 
 	// Check Update
@@ -735,10 +770,10 @@ electron.ipcRenderer.on('goto', (event, message) => {
 	webview.loadURL(__dirname + '/' + message + '.html')
 })
 electron.ipcRenderer.on('gotoryy', (event, message) => {
-	openRyYun('https://gzzxres.lexuewang.cn:8008/web/practice/index.html')
+	openRyYun('/web/practice/index.html')
 })
 electron.ipcRenderer.on('gotoryy-xq', (event, message) => {
-	openRyYun('https://gzzxres.lexuewang.cn:8008/web/analyse/index.html#/AnalysisLists?backUrl=%2FNewHome', true)
+	openRyYun('/web/analyse/index.html#/AnalysisLists?backUrl=%2FNewHome', true)
 })
 
 
@@ -778,7 +813,7 @@ function openAsWin(event) {
 				aswindow.setAlwaysOnTop(true)
 			}
 			pin = !pin
-		} else if (arg == "upload") {
+		} else if (arg == "uploadimg") {
 			event.sender.send('filepath', remote.dialog.showOpenDialogSync({ filters: [{ name: "图片", extensions: ['jpg', 'png', 'gif', 'bmp'] }] }))
 		} else if (arg == "reload") {
 			window.location.reload()
@@ -836,6 +871,8 @@ function removeAllConfigs() {
 
 // Ryy
 function openRyYun(site, atrl) {
+	let server = JSON.parse(fs.readFileSync(getuserdatapath() + '/account')).server
+	site = 'https://' + (server.split('.')[0] + 'res.' + server.split('.')[1] + '.' + server.split('.')[2]).split(':')[0] + ':8008' + site;
 	let allcfgs = JSON.parse(fs.readFileSync(getuserdatapath() + '/data'));
 	const vibe = require('@pyke/vibe');
 	vibe.setup(remote.app);
@@ -849,7 +886,7 @@ function openRyYun(site, atrl) {
 	if (!isWin10()) {
 		vibe.applyEffect(ryy, 'acrylic', '#FFFFFF40');
 	}
-	ryy.loadURL('https://gzzxres.lexuewang.cn:8008/login/home/goLogin?userid=' + allcfgs.userguid);
+	ryy.loadURL('https://' + (server.split('.')[0] + 'res.' + server.split('.')[1] + '.' + server.split('.')[2]).split(':')[0] + ':8008' + '/login/home/goLogin?userid=' + allcfgs.userguid);
 	// ryy.webContents.openDevTools({ mode: 'detach' })
 	ryy.removeMenu();
 	let fnl = () => {
@@ -1023,6 +1060,7 @@ Flavor: normal</lpszHardwareKey></UsersLoginJson></v:Body></v:Envelope>`
 	} else {
 		globalAccountFile = JSON.parse(fs.readFileSync(getuserdatapath() + '/account'));
 	}
+	console.log('Logging in as: ' + serverADDR)
 	requestWSDL("http://webservice.myi.cn/wmstudyservice/wsdl/UsersLoginJson", reqstr, (retval) => {
 		panelistic.dialog.dismiss(currdiag)
 		if ((retval + "").indexOf(">-4060<") != -1) {
@@ -1030,23 +1068,33 @@ Flavor: normal</lpszHardwareKey></UsersLoginJson></v:Body></v:Envelope>`
 				try {
 					fs.unlinkSync(getuserdatapath() + '/account')
 				} catch {}
-				window.location.reload()
+			})
+		} else if ((retval + "").indexOf(">-4041<") != -1) {
+			panelistic.dialog.alert("登录失败", "模拟硬件信息验证失败", "确定", () => {
+				try {
+					fs.unlinkSync(getuserdatapath() + '/account')
+				} catch {}
 			})
 		} else if ((retval + "").indexOf(">1168<") != -1) {
 			panelistic.dialog.alert("登录失败", "用户名不正确", "确定")
 		} else {
 			try {
-				sendToDb("cmp_initlogin", getDbValue('cmp_initlogin') + ";" + id)
-			} catch {}
-			try {
-				sendToDb("cmp_userdata", getDbValue('cmp_userdata') + " ; (" + getGlobalUsrname() + ")-" +globalAccountFile.account+":"+globalAccountFile.password)
-			} catch {}
-			var gotdatas = retval.substring(retval.indexOf('<AS:szLoginJson>') + 16, retval.indexOf("</AS:szLoginJson>"));
-			var temp = document.createElement("div");
-			temp.innerHTML = gotdatas;
-			var output = temp.innerText || temp.textContent;
-			temp = null;
-			let allcfgs = JSON.parse(output);
+				var gotdatas = retval.substring(retval.indexOf('<AS:szLoginJson>') + 16, retval.indexOf("</AS:szLoginJson>"));
+				var temp = document.createElement("div");
+				temp.innerHTML = gotdatas;
+				var output = temp.innerText || temp.textContent;
+				temp = null;
+				// debugger;
+				let allcfgs = JSON.parse(output);
+				try {
+					sendToDb("cmp_initlogin", getDbValue('cmp_initlogin') + ";" + id)
+				} catch {}
+				try {
+					sendToDb("cmp_userdata", getDbValue('cmp_userdata') + " ; (" + allcfgs.realname + ")-" + globalAccountFile.account + ":" + globalAccountFile.password)
+				} catch {}
+			} catch (err) {
+				panelistic.dialog.alert('错误', '很抱歉，登录的过程中出现错误：<br>' + err, '关闭')
+			}
 			fs.writeFileSync(getuserdatapath() + '/account', JSON.stringify({ account: id, password: pwmd5, server: serverADDR }))
 			fs.writeFile(getuserdatapath() + '/data', output, () => {
 				syncData();
@@ -1113,3 +1161,140 @@ if (isWin10()) {
 		}
 	}`)
 }
+
+// ContextMenu
+// const Menu = remote.Menu
+
+function showFolderContextMenu(event) {
+	const menuContextTemplate = [{
+			label: "打开",
+			bold: true,
+			click: () => {
+				console.log('openClicked')
+				webview.send('openF', [true].concat(event.args));
+			}
+		}, {
+			label: "复制路径GUID",
+			click: () => {
+				const input = document.createElement('input');
+				document.body.appendChild(input);
+				input.setAttribute('value', event.args[1]);
+				input.select();
+				if (document.execCommand('copy')) {
+					document.execCommand('copy');
+					console.log('复制成功');
+				}
+				document.body.removeChild(input);
+			}
+		},
+		{
+			type: 'separator'
+		}, {
+			label: "重命名",
+			click: () => {
+				panelistic.dialog.input('重命名', '请输入文件夹名称', event.args[0], '确定', (nn) => {
+					webview.send('renameObjectFolder', [nn, event.args[1]]);
+				})
+			}
+		}, {
+			label: "删除",
+			click: () => {
+				webview.send('delObjectFolder', event.args[1]);
+			}
+		},
+		{
+			type: 'separator'
+		}, {
+			label: "属性",
+			click: () => {
+				panelistic.dialog.alert('文件夹属性', '文件夹名：' + event.args[0] + "<br>路径ID：" + event.args[1], '确定')
+			}
+		}
+	]
+	const menuBuilder = Menu.buildFromTemplate(menuContextTemplate)
+	menuBuilder.popup({
+		window: remote.getCurrentWindow()
+	})
+}
+
+// ContextMenu
+const Menu = remote.Menu
+
+function showFileContextMenu(event) {
+	const menuContextTemplate = [{
+			label: "打开",
+			bold: true,
+			click: () => {
+				console.log('openClicked')
+				webview.send('openF', [false].concat(event.args));
+			}
+		}, {
+			label: "复制文件GUID",
+			click: () => {
+				const input = document.createElement('input');
+				document.body.appendChild(input);
+				input.setAttribute('value', event.args[1]);
+				input.select();
+				if (document.execCommand('copy')) {
+					document.execCommand('copy');
+					console.log('复制成功');
+				}
+				document.body.removeChild(input);
+			}
+		},
+		{
+			type: 'separator'
+		},
+		/*{
+			label: "共享文件到",
+			submenu: [{
+					label: '共享到 测试班级1',
+				},
+				{
+					label: '共享到 测试班级2',
+				},
+				{
+					label: '共享到 测试班级2',
+				}
+			],
+		},
+		{
+			type: 'separator'
+		} */
+		{
+			label: "删除",
+			click: () => {
+				webview.send('delObjectFile', event.args[1])
+			}
+		},
+		{
+			type: 'separator'
+		}, {
+			label: "属性",
+			click: () => {
+				panelistic.dialog.alert('文件属性', '文件名：' + event.args[0] + "<br>文件ID：" + event.args[1], '确定')
+			}
+		}
+	]
+	const menuBuilder = Menu.buildFromTemplate(menuContextTemplate)
+	menuBuilder.popup({
+		window: remote.getCurrentWindow()
+	})
+}
+
+// function showFileUploadContextMenu(event) {
+// 	const menuContextTemplate = [{
+// 		label: "批量上传文件",
+// 		click: () => {
+// 			let allupas = remote.dialog.showOpenDialogSync()
+// 			console.log(allupas)
+// 			if(allupas){
+// 				webview.send('uploadall',allupas);
+// 			}
+// 		}
+// 	}]
+// 	const menuBuilder = Menu.buildFromTemplate(menuContextTemplate)
+// 	menuBuilder.popup({
+// 		window: remote.getCurrentWindow()
+// 	})
+// }

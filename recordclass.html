@@ -96,14 +96,14 @@
 		background-size:cover;
 		backdrop-filter:blur(5px);
 	}
-	#panelistic_content{
+	#panelistic_content_sidebar_in{
 		background-color:#fff8 !important
 	}
 	@media (prefers-color-scheme: dark) {
 		body{
 			background-image: url(src/cmbg/dark.jpg) !important
 		}
-		#panelistic_content{
+		#panelistic_content_sidebar_in{
 			background-color:#0008 !important
 		}
 	}`)
@@ -115,7 +115,7 @@
 	<div id="panelistic_content_sidebar_in" style="border:0;margin: 0;">
 		<div id="panelistic_blur"></div>
 		<span class="panelistic_placeholder"></span>
-		<video style="left: 0px;top:0px;width: calc(100% - 260px);height: 100%;position: absolute;display: block;background-color: #000;outline: none;" id="video" controls></video>
+		<video autoplay style="left: 0px;top:0px;width: calc(100% - 260px);height: 100%;position: absolute;display: block;background-color: #000;outline: none;" id="video" controls></video>
 		<div class="panelistic_panel" id="panp" style="overflow: auto;position:absolute;padding-bottom: 2px;left: calc(100% - 250px);width: calc(250px - 28px);top: 8px;height: calc(100% - 28px);">
 			<span style="display: inline-block;font-size: 24px;font-weight: bold;margin-top: 8px;margin-left: 4px;width: calc(100% - 52px);position:relative;-webkit-line-clamp: 1;display:-webkit-box;-webkit-box-orient: vertical;overflow: hidden;" id="classname">课程名称</span><!-- <input type="button" value="隐藏" onclick="hidePanel()"> -->
 			<span style="display: block;font-size: 14px;margin-top: 4px;margin-left: 4px;" id="teachername">老师名称</span>

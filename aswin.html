@@ -238,27 +238,8 @@
 		if (!exit) return false
 	}
 
-	function parseB64(file) {
-		let filePath = path.resolve(file);
-		let data = fs.readFileSync(filePath);
-		data = Buffer.from(data).toString('base64');
-		return data;
-	}
-
-	function genPackageId() {
-		var crypto = require('crypto');
-		var md5 = crypto.createHash('md5');
-		return 'Photoupload_' + md5.update(new Date().getTime() + 'Cot Random Md5').digest('hex') + '.jpg';
-	}
-
-	function getRandomGUID() {
-		var crypto = require('crypto');
-		var md5 = crypto.createHash('md5');
-		return md5.update(new Date().getTime() + 'Cot Random Md5').digest('hex');
-	}
-
 	function uploadFileAndCopy() {
-		electron.ipcRenderer.send('upload')
+		electron.ipcRenderer.send('uploadimg')
 	}
 
 	electron.ipcRenderer.on('filepath', (event, args) => {
@@ -593,14 +574,14 @@
 		background-size:cover;
 		backdrop-filter:blur(5px);
 	}
-	#panelistic_content{
+	#panelistic_content_sidebar_in{
 		background-color:#fff8 !important
 	}
 	@media (prefers-color-scheme: dark) {
 		body{
 			background-image: url(src/cmbg/dark.jpg) !important
 		}
-		#panelistic_content{
+		#panelistic_content_sidebar_in{
 			background-color:#0008 !important
 		}
 	}`)

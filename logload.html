@@ -21,20 +21,24 @@
 		// document.getElementById('').innerText=;
 	}
 	electron.ipcRenderer.on('syncdata', function(event, arg) {
-		console.log(arg); 
-		document.getElementById('syncfileguid').innerText="正在解析资源 "+arg;
+		console.log(arg);
+		document.getElementById('syncfileguid').innerHTML = "<b>正在解析资源</b> " + arg;
+	});
+	electron.ipcRenderer.on('syncanother', function(event, arg) {
+		console.log(arg);
+		document.getElementById('syncfileguid').innerHTML = "<b>" + arg + "</b>";
 	});
 	electron.ipcRenderer.on('totdata', function(event, arg) {
-		console.log(arg); 
-		document.getElementById('synctotdata').innerText=arg;
+		console.log(arg);
+		document.getElementById('synctotdata').innerText = arg;
 	});
 	electron.ipcRenderer.on('itemdatal', function(event, args) {
-		console.log(args); 
-		document.getElementById('progressbar').max=args;
+		console.log(args);
+		document.getElementById('progressbar').max = args - 1;
 	});
 	electron.ipcRenderer.on('itemdatai', function(event, args) {
-		console.log(args); 
-		document.getElementById('progressbar').value=args;
+		console.log(args);
+		document.getElementById('progressbar').value = args;
 	});
 
 	const remote = require("@electron/remote");
@@ -48,12 +52,12 @@
 		<span class="panelistic_placeholder"></span>
 		<div class="panelistic_panel">
 			<div class="panelistic_panel_name">同步备课进度</div><span style="position: absolute;text-align: right;right: 20px;" id="synctotdata">0/0</span><br><span class="panelistic_placeholder_large"></span>
-			<progress value="8" max="74" style="width:100%" id="progressbar">
+			<progress value="0" max="0" style="width:100%" id="progressbar">
 		</div>
 		<span class="panelistic_placeholder"></span>
 		<div class="panelistic_panel">
 			<div class="panelistic_panel_name">同步资源进度</div><br><span class="panelistic_placeholder_large"></span>
-			<span id="syncfileguid">正在解析资源 </span>
+			<span id="syncfileguid" style="font-size:15px"><b>正在同步数据总列表</b></span>
 		</div>
 		<span class="panelistic_placeholder"></span>
 		<!--div class="panelistic_panel" style="background: #ee15;">

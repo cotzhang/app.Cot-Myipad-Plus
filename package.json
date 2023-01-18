@@ -1,6 +1,6 @@
 {
 	"name": "pad_assistant",
-	"version": "1.1.4",
+	"version": "1.2.1",
 	"description": "Pad assistant application",
 	"keywords": [
 		"panelistic",
@@ -49,10 +49,14 @@
 		"@electron/remote": "^2.0.9",
 		"@pyke/vibe": "^0.3.1",
 		"download": "^8.0.0",
+		"fluent-ffmpeg": "^2.1.2",
+		"jimp": "^0.16.2",
 		"jquery": "^3.6.1",
+		"libvips": "^0.0.2",
 		"node-gyp": "^9.3.0",
 		"qr-image": "^3.2.0",
-		"wallpaper": "^6.1.1"
+		"wallpaper": "^6.1.1",
+		"xml2js": "^0.4.23"
 	},
 	"engines": {
 		"node": ">=8.0.0"

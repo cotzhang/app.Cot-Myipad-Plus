@@ -1,7 +1,9 @@
 # 平板+ 客户端
 
 A desktop application for myipad. 
+
 睿易少年派桌面客户端
+
 ![image](https://user-images.githubusercontent.com/107354861/213108549-0a8be2b7-42f7-4f6e-bd94-2c74fd9523e4.png)
 
 网站：https://cotx.tech

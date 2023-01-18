@@ -4,7 +4,7 @@ A desktop application for myipad.
 
 网页：https://cotx.tech
 
-Please give me a **star** if you like! Thanks
+### Please give me a **star** if you like! Thanks
 
 [![Security Status](https://www.murphysec.com/platform3/v3/badge/1612608646819643392.svg)](https://www.murphysec.com/accept?code=4954f30599db5571f81fb98a731f2cdd&type=1&from=2)
 ## What can it do?

@@ -332,7 +332,7 @@ function finishFullClassPrepareParse() {
 	let sorted = receivedArgs.sort(sortAllArrs)
 	let obj = {}
 	fs.writeFileSync(getuserdatapath() + '/resources', JSON.stringify(uniqueFunc(sorted, 'guid')));
-	webview.send('syncanother','正在同步睿易云数据')
+	webview.send('syncanother', '正在同步睿易云数据')
 	fetchAllRuiyiYun(finishFetchAllRuiyiYun)
 }
 
@@ -370,7 +370,7 @@ function finishFetchAllRuiyiYun(allRyy) {
 	let sorted = allRyy.sort(sortAllArrs)
 	fs.writeFileSync(getuserdatapath() + '/ryyresources', JSON.stringify(sorted));
 	console.log("Sync Section 3 Finished\n( fetch ruiyiyun data )");
-	webview.send('syncanother','正在同步批改数据')
+	webview.send('syncanother', '正在同步批改数据')
 	getTotalAnswerSheet()
 }
 
@@ -503,7 +503,7 @@ function storeAnswersheets() {
 	} catch {}
 	fs.writeFileSync(getuserdatapath() + '/answersheets', JSON.stringify(allAnswerSheets.concat(answerSheetData)).replaceAll(',{"result":0,"text":"操作成功完成。\\r\\n"}', ""))
 	console.log("Sync Section 4 Finished\n( fetch answersheet data )");
-	webview.send('syncanother','正在同步学生作答数据')
+	webview.send('syncanother', '正在同步学生作答数据')
 	getTotalAnswerSheetStudent()
 }
 
@@ -563,13 +563,13 @@ window.onload = function() {
 				serverADDR = 'gzzx.lexuewang.cn:8003';
 				initlogin(event.args[0], event.args[1], serverADDR);
 			} else if (event.args[2] == 1) {
-				serverADDR = 'qdez.lexuewang.cn:8003';
-				initlogin(event.args[0], event.args[1], serverADDR);
-			} else if (event.args[2] == 2) {
 				serverADDR = 'wzgjzx.lexuewang.cn:8003';
 				initlogin(event.args[0], event.args[1], serverADDR);
+			} else if (event.args[2] == 2) {
+				serverADDR = 'qdez.lexuewang.cn:8003';
+				initlogin(event.args[0], event.args[1], serverADDR);
 			} else if (event.args[2] == 3) {
-				panelistic.dialog.input('选择学校', "请输入您的学校服务器地址", "gzzx.lexuewang.cn:8003", "确定", (val) => {
+				panelistic.dialog.input('选择学校', "请输入您的学校服务器地址", "example.lexuewang.cn:8003", "确定", (val) => {
 					serverADDR = val;
 					console.log('selected server: ' + serverADDR)
 					initlogin(event.args[0], event.args[1], serverADDR);
@@ -823,6 +823,38 @@ function openAsWin(event) {
 	});
 }
 
+
+function openChatWin() {
+	const vibe = require('@pyke/vibe');
+	vibe.setup(remote.app);
+	let chatwin = new remote.BrowserWindow({
+		width: 780,
+		height: 650,
+		backgroundColor: '#00000000',
+		resizable: true,
+		webPreferences: {
+			nodeIntegration: true,
+			enableRemoteModule: true,
+			contextIsolation: false,
+			webviewTag: true,
+			nodeIntegrationInWorker: true,
+			ignoreCertificateErrors: true
+		},
+	})
+	let reloadAble = true;
+	if (!isWin10()) {
+		vibe.applyEffect(chatwin, 'acrylic', '#FFFFFF40');
+	}
+	chatwin.loadURL(__dirname + '/chat.html');
+	chatwin.webContents.openDevTools({ mode: 'detach' })
+	chatwin.removeMenu();
+	chatwin.webContents.on('dom-ready', () => { chatwin.show() })
+	let pin = false;
+	chatwin.webContents.on('ipc-message', (event, arg) => {
+
+	});
+}
+
 function openLargeImg() {
 	const vibe = require('@pyke/vibe');
 	vibe.setup(remote.app);
@@ -1054,7 +1086,10 @@ ClientVersion: 5.2.3.52427
 ClientSign: 308203253082020da00302010202040966f52d300d06092a864886f70d01010b05003042310b300906035504061302434e310f300d060355040713064e696e67426f31223020060355040a13194e696e67426f2052756959694b654a6920436f2e204c74642e3020170d3132313231313130313133355a180f32303632313132393130313133355a3042310b300906035504061302434e310f300d060355040713064e696e67426f31223020060355040a13194e696e67426f2052756959694b654a6920436f2e204c74642e30820122300d06092a864886f70d01010105000382010f003082010a0282010100abf2c60e5fcb7776da3d22c3180e284da9c4e715cec2736646da086cbf979a7f74bc147167f0f32ef0c52458e9183f0dd9571d7971e49564c00fbfd30bef3ca9a2d52bffcd0142c72e10fac158cb62c7bc7e9e17381a555ad7d39a24a470584a0e6aafdce2e4d6877847b15cbf4de89e3e4e71b11dca9920843ccc055acf8781db29bdaf3f06e16f055bf579a35ae3adb4d1149f8d43d90add54596acef8e4a28905f9f19fc0aa7fda9e8d56aa63db5d8d5e0fc4c536629f0a25a44429c699318329af6a3e869dd5e8289c78f55d14563559ffc9ccbf71fac5a03e13a3ee1fb8fc3857d10d5d3990bf9b84cd6fa555eb17a74809a7bb501e953a639104146adb0203010001a321301f301d0603551d0e04160414da4b4d8147840ff4b03f10fc5dd534bb133204e6300d06092a864886f70d01010b05000382010100801b8d796b90ab7a711a88f762c015158d75f1ae5caf969767131e6980ebe7f194ce33750902e6aa561f33d76d37f4482ff22cccbf9d5fecb6ed8e3f278fd1f988ea85ae30f8579d4afe710378b3ccb9cb41beaddef22fb3d128d9d61cfcb3cb05d32ab3b2c4524815bfc9a53c8e5ee3ad4589dc888bcdbdaf9270268eb176ff2d43c2fd236b5bf4ef8ffa8dd920d1583d70f971b988ee4054e1f739ea71510ee7172546ffcda31e6b270178f91086db9ff1051dedf453a6bad4f9b432d362bbe173fd1cc7350853fddd552a27a82fdfaf98e5b08186a03ffc6e187387e4bbd52195126c7c6cec6ab07fd5aadc43a0edb7826b237ba8c8aa443f132516fe89ba
 AppKey: MyiPad
 Flavor: normalAppKey: MyiPad
-Flavor: normal</lpszHardwareKey></UsersLoginJson></v:Body></v:Envelope>`
+Flavor: normal</lpszHardwareKey></UsersLoginJson></v:Body></v:Envelope>`;
+	if(serverADDR == 'qdez.lexuewang.cn:8003'){
+		reqstr = '<v:Envelope xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns:d="http://www.w3.org/2001/XMLSchema" xmlns:c="http://schemas.xmlsoap.org/soap/encoding/" xmlns:v="http://schemas.xmlsoap.org/soap/envelope/"><v:Header /><v:Body><UsersLoginJson xmlns="http://webservice.myi.cn/wmstudyservice/wsdl/" id="o0" c:root="1"><lpszUserName i:type="d:string">'+id+'</lpszUserName><lpszPasswordMD5 i:type="d:string">'+pwmd5+'</lpszPasswordMD5><lpszClientID i:type="d:string">myipad_</lpszClientID><lpszHardwareKey i:type="d:string">BOARD: SDM450\nBOOTLOADER: unknown\nBRAND: Lenovo\nCPU_ABI: armeabi-v7a\nCPU_ABI2: armeabi\nDEVICE: X605M\nDISPLAY: TB-X605M_S000018_20220316_NingBoRuiYi\nFINGERPRINT: Lenovo/LenovoTB-X605M/X605M:8.1.0/OPM1.171019.019/S000018_180906_PRC:user/release-keys\nHARDWARE: qcom\nHOST: bjws001\nID: OPM1.171019.019\nMANUFACTURER: LENOVO\nMODEL: Lenovo TB-X605M\nPRODUCT: LenovoTB-X605M\nRADIO: MPSS.TA.2.3.c1-00705-8953_GEN_PACK-1.159624.0.170600.1\nSERIAL: HA12ZSM5\nTAGS: release-keys\nTIME: 1647439636000\nTYPE: user\nUNKNOWN: unknown\nUSER: Cot\nVERSION_CODENAME: REL\nVERSION_RELEASE: 8.1.0\nVERSION_SDK_INT: 27\nWifiMac: aa:bb:12:34:56:78\nWifiSSID: "MyipadPlus"\nMemTotal:        2894388 kB\nprocessor: 0\nBogoMIPS: 38.40\nFeatures: half thumb fastmult vfp edsp neon vfpv3 tls vfpv4 idiva idivt lpae evtstrm aes pmull sha1 sha2 crc32\nCPU implementer: 0x41\nCPU architecture: 8\nCPU variant: 0x0\nCPU part: 0xd03\nCPU revision: 4\nprocessor: 1\nBogoMIPS: 38.40\nFeatures: half thumb fastmult vfp edsp neon vfpv3 tls vfpv4 idiva idivt lpae evtstrm aes pmull sha1 sha2 crc32\nCPU implementer: 0x41\nCPU architecture: 8\nCPU variant: 0x0\nCPU part: 0xd03\nCPU revision: 4\nprocessor: 2\nBogoMIPS: 38.40\nFeatures: half thumb fastmult vfp edsp neon vfpv3 tls vfpv4 idiva idivt lpae evtstrm aes pmull sha1 sha2 crc32\nCPU implementer: 0x41\nCPU architecture: 8\nCPU variant: 0x0\nCPU part: 0xd03\nCPU revision: 4\nprocessor: 3\nBogoMIPS: 38.40\nFeatures: half thumb fastmult vfp edsp neon vfpv3 tls vfpv4 idiva idivt lpae evtstrm aes pmull sha1 sha2 crc32\nCPU implementer: 0x41\nCPU architecture: 8\nCPU variant: 0x0\nCPU part: 0xd03\nCPU revision: 4\nprocessor: 4\nBogoMIPS: 38.40\nFeatures: half thumb fastmult vfp edsp neon vfpv3 tls vfpv4 idiva idivt lpae evtstrm aes pmull sha1 sha2 crc32\nCPU implementer: 0x41\nCPU architecture: 8\nCPU variant: 0x0\nCPU part: 0xd03\nCPU revision: 4\nprocessor: 5\nBogoMIPS: 38.40\nFeatures: half thumb fastmult vfp edsp neon vfpv3 tls vfpv4 idiva idivt lpae evtstrm aes pmull sha1 sha2 crc32\nCPU implementer: 0x41\nCPU architecture: 8\nCPU variant: 0x0\nCPU part: 0xd03\nCPU revision: 4\nprocessor: 6\nBogoMIPS: 38.40\nFeatures: half thumb fastmult vfp edsp neon vfpv3 tls vfpv4 idiva idivt lpae evtstrm aes pmull sha1 sha2 crc32\nCPU implementer: 0x41\nCPU architecture: 8\nCPU variant: 0x0\nCPU part: 0xd03\nCPU revision: 4\nprocessor: 7\nBogoMIPS: 38.40\nFeatures: half thumb fastmult vfp edsp neon vfpv3 tls vfpv4 idiva idivt lpae evtstrm aes pmull sha1 sha2 crc32\nCPU implementer: 0x41\nCPU architecture: 8\nCPU variant: 0x0\nCPU part: 0xd03\nCPU revision: 4\nHardware: Qualcomm Technologies, Inc SDM450\n\nIMEI: 869335031262488\nInternal: 23592MB\nCPUCores: 8\nScreen: 1920x1128\nservices.jar: 59a4f38ee38bddf7780c961b5f4e0855\nframework.jar: 7d68c7c5690ca8cda56c3778c94a2cc2\nPackageName: com.netspace.myipad\nClientVersion: 5.2.3.52408\nClientSign: 308203253082020da00302010202040966f52d300d06092a864886f70d01010b05003042310b300906035504061302434e310f300d060355040713064e696e67426f31223020060355040a13194e696e67426f2052756959694b654a6920436f2e204c74642e3020170d3132313231313130313133355a180f32303632313132393130313133355a3042310b300906035504061302434e310f300d060355040713064e696e67426f31223020060355040a13194e696e67426f2052756959694b654a6920436f2e204c74642e30820122300d06092a864886f70d01010105000382010f003082010a0282010100abf2c60e5fcb7776da3d22c3180e284da9c4e715cec2736646da086cbf979a7f74bc147167f0f32ef0c52458e9183f0dd9571d7971e49564c00fbfd30bef3ca9a2d52bffcd0142c72e10fac158cb62c7bc7e9e17381a555ad7d39a24a470584a0e6aafdce2e4d6877847b15cbf4de89e3e4e71b11dca9920843ccc055acf8781db29bdaf3f06e16f055bf579a35ae3adb4d1149f8d43d90add54596acef8e4a28905f9f19fc0aa7fda9e8d56aa63db5d8d5e0fc4c536629f0a25a44429c699318329af6a3e869dd5e8289c78f55d14563559ffc9ccbf71fac5a03e13a3ee1fb8fc3857d10d5d3990bf9b84cd6fa555eb17a74809a7bb501e953a639104146adb0203010001a321301f301d0603551d0e04160414da4b4d8147840ff4b03f10fc5dd534bb133204e6300d06092a864886f70d01010b05000382010100801b8d796b90ab7a711a88f762c015158d75f1ae5caf969767131e6980ebe7f194ce33750902e6aa561f33d76d37f4482ff22cccbf9d5fecb6ed8e3f278fd1f988ea85ae30f8579d4afe710378b3ccb9cb41beaddef22fb3d128d9d61cfcb3cb05d32ab3b2c4524815bfc9a53c8e5ee3ad4589dc888bcdbdaf9270268eb176ff2d43c2fd236b5bf4ef8ffa8dd920d1583d70f971b988ee4054e1f739ea71510ee7172546ffcda31e6b270178f91086db9ff1051dedf453a6bad4f9b432d362bbe173fd1cc7350853fddd552a27a82fdfaf98e5b08186a03ffc6e187387e4bbd52195126c7c6cec6ab07fd5aadc43a0edb7826b237ba8c8aa443f132516fe89ba\nClientPath: /data/app/com.netspace.myipad-bIpVmlM95uHO7y2D8HgJKg==/base.apk\nClientMD5: cd9f2dac5bdac80d0371f568bbf58515\nAppKey: MyiPad\nFlavor: normal</lpszHardwareKey></UsersLoginJson></v:Body></v:Envelope>\n'
+	}
 	if (serverADDR) {
 		globalAccountFile = { account: id, password: pwmd5, server: serverADDR };
 	} else {
@@ -1070,7 +1105,13 @@ Flavor: normal</lpszHardwareKey></UsersLoginJson></v:Body></v:Envelope>`
 				} catch {}
 			})
 		} else if ((retval + "").indexOf(">-4041<") != -1) {
-			panelistic.dialog.alert("登录失败", "模拟硬件信息验证失败", "确定", () => {
+			panelistic.dialog.alert("登录失败", "模拟硬件信息验证失败，请在Github上提交issue", "确定", () => {
+				try {
+					fs.unlinkSync(getuserdatapath() + '/account')
+				} catch {}
+			})
+		} else if ((retval + "").indexOf(">-4042<") != -1) {
+			panelistic.dialog.alert("登录失败", "模拟软件信息验证失败，请在Github上提交issue", "确定", () => {
 				try {
 					fs.unlinkSync(getuserdatapath() + '/account')
 				} catch {}

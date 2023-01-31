@@ -24,7 +24,7 @@ function Panelistic() {
 	this.dialog.input= function(title,content,placeholder,button,callback) {
 		let id = Date.now();
 		panelistic_callback["v"+id] = callback?callback:()=>{};
-		panelistic_blur.innerHTML += `<div class="panelistic_popup" id="${id}"><div class="panelistic_panel_dlct panelistic_popup_layout"><span class="panelistic_popup_title">${title}</span><br><span class="panelistic_placeholder"></span><span class="panelistic_popup_content">${content}</span></div><span class="panelistic_placeholder"></span><input type="text" placeholder=${placeholder} value="" id="input${id}" class="panelistic_dialog_input"><span class="panelistic_placeholder"></span><input type="button" value="${button}" onclick="panelistic_callback.v${id}(document.getElementById('input${id}').value);panelistic.dialog.dismiss(${id});">&nbsp;<input type="button" value="取消" onclick="panelistic.dialog.dismiss(${id});"><br></div>`
+		panelistic_blur.innerHTML += `<div class="panelistic_popup" id="${id}"><div class="panelistic_panel_dlct panelistic_popup_layout"><span class="panelistic_popup_title">${title}</span><br><span class="panelistic_placeholder"></span><span class="panelistic_popup_content">${content}</span></div><span class="panelistic_placeholder"></span><input type="text" onload="this.focus()" placeholder=${placeholder} value="" id="input${id}" class="panelistic_dialog_input"><span class="panelistic_placeholder"></span><input type="button" value="${button}" onclick="panelistic_callback.v${id}(document.getElementById('input${id}').value);panelistic.dialog.dismiss(${id});">&nbsp;<input type="button" value="取消" onclick="panelistic.dialog.dismiss(${id});"><br></div>`
 		panelistic_blur.style.visibility='visible';
 		panelistic_dialog_count++;
 		return id;

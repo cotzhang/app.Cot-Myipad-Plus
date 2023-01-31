@@ -18,7 +18,8 @@ function uniqueFunc(arr, uniId) {
 
 function getClassGUIDs() {
 	let classstr = "";
-	if (!globalDataFile.classes) { return getGlobalUserguid() }
+	if (!globalDataFile.classes) { panelistic.dialog.alert("提示", "您的学校填写错误，请更正", "重新填写", () => { fs.unlinkSync(getuserdatapath() + '/account');
+			window.location.reload(); }); return getGlobalUserguid(); }
 	for (var i = 0; i < globalDataFile.classes.length; i++) {
 		classstr += globalDataFile.classes[i].guid + ",";
 	}

@@ -356,14 +356,14 @@ function finishAllSyncProgress() {
 function fetchAllRuiyiYun(callback) {
 	let server = JSON.parse(fs.readFileSync(getuserdatapath() + '/account')).server
 	let site = 'https://' + (server.split('.')[0] + 'res.' + server.split('.')[1] + '.' + server.split('.')[2]).split(':')[0] + ':8008';
-	autoRetryRequest(site + '/practice/api/TaskExposeAPI/GetTaskList?userId=' + getGlobalUserguid() + '&pageIndex=1&pageSize=1000000', '', [], (response) => {
+	simpleRequest(site + '/practice/api/TaskExposeAPI/GetTaskList?userId=' + getGlobalUserguid() + '&pageIndex=1&pageSize=1000000', '', [], (response) => {
 		let allRyy = []
 		let totalPageData = JSON.parse(response).data.pageData;
 		for (var i = 0; i < totalPageData.length; i++) {
 			allRyy.push(parseRuiyiYunDataSync(totalPageData[i]));
 		}
 		callback(allRyy);
-	}, 2000, 100, true)
+	},()=>{callback([])}, 2000, true)
 }
 
 function finishFetchAllRuiyiYun(allRyy) {
@@ -740,8 +740,8 @@ window.onload = function() {
 		} else if (event.channel == "upload") {
 			let filelists = remote.dialog.showOpenDialogSync({ properties: ['multiSelections'] })
 			console.log(filelists.length)
-			if (filelists.length > 40) {
-				panelistic.dialog.alert('提示', '单次上传最多40个文件', '确定')
+			if (filelists.length > 500) {
+				panelistic.dialog.alert('提示', '单次上传最多500个文件', '确定')
 				return;
 			} else if (filelists) {
 				webview.send('filepath', filelists)

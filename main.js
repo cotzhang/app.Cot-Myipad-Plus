@@ -12,7 +12,7 @@ const ex = process.execPath;
 let win;
 
 function isWin10() {
-	return (process.getSystemVersion().startsWith('10.0') && new Number(process.getSystemVersion().split('.')[2]) <= 19045)||(process.getSystemVersion().startsWith('11.0') && new Number(process.getSystemVersion().split('.')[2]) <= 19045)
+	return (process.getSystemVersion().startsWith('10.0') && new Number(process.getSystemVersion().split('.')[2]) <= 19045) || (process.getSystemVersion().startsWith('11.0') && new Number(process.getSystemVersion().split('.')[2]) <= 19045)
 }
 
 const { session } = require('electron')
@@ -39,32 +39,7 @@ electron.app.whenReady().then(() => {
 
 function spawnWindow() {
 	if (!isFirstInstance) {
-		win = new electron.BrowserWindow({
-			width: 240,
-			height: 65,
-			backgroundColor: '#00000000',
-			resizable: false,
-			webPreferences: {
-				nodeIntegration: true,
-				enableRemoteModule: true,
-				contextIsolation: false,
-				webviewTag: true,
-				nodeIntegrationInWorker: true,
-				acceptInsecureCerts: true,
-				disableHSTS: true
-			},
-			icon: __dirname + '/icon.png',
-			show: false
-		});
-		if (!isWin10()) {
-			vibe.applyEffect(win, 'acrylic', '#FFFFFF40');
-		}
-		win.loadFile('secondInstance.html')
-		win.removeMenu();
-		win.webContents.on('did-finish-load', () => {
-			win.show()
-		});
-		return;
+		electron.app.exit()
 	}
 	win = new electron.BrowserWindow({
 		backgroundColor: '#00000000',
@@ -106,6 +81,16 @@ function spawnWindow() {
 	win.removeMenu();
 	win.webContents.session.setCertificateVerifyProc((request, callback) => {
 		callback(0)
+	})
+	electron.app.on('second-instance', (event, commandLine, workingDirectory, additionalData) => {
+		//输入从第二个实例中接收到的数据
+		console.log(additionalData)
+		//有人试图运行第二个实例，我们应该关注我们的窗口
+		if (win) {
+			if (win.isMinimized()) win.restore()
+			win.show()
+			win.focus()
+		}
 	})
 	if (!isWin10()) {
 		vibe.applyEffect(win, 'acrylic', '#FFFFFF40');
@@ -188,70 +173,73 @@ function makeTray() {
 	let contextMenu;
 	if (fs.existsSync(getuserdatapath() + '/account')) {
 		contextMenu = electron.Menu.buildFromTemplate([{
-			label: '自主学习',
-			click: function() {
-				win.webContents.send('goto', 'selflearn')
-				win.show()
+				label: '自主学习',
+				click: function() {
+					win.webContents.send('goto', 'selflearn')
+					win.show()
+				}
+			}, {
+				label: '睿易云',
+				click: function() {
+					win.webContents.send('gotoryy')
+				}
+			}, {
+				label: '学情分析',
+				click: function() {
+					win.webContents.send('gotoryy-xq')
+				}
+			}, {
+				label: '课堂实录',
+				click: function() {
+					win.webContents.send('goto', 'classrecord')
+					win.show()
+				}
 			}
-		}, {
-			label: '睿易云',
-			click: function() {
-				win.webContents.send('gotoryy')
+			/*, {
+						label: '我的设备',
+						click: function() {
+							win.webContents.send('goto', 'mypad')
+							win.show()
+						}
+					}*/
+			, {
+				label: '我的资源库',
+				click: function() {
+					win.webContents.send('goto', 'library')
+					win.show()
+				}
+			}, {
+				type: 'separator'
+			}, {
+				label: '账号与设置',
+				click: function() {
+					win.webContents.send('goto', 'account')
+					win.show()
+				}
+			}, {
+				type: 'separator'
+			}, {
+				label: '立即同步',
+				click: function() {
+					win.webContents.send('sync')
+				}
+			}, {
+				type: 'separator'
+			}, {
+				label: '显示主窗口',
+				click: function() {
+					win.show()
+				}
+			}, {
+				label: '退出',
+				click: function() {
+					console.log("Exit!");
+					delTray()
+					win.destroy();
+					electron.app.quit();
+				}
 			}
-		}, {
-			label: '学情分析',
-			click: function() {
-				win.webContents.send('gotoryy-xq')
-			}
-		}, {
-			label: '课堂实录',
-			click: function() {
-				win.webContents.send('goto', 'classrecord')
-				win.show()
-			}
-		}/*, {
-			label: '我的设备',
-			click: function() {
-				win.webContents.send('goto', 'mypad')
-				win.show()
-			}
-		}*/, {
-			label: '我的资源库',
-			click: function() {
-				win.webContents.send('goto', 'library')
-				win.show()
-			}
-		}, {
-			type: 'separator'
-		}, {
-			label: '账号与设置',
-			click: function() {
-				win.webContents.send('goto', 'account')
-				win.show()
-			}
-		}, {
-			type: 'separator'
-		}, {
-			label: '立即同步',
-			click: function() {
-				win.webContents.send('sync')
-			}
-		}, {
-			type: 'separator'
-		}, {
-			label: '显示主窗口',
-			click: function() {
-				win.show()
-			}
-		}, {
-			label: '退出',
-			click: function() {
-				console.log("Exit!");
-				delTray()
-				win.destroy();
-				electron.app.quit();
-			}
-		}])
+		])
 	} else {
 		contextMenu = electron.Menu.buildFromTemplate([{
 			label: '您尚未登录',

@@ -1192,7 +1192,7 @@ function checkUpd() {
 			console.log("New Update!")
 			let upditems = JSON.parse(getDbSync('update').responseText.replaceAll('\n', '<br>')).update;
 			console.log()
-			panelistic.dialog.confirm("更新", upditems.replaceAll("抱歉，您的版本过旧，无法自动更新，请手动在网站下载最新版本安装：https://cotx.tech/#/padplus", ""), "更新", "取消", (cf) => {
+			panelistic.dialog.confirm("更新", upditems.replaceAll("抱歉，您的版本过低，无法自动更新，请手动在网站下载最新版本安装：https://cotx.tech/#/padplus", ""), "更新", "取消", (cf) => {
 				if (cf) {
 					(async () => {
 						fs.writeFile(getuserdatapath() + '/installer.exe', await download('https://storage-1303195148.cos.ap-guangzhou.myqcloud.com/app/cmp_inst.exe'), () => {

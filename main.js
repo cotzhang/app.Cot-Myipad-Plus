@@ -98,7 +98,7 @@ function spawnWindow() {
 	if (electron.nativeTheme.shouldUseDarkColors) vibe.setDarkMode(win);
 
 	//win.setAlwaysOnTop("alwaysOnTop")
-	// win.webContents.openDevTools({ mode: "detach" })
+	win.webContents.openDevTools({ mode: "detach" })
 	remote.enable(win.webContents)
 	win.webContents.on('did-finish-load', () => {
 		if (!process.argv.includes('--boot')) {
@@ -143,6 +143,11 @@ electron.ipcMain.on('openwin', (event, ...args) => {
 
 electron.ipcMain.on('exit', (event, ...args) => {
 	electron.app.exit()
+})
+
+electron.ipcMain.on('dragfile', (event, ...args) => {
+	console.log('dragging')
+	win.webContents.startDrag(args[0])
 })
 
 // Boot Load On!

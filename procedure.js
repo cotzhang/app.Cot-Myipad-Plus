@@ -643,6 +643,40 @@ window.onload = function() {
 					})();
 				}
 			}
+		} else if (event.channel == "dolink") {
+			if (!fs.existsSync(getuserdatapath() + '/downloads')) {
+				fs.mkdirSync(getuserdatapath() + '/downloads')
+			}
+			let panelisticid = panelistic.dialog.salert('请稍等');
+			(async () => {
+				try {
+					fs.writeFile(getuserdatapath() + '/downloads/' + event.args[0].split('/')[event.args[0].split('/').length - 1], await download(event.args[0]), () => {
+						var myHeaders = new Headers();
+						let fnm = "MyipadPlusGenerated_" + getRandomGUID()
+						fetch(`https://${getGlobalServerAddr()}/PutTemporaryStorage?filename=${fnm}` + "." + event.args[0].split('.')[event.args[0].split('.').length - 1], {
+								method: 'POST',
+								body: fs.readFileSync(getuserdatapath() + '/downloads/' + event.args[0].split('/')[event.args[0].split('/').length - 1]),
+								mode: 'no-cors',
+								headers: {
+									"Content-Type": "text/plain"
+								}
+							})
+							.then(() => {
+								panelistic.dialog.dismiss(panelisticid);
+								const newInput = document.createElement('input');
+								document.body.appendChild(newInput)
+								newInput.value = `https://${getGlobalServerAddr()}/GetTemporaryStorage?filename=${fnm}` + "." + event.args[0].split('.')[event.args[0].split('.').length - 1];
+								newInput.select();
+								document.execCommand('copy');
+								document.body.removeChild(newInput)
+								panelistic.dialog.alert("复制链接", "链接已复制到剪贴板", "确定");
+							})
+					})
+				} catch (err) {
+					panelistic.dialog.dismiss(panelisticid);
+					panelistic.dialog.alert('错误', '文件下载失败：<br>' + err, '确定')
+				}
+			})();
 		} else if (event.channel == "updable") {
 			panelistic.dialog.confirm("更新", "有新版本可用", "更新", "取消", (cf) => {
 				if (cf) {
@@ -1270,6 +1304,16 @@ function showFileContextMenu(event) {
 				webview.send('openF', [false].concat(event.args));
 			}
 		}, {
+			label: "另存为...",
+			bold: true,
+			click: () => {
+				console.log('openClicked')
+				webview.send('openF', [false].concat(event.args).concat(true));
+			}
+		},
+		{
+			type: 'separator'
+		}, {
 			label: "复制文件GUID",
 			click: () => {
 				const input = document.createElement('input');
@@ -1283,9 +1327,6 @@ function showFileContextMenu(event) {
 				document.body.removeChild(input);
 			}
 		},
-		{
-			type: 'separator'
-		},
 		/*{
 			label: "共享文件到",
 			submenu: [{
@@ -1298,10 +1339,16 @@ function showFileContextMenu(event) {
 					label: '共享到 测试班级2',
 				}
 			],
+		},*/
+		{
+			label: "生成文件链接",
+			click: () => {
+				webview.send('doLink', [false].concat(event.args))
+			}
 		},
 		{
 			type: 'separator'
-		} */
+		},
 		{
 			label: "删除",
 			click: () => {

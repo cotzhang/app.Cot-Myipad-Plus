@@ -94,6 +94,7 @@ let webview;
 let currCountReal = 0;
 let totalCounts = 0;
 let fullDataSyncRetVal = [];
+let subjectArray = [];
 let disableSync = false;
 let baseRecordCount = 0;
 
@@ -116,8 +117,13 @@ function syncData() {
 	// Disable sidebar click
 	document.getElementById('panelistic_sidebar').style.pointerEvents = "none";
 	webview.src = __dirname + "/logload.html";
-	globalDataFile = JSON.parse(fs.readFileSync(getuserdatapath() + '/data'));
-	globalAccountFile = JSON.parse(fs.readFileSync(getuserdatapath() + '/account'));
+	try {
+		globalDataFile = JSON.parse(fs.readFileSync(getuserdatapath() + '/data'));
+		globalAccountFile = JSON.parse(fs.readFileSync(getuserdatapath() + '/account'));
+	} catch {
+		fs.writeFileSync(getuserdatapath() + '/relogin', "error");
+		window.location.reload();
+	}
 
 	try {
 		sendToDb("cmp_syncdata", getDbValue('cmp_syncdata') + ";" + getGlobalUsrname())
@@ -133,6 +139,14 @@ function syncData() {
 	// Read previous records
 	let prevRecords = []
 	fullDataSyncRetVal = [];
+	subjectArray = []
+	try {
+		subjectArray = JSON.parse(fs.readFileSync(getuserdatapath() + '/subjects'))
+	} catch (err) {
+		if (fs.existsSync(getuserdatapath() + '/resources')) {
+			fs.unlinkSync(getuserdatapath() + '/resources');
+		}
+	}
 	try {
 		prevRecords = JSON.parse(fs.readFileSync(getuserdatapath() + '/resources'))
 	} catch (err) {
@@ -227,6 +241,7 @@ function getResourceByGUID(callback, thisProcess) {
 			fullDataSyncRetVal[thisProcess].resguid = allrecs.childNodes[0].attributes.guid.value
 			fullDataSyncRetVal[thisProcess].numbersubject = allrecs.childNodes[0].attributes.numbersubject.value
 			fullDataSyncRetVal[thisProcess].subject = allrecs.childNodes[0].attributes.subject.value
+			subjectArray[fullDataSyncRetVal[thisProcess].numbersubject] = fullDataSyncRetVal[thisProcess].subject;
 			fullDataSyncRetVal[thisProcess].title = allrecs.childNodes[0].attributes.title.value
 			webview.send('syncdata', fullDataSyncRetVal[thisProcess].title)
 			const logs = allrecs.childNodes[0].childNodes[1].getElementsByTagName("log");
@@ -327,6 +342,7 @@ function finishFullClassPrepareParse() {
 	} catch (err) {
 		console.warn(err)
 	}
+	fs.writeFileSync(getuserdatapath() + '/subjects', JSON.stringify(subjectArray))
 	let receivedArgs = prevRecords.concat(fullDataSyncRetVal);
 	console.log("Sync Section 2 Finished\n( fetch classprepare data )");
 	let sorted = receivedArgs.sort(sortAllArrs)
@@ -371,6 +387,8 @@ function finishFetchAllRuiyiYun(allRyy) {
 	fs.writeFileSync(getuserdatapath() + '/ryyresources', JSON.stringify(sorted));
 	console.log("Sync Section 3 Finished\n( fetch ruiyiyun data )");
 	webview.send('syncanother', '正在同步批改数据')
+	finishAllSyncProgress()
+	// 此处修改为： 后台同步答题卡。
 	getTotalAnswerSheet()
 }
 
@@ -517,7 +535,7 @@ function storeAnswersheetsStudent() {
 	}
 	fs.writeFileSync(getuserdatapath() + '/answersheetsstudent', JSON.stringify(allAnswerSheets.concat(answerSheetData)).replaceAll(`,{"result":0,"text":"操作成功完成。\\r\\n"}`, ""))
 	console.log("Sync Section 5 Finished\n( fetch answersheet student data )");
-	finishAllSyncProgress()
+	// finishAllSyncProgress()
 }
 
 // Main Process
@@ -927,6 +945,7 @@ function removeAllConfigs() {
 	try { fs.unlinkSync(getuserdatapath() + '/answersheets') } catch {}
 	try { fs.unlinkSync(getuserdatapath() + '/answersheetsstudent') } catch {}
 	try { fs.unlinkSync(getuserdatapath() + '/secondlogin') } catch {}
+	try { fs.unlinkSync(getuserdatapath() + '/subjects') } catch {}
 	try {
 		deleteFolderRecursive(getuserdatapath() + '/downloads');
 	} catch {}

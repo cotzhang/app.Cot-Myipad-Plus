@@ -14,7 +14,6 @@ let win;
 function isWin10() {
 	return (process.getSystemVersion().startsWith('10.0') && new Number(process.getSystemVersion().split('.')[2]) <= 19045) || (process.getSystemVersion().startsWith('11.0') && new Number(process.getSystemVersion().split('.')[2]) <= 19045)
 }
-
 const { session } = require('electron')
 
 if (process.platform === 'win32') {

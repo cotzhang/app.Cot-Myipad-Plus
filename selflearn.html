@@ -322,6 +322,14 @@
 								document.getElementById("fileload_" + guid).innerText = "●无需缓存"
 								document.getElementById("fileload_" + guid).style.color = "#f79b2c"
 							}
+							setTimeout(() => {
+								if (fs.existsSync(getuserdatapath() + '/downloads/' + getdoms.querySelector("div > wmstudy > resource > content").attributes.fileuri.textContent.split('/')[getdoms.querySelector("div > wmstudy > resource > content").attributes.fileuri.textContent.split('/').length - 1])) {
+									if (document.getElementById("fileload_" + guid).innerText == "●加载中") {
+										document.getElementById("fileload_" + guid).innerText = "●已缓存"
+										document.getElementById("fileload_" + guid).style.color = "#228004"
+									}
+								}
+							})
 						} else {
 							document.getElementById("fileload_" + guid).innerText = "●已缓存"
 							document.getElementById("fileload_" + guid).style.color = "#228004"
@@ -647,7 +655,7 @@
 				console.log(getuserdatapath() + '/downloads/' + filename + "." + fileposition.split('.')[fileposition.split('.').length - 1])
 				electron.ipcRenderer.sendToHost('startDrag', {
 					file: getuserdatapath() + '/downloads/' + filename + "." + fileposition.split('.')[fileposition.split('.').length - 1],
-					icon: './snpicon.png',
+					icon: __dirname + '/snpicon.png',
 					title: filename
 				})
 			}

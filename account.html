@@ -24,7 +24,7 @@
 		document.getElementById('mysch').innerText = alldata.schoolname + "\n" + alldata.schoolguid;
 		// document.getElementById('').innerText=;
 		setCheckboxes()
-		document.getElementById('autorelease').innerText = JSON.parse(fs.readFileSync('./package.json')).version;
+		document.getElementById('autorelease').innerText = JSON.parse(fs.readFileSync(__dirname+'/package.json')).version;
 	}
 
 	function checkUpd() {

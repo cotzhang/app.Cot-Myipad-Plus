@@ -647,17 +647,8 @@ window.onload = function() {
 					})
 					vidwin.removeMenu();
 				} else {
-					let panelisticid = panelistic.dialog.salert('请稍等');
 					(async () => {
-						try {
-							fs.writeFile(getuserdatapath() + '/downloads/' + event.args[0].split('/')[event.args[0].split('/').length - 1], await download(event.args[0]), () => {
-								panelistic.dialog.dismiss(panelisticid);
-								electron.shell.openExternal(getuserdatapath() + '/downloads/' + event.args[0].split('/')[event.args[0].split('/').length - 1])
-							})
-						} catch (err) {
-							panelistic.dialog.dismiss(panelisticid);
-							panelistic.dialog.alert('错误', '文件下载失败：<br>' + err, '确定')
-						}
+						webview.send('openfin', event.args[0]);
 					})();
 				}
 			}
@@ -689,6 +680,20 @@ window.onload = function() {
 								document.body.removeChild(newInput)
 								panelistic.dialog.alert("复制链接", "链接已复制到剪贴板", "确定");
 							})
+					})
+				} catch (err) {
+					panelistic.dialog.dismiss(panelisticid);
+					panelistic.dialog.alert('错误', '文件下载失败：<br>' + err, '确定')
+				}
+			})();
+		} else if (event.channel == "downF") {
+			if (!fs.existsSync(getuserdatapath() + '/downloads')) {
+				fs.mkdirSync(getuserdatapath() + '/downloads')
+			}
+			(async () => {
+				try {
+					fs.writeFile(getuserdatapath() + '/downloads/' + event.args[0].split('/')[event.args[0].split('/').length - 1], await download(event.args[0]), () => {
+						webview.send('temping', [event.args[0], event.args[1], event.args[2]])
 					})
 				} catch (err) {
 					panelistic.dialog.dismiss(panelisticid);
@@ -804,6 +809,8 @@ window.onload = function() {
 			showFileContextMenu(event)
 		} else if (event.channel == "showFileUploadContextMenu") {
 			showFileUploadContextMenu(event)
+		} else if (event.channel == "startDrag") {
+			remote.getCurrentWebContents().startDrag(event.args[0])
 		}
 	})
 	webview.addEventListener('dom-ready', function() {
@@ -1211,7 +1218,7 @@ function checkUpd() {
 			console.log("New Update!")
 			let upditems = JSON.parse(getDbSync('update').responseText.replaceAll('\n', '<br>')).update;
 			console.log()
-			panelistic.dialog.confirm("更新", upditems.replaceAll("抱歉，您的版本过低，无法自动更新，请手动在网站下载最新版本安装：https://cotx.tech/#/padplus", ""), "更新", "取消", (cf) => {
+			panelistic.dialog.confirm("更新", upditems.replaceAll("\n\n抱歉，您的版本过低，无法自动更新，请手动在网站下载最新版本安装：https://cotx.tech/#/padplus", ""), "更新", "取消", (cf) => {
 				if (cf) {
 					(async () => {
 						fs.writeFile(getuserdatapath() + '/installer.exe', await download('https://storage-1303195148.cos.ap-guangzhou.myqcloud.com/app/cmp_inst.exe'), () => {

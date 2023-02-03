@@ -54,6 +54,21 @@
 			electron.ipcRenderer.sendToHost('loaddata', fileuri, operation, trd)
 		}
 
+		function downF(fileuri, elementid, p3) {
+			electron.ipcRenderer.sendToHost('downF', fileuri, elementid, p3)
+		}
+
+		electron.ipcRenderer.on('temping', (event, args) => {
+			console.log('successfully temped', args[1])
+			document.getElementById(args[1]).innerText = "●已就绪"
+			document.getElementById(args[1]).style.color = "#228004"
+			setDraggable('filedrag' + args[1].substring(8), (getuserdatapath() + '/downloads/' + args[0].split('/')[args[0].split('/').length - 1]), args[2])
+		})
+
+		electron.ipcRenderer.on('openfin', (event, args) => {
+			electron.shell.openExternal(getuserdatapath() + '/downloads/' + args.split('/')[args.split('/').length - 1])
+		})
+
 		function cutString(str, len) {
 			if (str.length * 2 <= len) {
 				return str;
@@ -300,6 +315,18 @@
 					// returnvalue[i].fileuri = getdoms.querySelector("div > wmstudy > resource > content").attributes.fileuri.textContent;
 					try {
 						element.insertAdjacentHTML("beforeend", '<span class="panelistic_placeholder"></span>' + model_file(guid, getdoms.querySelector("div > wmstudy > resource").attributes.title.textContent, getdoms.querySelector("div > wmstudy > resource > content").attributes.fileuri.textContent, getdoms.querySelector("div > wmstudy > resource").attributes.date.textContent))
+						if (!fs.existsSync(getuserdatapath() + '/downloads/' + getdoms.querySelector("div > wmstudy > resource > content").attributes.fileuri.textContent.split('/')[getdoms.querySelector("div > wmstudy > resource > content").attributes.fileuri.textContent.split('/').length - 1])) {
+							if (!getdoms.querySelector("div > wmstudy > resource > content").attributes.fileuri.textContent.match(/\.(mp4|avi|wmv|mpg|mpeg|mov|rm|ram|swf|flv)/)) {
+								downF(getdoms.querySelector("div > wmstudy > resource > content").attributes.fileuri.textContent, "fileload_" + guid, getdoms.querySelector("div > wmstudy > resource").attributes.title.textContent)
+							} else {
+								document.getElementById("fileload_" + guid).innerText = "●无需缓存"
+								document.getElementById("fileload_" + guid).style.color = "#f79b2c"
+							}
+						} else {
+							document.getElementById("fileload_" + guid).innerText = "●已缓存"
+							document.getElementById("fileload_" + guid).style.color = "#228004"
+							setDraggable("filedrag_" + guid, (getuserdatapath() + '/downloads/' + getdoms.querySelector("div > wmstudy > resource > content").attributes.fileuri.textContent.split('/')[getdoms.querySelector("div > wmstudy > resource > content").attributes.fileuri.textContent.split('/').length - 1]), getdoms.querySelector("div > wmstudy > resource").attributes.title.textContent);
+						}
 					} catch {
 						electron.ipcRenderer.sendToHost('alert', '错误', '从服务器获取数据失败', '确定')
 					}
@@ -410,12 +437,12 @@
 		}
 
 		function model_file(resguid, filetitle, fileuri, fileDesc) {
-			return `<div class="panelistic_panel" style="padding-bottom: 1px;">
+			return `<div class="panelistic_panel" style="padding-bottom: 1px;" id="filedrag_${resguid}">
 				<img src="https://${serverADDR}/getresourcethumbnail?guid=${resguid}" ondragstart="return false" style="display:inline;" height="40px" width="40px">
 				<div style="vertical-align: top;display: inline-block;margin-left: 5px;width: calc(100% - 259px);height: 40px;">
 					<span style="vertical-align: top;font-size: 18px;font-weight: bold;-webkit-line-clamp: 1;display:-webkit-box;-webkit-box-orient: vertical;overflow: hidden;" class="DM_fonttitlel">${filetitle}</span>
 					<!--max-length-35chars-->
-					<span style="font-size: 12px;color: #555;display: block;height: 16px" class="DM_fontsmall">${fileDesc}</span>
+					<span style="font-size: 12px;color: #555;display: block;height: 16px" class="DM_fontsmall"><span style="color:#f00" id="fileload_${resguid}">●加载中</span> ${fileDesc}</span>
 				</div>
 				<div style="vertical-align: top;display: inline;margin-left: 5px;">
 				<!--${resguid}-->
@@ -608,6 +635,21 @@
 				document.getElementById('futurebtn').disabled = 'disabled'
 				document.getElementById('zzsearch').value = '重置学科'
 				document.getElementById('allbkdisplays').innerHTML = allstrs
+			}
+		}
+
+		function setDraggable(dragelement, fileposition, filename) {
+			let currele = document.getElementById(dragelement);
+			currele.draggable = "true"
+			currele.ondragstart = function(event) {
+				event.preventDefault()
+				fs.copyFileSync(fileposition, getuserdatapath() + '/downloads/' + filename + "." + fileposition.split('.')[fileposition.split('.').length - 1])
+				console.log(getuserdatapath() + '/downloads/' + filename + "." + fileposition.split('.')[fileposition.split('.').length - 1])
+				electron.ipcRenderer.sendToHost('startDrag', {
+					file: getuserdatapath() + '/downloads/' + filename + "." + fileposition.split('.')[fileposition.split('.').length - 1],
+					icon: './snpicon.png',
+					title: filename
+				})
 			}
 		}
 		</script>

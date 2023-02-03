@@ -47,6 +47,14 @@
   const getuserdatapath = () => {
     return require('path').join(process.env.appdata, 'cmp').replaceAll('\\', '/')
   }
+
+  // Linux detection
+  if (process.platform === 'linux') {
+    // Hey, you are using the linux system!
+    getuserdatapath = () => {
+      return process.cwd() + '/ldata'
+    }
+  }
   // Windows 10 detection
   if (isWin10()) {
     add_css(`body{ background-color:#000 }`)

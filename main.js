@@ -9,6 +9,18 @@ const remote = require("@electron/remote/main")
 const ex = process.execPath;
 // const isDev = require('electron-is-dev')
 
+function getuserdatapath() {
+	return require('path').join(process.env.appdata, 'cmp').replaceAll('\\', '/')；
+}
+
+// Linux detection
+if (process.platform === 'linux') {
+	// Hey, you are using the linux system!
+	getuserdatapath = () => {
+		return process.cwd() + '/ldata'
+	}
+}
+
 let win;
 
 function isWin10() {
@@ -18,10 +30,6 @@ const { session } = require('electron')
 
 if (process.platform === 'win32') {
 	electron.app.setAppUserModelId('平板+')
-}
-
-function getuserdatapath() {
-	return require('path').join(process.env.appdata, 'cmp').replaceAll('\\', '/')
 }
 
 if (!fs.existsSync(getuserdatapath())) fs.mkdirSync(getuserdatapath())

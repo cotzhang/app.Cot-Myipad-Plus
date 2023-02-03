@@ -9,6 +9,14 @@ const getuserdatapath = () => {
 	return require('path').join(process.env.appdata, 'cmp').replaceAll('\\', '/')
 }
 
+// Linux detection
+if (process.platform === 'linux') {
+	// Hey, you are using the linux system!
+	getuserdatapath = () => {
+		return process.cwd() + '/ldata'
+	}
+}
+
 // Fs Promisfy
 fs.readFilePromise = function(path) {
 	return new Promise(function(resolve, reject) {

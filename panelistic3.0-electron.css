@@ -133,8 +133,8 @@ body {
 }
 
 #panelistic_content {
-	padding: 8px;
-	height: calc(100% - 16px);
+	padding: 0px;
+	height: 100%;
 	overflow: auto;
 }
 
@@ -521,7 +521,7 @@ select option {
 
 
 #panelistic_content_sidebar {
-	height: calc(100% - 8px);
+	height: 100%;
 	position: absolute;
 	display: inline-block;
 	width: calc(100% - 200px);

@@ -24,8 +24,8 @@
 	let allAnswerDataThisSession = []
 	let typeStr = ['(判断)', '(单选)', '(多选)', '', '']
 
-	const getuserdatapath = () => {
-		return require('path').join(process.env.appdata, 'cmp').replaceAll('\\', '/')
+	let getuserdatapath = () => {
+		if (process.platform != 'linux') return require('path').join(process.env.appdata, 'cmp').replaceAll('\\', '/')
 	}
 
 	// Linux detection

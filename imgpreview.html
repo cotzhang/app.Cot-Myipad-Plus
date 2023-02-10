@@ -45,7 +45,7 @@
   <div id="div" onmousewheel="return bbimg(this)"></div>
   <script language="javascript">
   const getuserdatapath = () => {
-    return require('path').join(process.env.appdata, 'cmp').replaceAll('\\', '/')
+    if (process.platform != 'linux') return require('path').join(process.env.appdata, 'cmp').replaceAll('\\', '/')
   }
 
   // Linux detection

@@ -5,8 +5,8 @@ const electron = require('electron')
 const remote = require("@electron/remote");
 const os = require('os')
 
-const getuserdatapath = () => {
-	return require('path').join(process.env.appdata, 'cmp').replaceAll('\\', '/')
+let getuserdatapath = () => {
+	if (process.platform != 'linux') return require('path').join(process.env.appdata, 'cmp').replaceAll('\\', '/')
 }
 
 // Linux detection
@@ -366,12 +366,12 @@ function finishAllSyncProgress() {
 		panelistic.dialog.dismiss(currdiag);
 	} catch {}
 	try {
-		webview.loadURL(__dirname + "/selflearn.html")
-		webview.loadURL(__dirname + "/selflearn.html")
+		webview.loadURL('file:///' + __dirname + "/selflearn.html")
+		webview.loadURL('file:///' + __dirname + "/selflearn.html")
 	} catch {}
 	setTimeout(() => {
 		if (webview.getURL().indexOf('selflearn') == -1) {
-			webview.loadURL(__dirname + "/selflearn.html")
+			webview.loadURL('file:///' + __dirname + "/selflearn.html")
 		}
 	}, 500)
 }
@@ -552,6 +552,9 @@ window.onload = function() {
 	panelistic = new Panelistic();
 	panelistic.initialize();
 
+	// Linux
+	if (process.platform === 'linux') document.getElementById('libres').style.display='none'
+
 	// Get main webview
 	webview = document.getElementById('webview');
 
@@ -655,9 +658,22 @@ window.onload = function() {
 					})
 					vidwin.removeMenu();
 				} else {
-					(async () => {
-						webview.send('openfin', event.args[0]);
-					})();
+					if (event.args[3]) {
+						try {
+							(async () => {
+								fs.writeFile(getuserdatapath() + '/downloads/' + event.args[0].split('/')[event.args[0].split('/').length - 1], await download(event.args[0]), () => {
+									electron.shell.openExternal(getuserdatapath() + '/downloads/' + event.args[0].split('/')[event.args[0].split('/').length - 1])
+								})
+							})();
+						} catch (err) {
+							panelistic.dialog.dismiss(panelisticid);
+							panelistic.dialog.alert('错误', '文件下载失败：<br>' + err, '确定')
+						}
+					} else {
+						(async () => {
+							webview.send('openfin', event.args[0]);
+						})();
+					}
 				}
 			}
 		} else if (event.channel == "dolink") {
@@ -768,8 +784,9 @@ window.onload = function() {
 		} else if (event.channel == 'dismisssalert') {
 			panelistic.dialog.dismiss(currDiagId)
 		} else if (event.channel == "recordclass") {
-			const vibe = require('@pyke/vibe');
-			vibe.setup(remote.app);
+			let vibe;
+			if (!isWin10()) vibe = require('@pyke/vibe');
+			if (!isWin10()) vibe.setup(remote.app);
 			const { session } = remote;
 			let ses = session.fromPartition('persist:name', { webRequest: { strictTransportSecurity: false } });
 			let rcwin = new remote.BrowserWindow({
@@ -834,7 +851,7 @@ electron.ipcRenderer.on('sync', (event, message) => {
 	syncData();
 })
 electron.ipcRenderer.on('goto', (event, message) => {
-	webview.loadURL(__dirname + '/' + message + '.html')
+	webview.loadURL('file:///' + __dirname + '/' + message + '.html')
 })
 electron.ipcRenderer.on('gotoryy', (event, message) => {
 	openRyYun('/web/practice/index.html')
@@ -845,8 +862,9 @@ electron.ipcRenderer.on('gotoryy-xq', (event, message) => {
 
 
 function openAsWin(event) {
-	const vibe = require('@pyke/vibe');
-	vibe.setup(remote.app);
+	let vibe;
+	if (!isWin10()) vibe = require('@pyke/vibe');
+	if (!isWin10()) vibe.setup(remote.app);
 	let aswindow = new remote.BrowserWindow({
 		width: 387,
 		height: 750,
@@ -866,7 +884,7 @@ function openAsWin(event) {
 	if (!isWin10()) {
 		vibe.applyEffect(aswindow, 'acrylic', '#FFFFFF40');
 	}
-	aswindow.loadURL(__dirname + '/aswin.html');
+	aswindow.loadURL('file:///' + __dirname + '/aswin.html');
 	// aswindow.webContents.openDevTools({ mode: 'detach' })
 	aswindow.removeMenu();
 	aswindow.webContents.on('dom-ready', () => { aswindow.webContents.send('aswin', event.args[0]) })
@@ -892,8 +910,9 @@ function openAsWin(event) {
 
 
 function openChatWin() {
-	const vibe = require('@pyke/vibe');
-	vibe.setup(remote.app);
+	let vibe;
+	if (!isWin10()) vibe = require('@pyke/vibe');
+	if (!isWin10()) vibe.setup(remote.app);
 	let chatwin = new remote.BrowserWindow({
 		width: 780,
 		height: 650,
@@ -912,7 +931,7 @@ function openChatWin() {
 	if (!isWin10()) {
 		vibe.applyEffect(chatwin, 'acrylic', '#FFFFFF40');
 	}
-	chatwin.loadURL(__dirname + '/chat.html');
+	chatwin.loadURL('file:///' + __dirname + '/chat.html');
 	chatwin.webContents.openDevTools({ mode: 'detach' })
 	chatwin.removeMenu();
 	chatwin.webContents.on('dom-ready', () => { chatwin.show() })
@@ -923,8 +942,9 @@ function openChatWin() {
 }
 
 function openLargeImg() {
-	const vibe = require('@pyke/vibe');
-	vibe.setup(remote.app);
+	let vibe;
+	if (!isWin10()) vibe = require('@pyke/vibe');
+	if (!isWin10()) vibe.setup(remote.app);
 	let largeImgWin = new remote.BrowserWindow({
 		backgroundColor: '#00000000',
 		show: true,
@@ -943,7 +963,7 @@ function openLargeImg() {
 	if (!isWin10()) {
 		vibe.applyEffect(largeImgWin, 'acrylic', '#FFFFFF40');
 	}
-	largeImgWin.loadURL(__dirname + '/imgpreview.html');
+	largeImgWin.loadURL('file:///' + __dirname + '/imgpreview.html');
 	// largeImgWin.webContents.openDevTools({ mode: 'detach' })
 	largeImgWin.removeMenu();
 }
@@ -974,8 +994,9 @@ function openRyYun(site, atrl) {
 	let server = JSON.parse(fs.readFileSync(getuserdatapath() + '/account')).server
 	site = 'https://' + (server.split('.')[0] + 'res.' + server.split('.')[1] + '.' + server.split('.')[2]).split(':')[0] + ':8008' + site;
 	let allcfgs = JSON.parse(fs.readFileSync(getuserdatapath() + '/data'));
-	const vibe = require('@pyke/vibe');
-	vibe.setup(remote.app);
+	let vibe;
+	if (!isWin10()) vibe = require('@pyke/vibe');
+	if (!isWin10()) vibe.setup(remote.app);
 	let ryy = new remote.BrowserWindow({
 		width: 1080,
 		height: 800,
@@ -1063,8 +1084,9 @@ function openRyYun(site, atrl) {
 
 function openRyYunTo(site, atrl) {
 	let allcfgs = JSON.parse(fs.readFileSync(getuserdatapath() + '/data'));
-	const vibe = require('@pyke/vibe');
-	vibe.setup(remote.app);
+	let vibe;
+	if (!isWin10()) vibe = require('@pyke/vibe');
+	if (!isWin10()) vibe.setup(remote.app);
 	let ryy = new remote.BrowserWindow({
 		width: 1080,
 		height: 800,

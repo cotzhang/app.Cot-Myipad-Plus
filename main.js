@@ -1,6 +1,7 @@
 const electron = require('electron');
-const vibe = require('@pyke/vibe');
-vibe.setup(electron.app);
+let vibe;
+if (!isWin10()) vibe = require('@pyke/vibe');
+if (!isWin10()) vibe.setup(electron.app);
 const path = require('path');
 const os = require('os')
 const fs = require('fs')
@@ -10,7 +11,7 @@ const ex = process.execPath;
 // const isDev = require('electron-is-dev')
 
 function getuserdatapath() {
-	return require('path').join(process.env.appdata, 'cmp').replaceAll('\\', '/')；
+	return require('path').join(process.env.appdata, 'cmp').replaceAll('\\', '/');
 }
 
 // Linux detection
@@ -24,7 +25,7 @@ if (process.platform === 'linux') {
 let win;
 
 function isWin10() {
-	return (process.getSystemVersion().startsWith('10.0') && new Number(process.getSystemVersion().split('.')[2]) <= 19045) || (process.getSystemVersion().startsWith('11.0') && new Number(process.getSystemVersion().split('.')[2]) <= 19045)
+	return ((process.getSystemVersion().startsWith('10.0') && new Number(process.getSystemVersion().split('.')[2]) <= 19045) || (process.getSystemVersion().startsWith('11.0') && new Number(process.getSystemVersion().split('.')[2]) <= 19045)) || process.platform === 'linux'
 }
 const { session } = require('electron')
 
@@ -101,8 +102,8 @@ function spawnWindow() {
 	})
 	if (!isWin10()) {
 		vibe.applyEffect(win, 'acrylic', '#FFFFFF40');
+		if (electron.nativeTheme.shouldUseDarkColors) vibe.setDarkMode(win);
 	}
-	if (electron.nativeTheme.shouldUseDarkColors) vibe.setDarkMode(win);
 
 	//win.setAlwaysOnTop("alwaysOnTop")
 	// win.webContents.openDevTools({ mode: "detach" })
@@ -131,11 +132,13 @@ function spawnWindow() {
 
 electron.nativeTheme.on('updated', () => {
 	const wins = electron.BrowserWindow.getAllWindows();
-	if (electron.nativeTheme.shouldUseDarkColors) {
-		vibe.setDarkMode(win);
+	if (!isWin10()) {
+		if (electron.nativeTheme.shouldUseDarkColors) {
+			vibe.setDarkMode(win);
 
-	} else {
-		vibe.setLightMode(win);
+		} else {
+			vibe.setLightMode(win);
+		}
 	}
 });
 

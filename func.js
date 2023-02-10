@@ -1,6 +1,9 @@
 const $ = require('jquery');
 let fs = require('fs');
-const xml2js = require('xml2js');
+let xml2js;
+try {
+	xml2js = require('xml2js');
+} catch {}
 
 
 let globalAccountFile = {};
@@ -33,7 +36,7 @@ function getClassGUIDs() {
 }
 
 getuserdatapath = function() {
-	return require('path').join(process.env.appdata, 'cmp').replaceAll('\\', '/')
+	if (process.platform != 'linux') return require('path').join(process.env.appdata, 'cmp').replaceAll('\\', '/')
 }
 
 // Linux detection
@@ -476,5 +479,5 @@ function add_css(str_css) { //Copyright @ rainic.com
 }
 
 function isWin10() {
-	return (process.getSystemVersion().startsWith('10.0') && new Number(process.getSystemVersion().split('.')[2]) <= 19045) || (process.getSystemVersion().startsWith('11.0') && new Number(process.getSystemVersion().split('.')[2]) <= 19045)
+	return ((process.getSystemVersion().startsWith('10.0') && new Number(process.getSystemVersion().split('.')[2]) <= 19045) || (process.getSystemVersion().startsWith('11.0') && new Number(process.getSystemVersion().split('.')[2]) <= 19045)) || process.platform === 'linux'
 }

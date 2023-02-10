@@ -1,7 +1,7 @@
 const { app } = require('electron')
 
 getuserdatapath = () => {
-  return require('path').join(process.env.appdata,'cmp').replaceAll('\\','/')
+  if (process.platform != 'linux') return require('path').join(process.env.appdata,'cmp').replaceAll('\\','/')
 }
 
 // Linux detection

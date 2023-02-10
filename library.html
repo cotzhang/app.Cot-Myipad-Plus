@@ -31,8 +31,7 @@
 				getStudentOwnFolder(num, () => {
 					renderMore(allSOF)
 					ipcRenderer.sendToHost('dismisssalert')
-					if (fs.existsSync(getuserdatapath() + '/secondloginlib')) {
-					} else {
+					if (fs.existsSync(getuserdatapath() + '/secondloginlib')) {} else {
 						ipcRenderer.sendToHost('alert', '文件上传提示', "您上传的文件内容可以被任课教师看见，请勿上传不允许的内容", "确定")
 						fs.writeFileSync(getuserdatapath() + '/secondloginlib', '');
 					}
@@ -138,29 +137,13 @@
 					} catch {}
 				} else {
 					try {
-						electron.ipcRenderer.sendToHost('loaddata', cbv.RESOURCE.CONTENT["@attributes"].fileuri, 'open')
+						electron.ipcRenderer.sendToHost('loaddata', cbv.RESOURCE.CONTENT["@attributes"].fileuri, 'open', '', true)
 					} catch {}
 					try {
 						//cbv.RESOURCE.SUMMERY.CONTENT["@attributes"].fileuri
-						electron.ipcRenderer.sendToHost('loaddata', cbv.RESOURCE.SUMMERY.CONTENT["@attributes"].fileuri, 'open')
+						electron.ipcRenderer.sendToHost('loaddata', cbv.RESOURCE.SUMMERY.CONTENT["@attributes"].fileuri, 'open', '', true)
 					} catch {}
 				}
-			})
-		}
-	}
-
-	function doLink(isFolder, ftt, fng) {
-		ipcRenderer.sendToHost('salert', '请稍等')
-		if (isFolder) {} else {
-			getResourceByGUID(fng, (cbv) => {
-				ipcRenderer.sendToHost('dismisssalert');
-				try {
-					electron.ipcRenderer.sendToHost('dolink', cbv.RESOURCE.CONTENT["@attributes"].fileuri, 'open')
-				} catch {}
-				try {
-					//cbv.RESOURCE.SUMMERY.CONTENT["@attributes"].fileuri
-					electron.ipcRenderer.sendToHost('dolink', cbv.RESOURCE.SUMMERY.CONTENT["@attributes"].fileuri, 'open')
-				} catch {}
 			})
 		}
 	}
@@ -174,22 +157,6 @@
 				try {
 					//cbv.RESOURCE.SUMMERY.CONTENT["@attributes"].fileuri
 					electron.ipcRenderer.sendToHost('downF', cbv.RESOURCE.SUMMERY.CONTENT["@attributes"].fileuri, 'open')
-				} catch {}
-			})
-		}
-	}
-
-	function dragF(isFolder, ftt, fng) {
-		ipcRenderer.sendToHost('salert', '请稍等')
-		if (isFolder) {} else {
-			getResourceByGUID(fng, (cbv) => {
-				ipcRenderer.sendToHost('dismisssalert');
-				try {
-					electron.ipcRenderer.sendToHost('dolink', cbv.RESOURCE.CONTENT["@attributes"].fileuri, 'open')
-				} catch {}
-				try {
-					//cbv.RESOURCE.SUMMERY.CONTENT["@attributes"].fileuri
-					electron.ipcRenderer.sendToHost('dolink', cbv.RESOURCE.SUMMERY.CONTENT["@attributes"].fileuri, 'open')
 				} catch {}
 			})
 		}
@@ -407,6 +374,10 @@
 		uploadFilesSync(args)
 	})
 
+	electron.ipcRenderer.on('openfin', (event, args) => {
+		electron.shell.openExternal()
+	})
+
 	function uploadFilesSync(args, index = 0) {
 		if (index === args.length) {
 			ipcRenderer.sendToHost('dismisssalert')
@@ -438,12 +409,7 @@
 
 	electron.ipcRenderer.on('openF', (event, args) => {
 		console.log(args[0], args[1], args[2])
-		openF(args[0], args[1], args[2],args[3])
-	})
-
-	electron.ipcRenderer.on('doLink', (event, args) => {
-		console.log(args[0], args[1], args[2])
-		doLink(args[0], args[1], args[2])
+		openF(args[0], args[1], args[2], args[3])
 	})
 
 	electron.ipcRenderer.on('uploadall', (event, args) => {

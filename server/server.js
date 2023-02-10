@@ -5,6 +5,7 @@ const endstr = `</span>
 </body>
 
 </html>`
+if (process.platform != 'linux') {
 http.createServer((req, res) => {
     console.log('requesting: ' + req.url)
     if (req.url == '/') {
@@ -29,3 +30,4 @@ http.createServer((req, res) => {
         });
     }
 }).listen(307);
+}

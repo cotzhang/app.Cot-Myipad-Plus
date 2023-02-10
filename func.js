@@ -32,6 +32,7 @@ function getClassGUIDs() {
 		classstr += globalDataFile.classes[i].guid + ",";
 	}
 	classstr += getGlobalUserguid();
+	console.log("Get totalclass: " + classstr)
 	return classstr;
 }
 

@@ -180,16 +180,13 @@ function requestFullClassPrepare(allrecords, callback) {
 	</v:Body></v:Envelope>`
 	// console.log(requestBody)
 	autoRetryRequestWSDL("http://webservice.myi.cn/wmstudyservice/wsdl/LessonsScheduleGetTableData", requestBody, (data) => {
-		// console.log(data)
 		data = data + ""
 		var gotdatas = data.substring(data.indexOf('<AS:szReturnXML>') + 16, data.indexOf("</AS:szReturnXML>"));
 		gotdatas = unEscape(gotdatas);
 		let allrecs = parseDom(gotdatas)[0].childNodes
 		for (let i = 0; i < allrecs.length; i++) {
 			if (allrecs[0].nodeValue == '\n') {
-				console.log('Skipped section 1')
-				finishFullClassPrepareParse();
-				return;
+				break;
 			}
 			allrecords.push(parseRawRecordSync(allrecs[i]));
 		}
@@ -327,7 +324,12 @@ function requestFullClassPrepareParse(allrecords) {
 	console.log("Sync Section 1 Finished\n( fetch classprepare data )");
 	currCountReal = 0;
 	totalCounts = allrecords.length - baseRecordCount;
-	fullDataSyncRetVal = allrecords.slice(baseRecordCount);
+	if (allrecords.length - baseRecordCount == 0) {
+		console.log('Skipped section 1')
+		finishFullClassPrepareParse();
+		return;
+	}
+	fullDataSyncRetVal = allrecords.slice(allrecords.length);
 	webview.send('itemdatal', totalCounts)
 	parse50Records(() => { recallParsing() })
 }
@@ -553,7 +555,7 @@ window.onload = function() {
 	panelistic.initialize();
 
 	// Linux
-	if (process.platform === 'linux') document.getElementById('libres').style.display='none'
+	if (process.platform === 'linux') document.getElementById('libres').style.display = 'none'
 
 	// Get main webview
 	webview = document.getElementById('webview');
@@ -598,6 +600,18 @@ window.onload = function() {
 				serverADDR = 'qdez.lexuewang.cn:8003';
 				initlogin(event.args[0], event.args[1], serverADDR);
 			} else if (event.args[2] == 3) {
+				serverADDR = 'dcgz2017.lexuewang.cn:8006';
+				initlogin(event.args[0], event.args[1], serverADDR);
+			} else if (event.args[2] == 4) {
+				serverADDR = 'qjyz1.lexuewang.cn:8016';
+				initlogin(event.args[0], event.args[1], serverADDR);
+			} else if (event.args[2] == 5) {
+				serverADDR = 'wfwz.lexuewang.cn:8003';
+				initlogin(event.args[0], event.args[1], serverADDR);
+			} else if (event.args[2] == 6) {
+				serverADDR = 'qhjt.lexuewang.cn:8003';
+				initlogin(event.args[0], event.args[1], serverADDR);
+			} else if (event.args[2] == 7) {
 				panelistic.dialog.input('选择学校', "请输入您的学校服务器地址", "example.lexuewang.cn:8003", "确定", (val) => {
 					serverADDR = val;
 					console.log('selected server: ' + serverADDR)
@@ -727,11 +741,19 @@ window.onload = function() {
 		} else if (event.channel == "updable") {
 			panelistic.dialog.confirm("更新", "有新版本可用", "更新", "取消", (cf) => {
 				if (cf) {
-					(async () => {
-						fs.writeFile(__dirname + '/installer.exe', await download('https://storage-1303195148.cos.ap-guangzhou.myqcloud.com/app/cmp_inst.exe'), () => {
-							electron.shell.openExternal(__dirname + '/installer.exe')
-						})
-					})();
+					if (process.platform != 'linux') {
+						(async () => {
+							fs.writeFile(getuserdatapath() + '/installer.exe', await download('https://storage-1303195148.cos.ap-guangzhou.myqcloud.com/app/cmp_inst.exe'), () => {
+								electron.shell.openExternal(getuserdatapath() + '/installer.exe')
+							})
+						})();
+					} else {
+						(async () => {
+							fs.writeFile(process.cwd() + '/newver.tar', await download('https://storage-1303195148.cos.ap-guangzhou.myqcloud.com/app/cmp_linux.tar'), () => {
+								panelistic.dialog.alert("提示", "新版本下载成功，请手动解压<br>" + process.cwd() + "/newver.tar")
+							})
+						})();
+					}
 				}
 			})
 		} else if (event.channel == "sync") {
@@ -1248,13 +1270,21 @@ function checkUpd() {
 			console.log("New Update!")
 			let upditems = JSON.parse(getDbSync('update').responseText.replaceAll('\n', '<br>')).update;
 			console.log()
-			panelistic.dialog.confirm("更新", upditems.replaceAll("\n\n抱歉，您的版本过低，无法自动更新，请手动在网站下载最新版本安装：https://cotx.tech/#/padplus", ""), "更新", "取消", (cf) => {
+			panelistic.dialog.confirm("更新", upditems.replaceAll("\n抱歉，您的版本过低，无法自动更新，请手动在网站下载最新版本安装：https://cotx.tech/#/padplus", ""), "更新", "取消", (cf) => {
 				if (cf) {
-					(async () => {
-						fs.writeFile(getuserdatapath() + '/installer.exe', await download('https://storage-1303195148.cos.ap-guangzhou.myqcloud.com/app/cmp_inst.exe'), () => {
-							electron.shell.openExternal(getuserdatapath() + '/installer.exe')
-						})
-					})();
+					if (process.platform != 'linux') {
+						(async () => {
+							fs.writeFile(getuserdatapath() + '/installer.exe', await download('https://storage-1303195148.cos.ap-guangzhou.myqcloud.com/app/cmp_inst.exe'), () => {
+								electron.shell.openExternal(getuserdatapath() + '/installer.exe')
+							})
+						})();
+					} else {
+						(async () => {
+							fs.writeFile(process.cwd() + '/newver.tar', await download('https://storage-1303195148.cos.ap-guangzhou.myqcloud.com/app/cmp_linux.tar'), () => {
+								panelistic.dialog.alert("提示", "新版本下载成功，请手动解压<br>" + process.cwd() + "/newver.tar")
+							})
+						})();
+					}
 				}
 			})
 		}

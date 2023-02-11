@@ -11,6 +11,11 @@ A desktop application for myipad.
 ### Please give me a **star** if you like! Thanks
 
 [![Security Status](https://www.murphysec.com/platform3/v3/badge/1612608646819643392.svg)](https://www.murphysec.com/accept?code=4954f30599db5571f81fb98a731f2cdd&type=1&from=2)
+## 核心功能
+- [x] 课件文件导出
+- [x] 自动作答选择题练习（100%正确）
+- [x] 创建讨论组
+- [x] 免破解上传文件到平板
 ## 功能
 ### - 抓取自主学习内容
 - [x] 高效率抓取自主学习内容（广州中学服务器测试抓取500条用时15秒）
@@ -63,6 +68,9 @@ A desktop application for myipad.
 - [x] 课堂实录节点播放
 - [x] 在线预览课程视频
 - [x] 课堂实录视频导出
+### - 在线答疑
+- [x] 讨论组拉取功能
+- [x] 讨论组删除功能
 ### - 后台功能
 - [x] 开机启动
 - [x] 托盘运行

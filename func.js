@@ -101,6 +101,28 @@ function simpleRequestOctet(url, body, header, successcallback, errorcallback, t
 	})
 }
 
+function simpleRequestDel(url, body, header, successcallback, errorcallback, timeout) {
+	$.ajax({
+		url: url,
+		data: body,
+		type: "delete",
+		async: true,
+		processData: false,
+		xhrFields: {
+			withCredentials: true
+		},
+		timeout: timeout ? timeout : 2000,
+		beforeSend: function(request) {
+			for (var i = 0; i < header.length; i++) {
+				// console.log("header set")
+				request.setRequestHeader(header[i].key, header[i].value);
+			}
+		},
+		success: successcallback,
+		error: errorcallback
+	})
+}
+
 function simpleRequestPgrs(url, body, header, successcallback, errorcallback, timeout, method, opgress) {
 	$.ajax({
 		url: url,
@@ -173,6 +195,30 @@ function xmlToJson(xml) {
 	}
 	return obj;
 }
+
+function randrange(min, max) {
+	var range = max - min;
+	if (range <= 0) {
+		throw new Error('max必须大于min');
+	}
+	var requestBytes = Math.ceil(Math.log2(range) / 8);
+	if (!requestBytes) { //无需随机性
+		return min;
+	}
+	var maxNum = Math.pow(256, requestBytes);
+	var ar = new Uint8Array(requestBytes);
+	while (true) {
+		window.crypto.getRandomValues(ar);
+		var val = 0;
+		for (var i = 0; i < requestBytes; i++) {
+			val = (val << 8) + ar[i];
+		}
+		if (val < maxNum - maxNum % range) {
+			return min + (val % range);
+		}
+	}
+}
+
 
 function autoRetryRequest(url, body, header, successcallback, timewait, timeout, method) {
 	simpleRequest(url, body, header, successcallback, (ax, bx, cx) => {
@@ -263,7 +309,7 @@ function genPackageId() {
 function getRandomGUID() {
 	var crypto = require('crypto');
 	var md5 = crypto.createHash('md5');
-	return md5.update(new Date().getTime() + 'Cot Random Md5').digest('hex');
+	return md5.update(randrange(0,99999999999999) + 'Cot Random Md5').digest('hex');
 }
 
 function getRandomGUID2() {

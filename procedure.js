@@ -180,13 +180,16 @@ function requestFullClassPrepare(allrecords, callback) {
 	</v:Body></v:Envelope>`
 	// console.log(requestBody)
 	autoRetryRequestWSDL("http://webservice.myi.cn/wmstudyservice/wsdl/LessonsScheduleGetTableData", requestBody, (data) => {
+		// console.log(data)
 		data = data + ""
 		var gotdatas = data.substring(data.indexOf('<AS:szReturnXML>') + 16, data.indexOf("</AS:szReturnXML>"));
 		gotdatas = unEscape(gotdatas);
 		let allrecs = parseDom(gotdatas)[0].childNodes
 		for (let i = 0; i < allrecs.length; i++) {
 			if (allrecs[0].nodeValue == '\n') {
-				break;
+				console.log('Skipped section 1')
+				finishFullClassPrepareParse();
+				return;
 			}
 			allrecords.push(parseRawRecordSync(allrecs[i]));
 		}
@@ -324,12 +327,7 @@ function requestFullClassPrepareParse(allrecords) {
 	console.log("Sync Section 1 Finished\n( fetch classprepare data )");
 	currCountReal = 0;
 	totalCounts = allrecords.length - baseRecordCount;
-	if (allrecords.length - baseRecordCount == 0) {
-		console.log('Skipped section 1')
-		finishFullClassPrepareParse();
-		return;
-	}
-	fullDataSyncRetVal = allrecords.slice(allrecords.length);
+	fullDataSyncRetVal = allrecords.slice(baseRecordCount);
 	webview.send('itemdatal', totalCounts)
 	parse50Records(() => { recallParsing() })
 }
@@ -750,7 +748,7 @@ window.onload = function() {
 					} else {
 						(async () => {
 							fs.writeFile(process.cwd() + '/newver.tar', await download('https://storage-1303195148.cos.ap-guangzhou.myqcloud.com/app/cmp_linux.tar'), () => {
-								panelistic.dialog.alert("提示", "新版本下载成功，请手动解压<br>" + process.cwd() + "/newver.tar")
+								panelistic.dialog.alert("提示","新版本下载成功，请手动解压<br>"+process.cwd()+"/newver.tar")
 							})
 						})();
 					}
@@ -954,7 +952,7 @@ function openChatWin() {
 		vibe.applyEffect(chatwin, 'acrylic', '#FFFFFF40');
 	}
 	chatwin.loadURL('file:///' + __dirname + '/chat.html');
-	chatwin.webContents.openDevTools({ mode: 'detach' })
+	// chatwin.webContents.openDevTools({ mode: 'detach' })
 	chatwin.removeMenu();
 	chatwin.webContents.on('dom-ready', () => { chatwin.show() })
 	let pin = false;
@@ -1281,7 +1279,7 @@ function checkUpd() {
 					} else {
 						(async () => {
 							fs.writeFile(process.cwd() + '/newver.tar', await download('https://storage-1303195148.cos.ap-guangzhou.myqcloud.com/app/cmp_linux.tar'), () => {
-								panelistic.dialog.alert("提示", "新版本下载成功，请手动解压<br>" + process.cwd() + "/newver.tar")
+								panelistic.dialog.alert("提示","新版本下载成功，请手动解压<br>"+process.cwd()+"/newver.tar")
 							})
 						})();
 					}

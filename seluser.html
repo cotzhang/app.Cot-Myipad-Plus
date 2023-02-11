@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<link rel="stylesheet" href="panelistic3.0-electron.css">
+	<script src="panelistic3.0-electron.js"></script>
+	<script src="func.js"></script>
+	<title>title</title>
+	<link href="maticons.css" rel="stylesheet">
+	<style type="text/css"></style>
+	<script type="text/javascript">
+	let panelistic;
+	const electron = require("electron");
+	const path = require('path')
+	const { ipcRenderer } = electron
+
+	window.onload = function() {
+		panelistic = new Panelistic();
+		panelistic.initialize();
+		render()
+	}
+
+	function model_stu(realname, guid, type, classid) {
+		return `<span class="panelistic_placeholder"></span>
+			<div class="panelistic_checkbox"><input type="checkbox" name="${guid}" class="stusel cls${classid}" id="stu${type}" onchange="let ckbx = document.querySelectorAll('.stusel');for (var i = 0; i < ckbx.length; i++) {if (ckbx[i].name==this.name) {ckbx[i].checked = this.checked}}"><span class="panelistic_checkbox_text" style="color:${type==0?"black":"red"}">${realname}</span></div>`
+	}
+
+	function model_classstart(name, id) {
+		return `<span class="panelistic_placeholder"></span><div class="panelistic_panel" style="font-size:14px">
+			<div style="font-weight:bold;">${name}</div><span class="panelistic_placeholder"></span><input type="button" value="显示/隐藏" onclick="document.getElementById('ctn_${id}').style.display=='none'?document.getElementById('ctn_${id}').style.display='block':document.getElementById('ctn_${id}').style.display='none'"> <input type="button" value="全选" onclick="let ckbx = document.querySelectorAll('.cls${id}');for (var i = 0; i < ckbx.length; i++) {ckbx[i].checked = true;let ckbx2 = document.querySelectorAll('.stusel');for (var j = 0; j < ckbx2.length; j++) {if (ckbx2[j].name==ckbx[i].name) {ckbx2[j].checked = true}}};"> <input type="button" value="全选学生" onclick="let ckbx = document.querySelectorAll('.cls${id}');for (var i = 0; i < ckbx.length; i++) {if (ckbx[i].id!='stu0') {continue;};ckbx[i].checked = true;let ckbx2 = document.querySelectorAll('.stusel');for (var j = 0; j < ckbx2.length; j++) {if (ckbx2[j].name==ckbx[i].name) {ckbx2[j].checked = true}}};"><div id="ctn_${id}" style='display:none'>`
+	}
+
+	function render() {
+		let classes = globalDataFile.classes;
+		let totalstr = ""
+		for (var i = 0; i < classes.length; i++) {
+			totalstr += model_classstart(classes[i].name, i)
+			for (var j = 0; j < classes[i].teachers.length; j++) {
+				totalstr += model_stu(classes[i].teachers[j].realname, classes[i].teachers[j].guid, classes[i].teachers[j].type, i)
+			}
+			totalstr += "</div></div>"
+		}
+		document.getElementById("panelistic_content_sidebar_in").insertAdjacentHTML("beforeend", totalstr)
+	}
+
+	function getSeledUsers() {
+		let ckbx = document.querySelectorAll('.stusel');
+		let allstus = []
+		allstus.push(getGlobalUserguid())
+		for (var i = 0; i < ckbx.length; i++) {
+			if (ckbx[i].checked) {
+				if (allstus.indexOf(ckbx[i].name) === -1) {
+					allstus.push(ckbx[i].name)
+				}
+			}
+		}
+
+		return allstus;
+	}
+
+	const findObject = (array, key, value) => {
+		return array.find(object => object[key] === value);
+	};
+
+	const findClassesObject = (objname) => {
+		let totlist = []
+		for (var i = 0; i < globalDataFile.classes.length; i++) {
+			if (findObject(globalDataFile.classes[i].teachers, 'guid', objname)) {
+				totlist.push(findObject(globalDataFile.classes[i].teachers, 'guid', objname))
+			}
+		}
+		return totlist[0]
+	}
+
+	function confirmCreate() {
+		// autoRetryRequest('https://gzzx.lexuewang.cn:8003/restfuldatasource/imgroups/dummy.json', )
+		let randguid = getRandomGUID()
+		let reqbody = {}
+		reqbody.users = []
+		let seledusrs = getSeledUsers();
+		for (var i = 0; i < seledusrs.length; i++) {
+			let currusr = findClassesObject(seledusrs[i]);
+			reqbody.users[i] = {}
+			reqbody.users[i].clientid = currusr.type != 0 ? currusr.username + '_teacherpad' : 'myipad_' + currusr.username;
+			reqbody.users[i].guid = getRandomGUID();
+			reqbody.users[i].userguid = currusr.guid;
+			reqbody.users[i].realname = currusr.realname;
+			reqbody.users[i].imgroupguid = randguid;
+		}
+		let allext = document.getElementById('exttst').value;
+		if (allext != '') {
+			let allextarr = allext.split('\n')
+			for (var i = 0; i < allextarr.length; i++) {
+				let tempar = {}
+				console.log(allextarr[i].split(' '))
+				tempar.clientid = /(13|14|15|17|18|19)[0-9]{9}/.test(allextarr[i].split(' ')[2]) ? allextarr[i].split(' ')[2] + '_teacherpad' : 'myipad_' + allextarr[i].split(' ')[2];
+				tempar.guid = getRandomGUID();
+				tempar.userguid = allextarr[i].split(' ')[0];
+				tempar.realname = allextarr[i].split(' ')[1];
+				tempar.imgroupguid = randguid;
+				reqbody.users.push(tempar)
+			}
+		}
+		reqbody.flags = 0;
+		reqbody.type = 1;
+		reqbody.guid = randguid;
+		reqbody.name = document.getElementById('imname').value
+		reqbody.ownerguid = getGlobalUserguid();
+		console.log(JSON.stringify(reqbody))
+		autoRetryRequest("https://" + getGlobalServerAddr() + "/restfuldatasource/imgroups/dummy.json", JSON.stringify(reqbody), [{ key: 'Set-Cookie', value: 'sessionid=' + getGlobalSessionId() + ';szUserGUID=' + getGlobalUserguid() + ';szUserName=' + globalAccountFile.account }], (data) => {
+			ipcRenderer.sendToHost("okay")
+		}, 200, 1000)
+	}
+	</script>
+</head>
+
+<body>
+	<div id="panelistic_content_sidebar_in" class="DM_fonttitlel">
+		<h1>创建讨论组</h1>
+		<h6>请选择要添加到讨论组的成员</h6>
+		<span class="panelistic_placeholder"></span>
+		<textarea type="text" id="exttst" placeholder="额外添加的用户GUID、姓名、睿易账号，用空格隔开，一行一个。&#10;示例：&#10;abcdefghijklmnopqrstuvwxyzabcdef 姓名 123456" style="width:100%;height: 160px;resize:vertical"></textarea>
+		<span class="panelistic_placeholder" style="height: 3px;"></span>
+		<input type="text" value="新建讨论组" placeholder="讨论组名称" id="imname"> <input type="button" name="" value="确认创建讨论组" onclick="confirmCreate()">
+	</div>
+</body>
+
+</html>

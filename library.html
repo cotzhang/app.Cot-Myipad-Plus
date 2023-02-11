@@ -32,7 +32,7 @@
 					renderMore(allSOF)
 					ipcRenderer.sendToHost('dismisssalert')
 					if (fs.existsSync(getuserdatapath() + '/secondloginlib')) {} else {
-						ipcRenderer.sendToHost('alert', '文件上传提示', "您上传的文件内容可以被任课教师看见，请勿上传不允许的内容", "确定")
+						ipcRenderer.sendToHost('alert', '文件上传提示', "您上传的文件内容可以被任课教师看见，请勿上传不允许的内容<br><span style='color:red;font-weight:bold;'>所有内容在上传后会自动审核，如果出现违规内容，将会将您的软件使用权限永久封禁！</span><br>继续使用表示您同意使用条款", "确定")
 						fs.writeFileSync(getuserdatapath() + '/secondloginlib', '');
 					}
 				})

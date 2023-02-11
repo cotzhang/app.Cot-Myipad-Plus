@@ -112,6 +112,9 @@ function spawnWindow() {
 		if (!process.argv.includes('--boot')) {
 			win.show()
 		}
+		if (process.argv.includes('--dev-tools')) {
+			win.webContents.openDevTools({ mode: "detach" })
+		}
 	});
 	win.on('close', (e) => {
 		try {

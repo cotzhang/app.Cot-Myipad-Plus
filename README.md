@@ -97,6 +97,8 @@ A desktop application for myipad.
 ![image](https://user-images.githubusercontent.com/107354861/213110235-ef46725a-6168-4ac7-ba09-b826d0298649.png)
 ### 课堂实录视频页面预览
 ![image](https://user-images.githubusercontent.com/107354861/213110335-616e66be-c2a2-4eea-9c8c-7888a7b08d05.png)
+### 在线答疑讨论组页面预览
+![1676128990983](https://user-images.githubusercontent.com/107354861/218266552-63e546c7-8796-487f-a8d9-b399b42726c9.png)
 
 ## 联系
 QQ:3514048093

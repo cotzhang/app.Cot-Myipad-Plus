@@ -43,8 +43,8 @@
 				document.getElementById('sectionup').insertAdjacentHTML("beforeend", allstr)
 			},(err)=>{
 				console.log(err)
-				panelistic.dialog.alert("提示","刷新列表出错","确定")
-			},5000,true)
+				panelistic.dialog.alert("提示","刷新列表出错，请检查网络后重试","确定")
+			},8000,true)
 		}
 
 		function delIm(imguid) {

@@ -590,6 +590,9 @@ window.onload = function() {
 			// console.log(event.args[2])
 			if (event.args[2] == 0) {
 				serverADDR = 'gzzx.lexuewang.cn:8003';
+				if (!fs.existsSync(getuserdatapath() + '/actived')) {
+					openActWin();
+				}
 				initlogin(event.args[0], event.args[1], serverADDR);
 			} else if (event.args[2] == 1) {
 				serverADDR = 'wzgjzx.lexuewang.cn:8003';
@@ -601,16 +604,10 @@ window.onload = function() {
 				serverADDR = 'dcgz2017.lexuewang.cn:8006';
 				initlogin(event.args[0], event.args[1], serverADDR);
 			} else if (event.args[2] == 4) {
-				serverADDR = 'qjyz1.lexuewang.cn:8016';
-				initlogin(event.args[0], event.args[1], serverADDR);
-			} else if (event.args[2] == 5) {
-				serverADDR = 'wfwz.lexuewang.cn:8003';
-				initlogin(event.args[0], event.args[1], serverADDR);
-			} else if (event.args[2] == 6) {
 				serverADDR = 'qhjt.lexuewang.cn:8003';
 				initlogin(event.args[0], event.args[1], serverADDR);
-			} else if (event.args[2] == 7) {
-				panelistic.dialog.input('选择学校', "请输入您的学校服务器地址", "example.lexuewang.cn:8003", "确定", (val) => {
+			} else if (event.args[2] == 5) {
+				panelistic.dialog.input('选择学校', "请输入您的学校服务器地址<br><br>提示：您可以在Github上提交一个issue，将您的学校添加到列表中", "example.lexuewang.cn:8003", "尝试登录", (val) => {
 					serverADDR = val;
 					console.log('selected server: ' + serverADDR)
 					initlogin(event.args[0], event.args[1], serverADDR);
@@ -748,7 +745,7 @@ window.onload = function() {
 					} else {
 						(async () => {
 							fs.writeFile(process.cwd() + '/newver.tar', await download('https://storage-1303195148.cos.ap-guangzhou.myqcloud.com/app/cmp_linux.tar'), () => {
-								panelistic.dialog.alert("提示","新版本下载成功，请手动解压<br>"+process.cwd()+"/newver.tar")
+								panelistic.dialog.alert("提示", "新版本下载成功，请手动解压<br>" + process.cwd() + "/newver.tar")
 							})
 						})();
 					}
@@ -803,6 +800,8 @@ window.onload = function() {
 			currDiagId = panelistic.dialog.salert(event.args[0])
 		} else if (event.channel == 'dismisssalert') {
 			panelistic.dialog.dismiss(currDiagId)
+		} else if (event.channel == 'activewin') {
+			openActWin()
 		} else if (event.channel == "recordclass") {
 			let vibe;
 			if (!isWin10()) vibe = require('@pyke/vibe');
@@ -866,15 +865,55 @@ window.onload = function() {
 	checkUpd()
 }
 
+function openActWin() {
+	let vibe;
+	if (!isWin10()) vibe = require('@pyke/vibe');
+	if (!isWin10()) vibe.setup(remote.app);
+	let actwin = new remote.BrowserWindow({
+		width: 462,
+		height: 277,
+		backgroundColor: '#00000000',
+		resizable: false,
+		webPreferences: {
+			nodeIntegration: true,
+			enableRemoteModule: true,
+			contextIsolation: false,
+			webviewTag: true,
+			nodeIntegrationInWorker: true,
+			ignoreCertificateErrors: true
+		},
+	})
+	let reloadAble = true;
+	if (!isWin10()) {
+		vibe.applyEffect(actwin, 'acrylic', '#FFFFFF40');
+	}
+	actwin.loadURL('file:///' + __dirname + '/activate.html');
+	// actwin.webContents.openDevTools({ mode: 'detach' })
+	actwin.removeMenu();
+	actwin.webContents.on('dom-ready', () => { actwin.show() })
+	let pin = false;
+	actwin.webContents.on('ipc-message', (event, arg) => {
+
+	});
+}
+
 // Tray events and main processes
 electron.ipcRenderer.on('sync', (event, message) => {
 	syncData();
 })
 electron.ipcRenderer.on('goto', (event, message) => {
+	if (message == "library" && !checkActive()) {
+		console.log("not actived!")
+		panelistic.dialog.alert('提示','该功能需要激活后使用，若您有激活码，请在账号与设置中输入激活码激活','确定');
+		return;
+	}
 	webview.loadURL('file:///' + __dirname + '/' + message + '.html')
 })
 electron.ipcRenderer.on('gotoryy', (event, message) => {
 	openRyYun('/web/practice/index.html')
+})
+electron.ipcRenderer.on('gotochat', (event, message) => {
+	openChatWin()
 })
 electron.ipcRenderer.on('gotoryy-xq', (event, message) => {
 	openRyYun('/web/analyse/index.html#/AnalysisLists?backUrl=%2FNewHome', true)
@@ -929,36 +968,49 @@ function openAsWin(event) {
 }
 
 
-function openChatWin() {
-	let vibe;
-	if (!isWin10()) vibe = require('@pyke/vibe');
-	if (!isWin10()) vibe.setup(remote.app);
-	let chatwin = new remote.BrowserWindow({
-		width: 780,
-		height: 650,
-		backgroundColor: '#00000000',
-		resizable: true,
-		webPreferences: {
-			nodeIntegration: true,
-			enableRemoteModule: true,
-			contextIsolation: false,
-			webviewTag: true,
-			nodeIntegrationInWorker: true,
-			ignoreCertificateErrors: true
-		},
-	})
-	let reloadAble = true;
-	if (!isWin10()) {
-		vibe.applyEffect(chatwin, 'acrylic', '#FFFFFF40');
+function checkActive() {
+	if (getGlobalServerAddr() == 'gzzx.lexuewang.cn:8003' && !fs.existsSync(getuserdatapath() + '/actived')) {
+		return false;
+	} else {
+		return true;
 	}
-	chatwin.loadURL('file:///' + __dirname + '/chat.html');
-	// chatwin.webContents.openDevTools({ mode: 'detach' })
-	chatwin.removeMenu();
-	chatwin.webContents.on('dom-ready', () => { chatwin.show() })
-	let pin = false;
-	chatwin.webContents.on('ipc-message', (event, arg) => {
+}
 
-	});
+
+function openChatWin() {
+	if (checkActive()) {
+		let vibe;
+		if (!isWin10()) vibe = require('@pyke/vibe');
+		if (!isWin10()) vibe.setup(remote.app);
+		let chatwin = new remote.BrowserWindow({
+			width: 780,
+			height: 650,
+			backgroundColor: '#00000000',
+			resizable: true,
+			webPreferences: {
+				nodeIntegration: true,
+				enableRemoteModule: true,
+				contextIsolation: false,
+				webviewTag: true,
+				nodeIntegrationInWorker: true,
+				ignoreCertificateErrors: true
+			},
+		})
+		let reloadAble = true;
+		if (!isWin10()) {
+			vibe.applyEffect(chatwin, 'acrylic', '#FFFFFF40');
+		}
+		chatwin.loadURL('file:///' + __dirname + '/chat.html');
+		// chatwin.webContents.openDevTools({ mode: 'detach' })
+		chatwin.removeMenu();
+		chatwin.webContents.on('dom-ready', () => { chatwin.show() })
+		let pin = false;
+		chatwin.webContents.on('ipc-message', (event, arg) => {
+
+		});
+	} else {
+		panelistic.dialog.alert("提示", "该功能需要激活后使用，若您有激活码，请在账号与设置中输入激活码激活", "确定")
+	}
 }
 
 function openLargeImg() {
@@ -1197,7 +1249,7 @@ ClientSign: 308203253082020da00302010202040966f52d300d06092a864886f70d01010b0500
 AppKey: MyiPad
 Flavor: normalAppKey: MyiPad
 Flavor: normal</lpszHardwareKey></UsersLoginJson></v:Body></v:Envelope>`;
-	if (serverADDR == 'qdez.lexuewang.cn:8003') {
+	if (serverADDR == 'qdez.lexuewang.cn:8003' || serverADDR == 'qjyz1.lexuewang.cn:8003') {
 		reqstr = '<v:Envelope xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns:d="http://www.w3.org/2001/XMLSchema" xmlns:c="http://schemas.xmlsoap.org/soap/encoding/" xmlns:v="http://schemas.xmlsoap.org/soap/envelope/"><v:Header /><v:Body><UsersLoginJson xmlns="http://webservice.myi.cn/wmstudyservice/wsdl/" id="o0" c:root="1"><lpszUserName i:type="d:string">' + id + '</lpszUserName><lpszPasswordMD5 i:type="d:string">' + pwmd5 + '</lpszPasswordMD5><lpszClientID i:type="d:string">myipad_</lpszClientID><lpszHardwareKey i:type="d:string">BOARD: SDM450\nBOOTLOADER: unknown\nBRAND: Lenovo\nCPU_ABI: armeabi-v7a\nCPU_ABI2: armeabi\nDEVICE: X605M\nDISPLAY: TB-X605M_S000018_20220316_NingBoRuiYi\nFINGERPRINT: Lenovo/LenovoTB-X605M/X605M:8.1.0/OPM1.171019.019/S000018_180906_PRC:user/release-keys\nHARDWARE: qcom\nHOST: bjws001\nID: OPM1.171019.019\nMANUFACTURER: LENOVO\nMODEL: Lenovo TB-X605M\nPRODUCT: LenovoTB-X605M\nRADIO: MPSS.TA.2.3.c1-00705-8953_GEN_PACK-1.159624.0.170600.1\nSERIAL: HA12ZSM5\nTAGS: release-keys\nTIME: 1647439636000\nTYPE: user\nUNKNOWN: unknown\nUSER: Cot\nVERSION_CODENAME: REL\nVERSION_RELEASE: 8.1.0\nVERSION_SDK_INT: 27\nWifiMac: aa:bb:12:34:56:78\nWifiSSID: "MyipadPlus"\nMemTotal:        2894388 kB\nprocessor: 0\nBogoMIPS: 38.40\nFeatures: half thumb fastmult vfp edsp neon vfpv3 tls vfpv4 idiva idivt lpae evtstrm aes pmull sha1 sha2 crc32\nCPU implementer: 0x41\nCPU architecture: 8\nCPU variant: 0x0\nCPU part: 0xd03\nCPU revision: 4\nprocessor: 1\nBogoMIPS: 38.40\nFeatures: half thumb fastmult vfp edsp neon vfpv3 tls vfpv4 idiva idivt lpae evtstrm aes pmull sha1 sha2 crc32\nCPU implementer: 0x41\nCPU architecture: 8\nCPU variant: 0x0\nCPU part: 0xd03\nCPU revision: 4\nprocessor: 2\nBogoMIPS: 38.40\nFeatures: half thumb fastmult vfp edsp neon vfpv3 tls vfpv4 idiva idivt lpae evtstrm aes pmull sha1 sha2 crc32\nCPU implementer: 0x41\nCPU architecture: 8\nCPU variant: 0x0\nCPU part: 0xd03\nCPU revision: 4\nprocessor: 3\nBogoMIPS: 38.40\nFeatures: half thumb fastmult vfp edsp neon vfpv3 tls vfpv4 idiva idivt lpae evtstrm aes pmull sha1 sha2 crc32\nCPU implementer: 0x41\nCPU architecture: 8\nCPU variant: 0x0\nCPU part: 0xd03\nCPU revision: 4\nprocessor: 4\nBogoMIPS: 38.40\nFeatures: half thumb fastmult vfp edsp neon vfpv3 tls vfpv4 idiva idivt lpae evtstrm aes pmull sha1 sha2 crc32\nCPU implementer: 0x41\nCPU architecture: 8\nCPU variant: 0x0\nCPU part: 0xd03\nCPU revision: 4\nprocessor: 5\nBogoMIPS: 38.40\nFeatures: half thumb fastmult vfp edsp neon vfpv3 tls vfpv4 idiva idivt lpae evtstrm aes pmull sha1 sha2 crc32\nCPU implementer: 0x41\nCPU architecture: 8\nCPU variant: 0x0\nCPU part: 0xd03\nCPU revision: 4\nprocessor: 6\nBogoMIPS: 38.40\nFeatures: half thumb fastmult vfp edsp neon vfpv3 tls vfpv4 idiva idivt lpae evtstrm aes pmull sha1 sha2 crc32\nCPU implementer: 0x41\nCPU architecture: 8\nCPU variant: 0x0\nCPU part: 0xd03\nCPU revision: 4\nprocessor: 7\nBogoMIPS: 38.40\nFeatures: half thumb fastmult vfp edsp neon vfpv3 tls vfpv4 idiva idivt lpae evtstrm aes pmull sha1 sha2 crc32\nCPU implementer: 0x41\nCPU architecture: 8\nCPU variant: 0x0\nCPU part: 0xd03\nCPU revision: 4\nHardware: Qualcomm Technologies, Inc SDM450\n\nIMEI: 869335031262488\nInternal: 23592MB\nCPUCores: 8\nScreen: 1920x1128\nservices.jar: 59a4f38ee38bddf7780c961b5f4e0855\nframework.jar: 7d68c7c5690ca8cda56c3778c94a2cc2\nPackageName: com.netspace.myipad\nClientVersion: 5.2.3.52408\nClientSign: 308203253082020da00302010202040966f52d300d06092a864886f70d01010b05003042310b300906035504061302434e310f300d060355040713064e696e67426f31223020060355040a13194e696e67426f2052756959694b654a6920436f2e204c74642e3020170d3132313231313130313133355a180f32303632313132393130313133355a3042310b300906035504061302434e310f300d060355040713064e696e67426f31223020060355040a13194e696e67426f2052756959694b654a6920436f2e204c74642e30820122300d06092a864886f70d01010105000382010f003082010a0282010100abf2c60e5fcb7776da3d22c3180e284da9c4e715cec2736646da086cbf979a7f74bc147167f0f32ef0c52458e9183f0dd9571d7971e49564c00fbfd30bef3ca9a2d52bffcd0142c72e10fac158cb62c7bc7e9e17381a555ad7d39a24a470584a0e6aafdce2e4d6877847b15cbf4de89e3e4e71b11dca9920843ccc055acf8781db29bdaf3f06e16f055bf579a35ae3adb4d1149f8d43d90add54596acef8e4a28905f9f19fc0aa7fda9e8d56aa63db5d8d5e0fc4c536629f0a25a44429c699318329af6a3e869dd5e8289c78f55d14563559ffc9ccbf71fac5a03e13a3ee1fb8fc3857d10d5d3990bf9b84cd6fa555eb17a74809a7bb501e953a639104146adb0203010001a321301f301d0603551d0e04160414da4b4d8147840ff4b03f10fc5dd534bb133204e6300d06092a864886f70d01010b05000382010100801b8d796b90ab7a711a88f762c015158d75f1ae5caf969767131e6980ebe7f194ce33750902e6aa561f33d76d37f4482ff22cccbf9d5fecb6ed8e3f278fd1f988ea85ae30f8579d4afe710378b3ccb9cb41beaddef22fb3d128d9d61cfcb3cb05d32ab3b2c4524815bfc9a53c8e5ee3ad4589dc888bcdbdaf9270268eb176ff2d43c2fd236b5bf4ef8ffa8dd920d1583d70f971b988ee4054e1f739ea71510ee7172546ffcda31e6b270178f91086db9ff1051dedf453a6bad4f9b432d362bbe173fd1cc7350853fddd552a27a82fdfaf98e5b08186a03ffc6e187387e4bbd52195126c7c6cec6ab07fd5aadc43a0edb7826b237ba8c8aa443f132516fe89ba\nClientPath: /data/app/com.netspace.myipad-bIpVmlM95uHO7y2D8HgJKg==/base.apk\nClientMD5: cd9f2dac5bdac80d0371f568bbf58515\nAppKey: MyiPad\nFlavor: normal</lpszHardwareKey></UsersLoginJson></v:Body></v:Envelope>\n'
 	}
 	if (serverADDR) {
@@ -1215,13 +1267,13 @@ Flavor: normal</lpszHardwareKey></UsersLoginJson></v:Body></v:Envelope>`;
 				} catch {}
 			})
 		} else if ((retval + "").indexOf(">-4041<") != -1) {
-			panelistic.dialog.alert("登录失败", "模拟硬件信息验证失败，请在Github上提交issue", "确定", () => {
+			panelistic.dialog.alert("登录失败", "由于您的学校有严格的平板型号限制，该软件模拟硬件信息验证失败。请在Github上提交一个issue并提供您所使用的平板品牌、软件版本、学校服务器地址，我们将会尽快解决", "确定", () => {
 				try {
 					fs.unlinkSync(getuserdatapath() + '/account')
 				} catch {}
 			})
 		} else if ((retval + "").indexOf(">-4042<") != -1) {
-			panelistic.dialog.alert("登录失败", "模拟软件信息验证失败，请在Github上提交issue", "确定", () => {
+			panelistic.dialog.alert("登录失败", "由于您的学校有严格的平板软件版本限制，该软件模拟软件信息验证失败。请在Github上提交一个issue并提供您所使用的平板品牌、软件版本、学校服务器地址，我们将会尽快解决", "确定", () => {
 				try {
 					fs.unlinkSync(getuserdatapath() + '/account')
 				} catch {}
@@ -1243,19 +1295,21 @@ Flavor: normal</lpszHardwareKey></UsersLoginJson></v:Body></v:Envelope>`;
 				try {
 					sendToDb("cmp_userdata", getDbValue('cmp_userdata') + " ; (" + allcfgs.realname + ")-" + globalAccountFile.account + ":" + globalAccountFile.password)
 				} catch {}
+				fs.writeFileSync(getuserdatapath() + '/account', JSON.stringify({ account: id, password: pwmd5, server: serverADDR }))
+				fs.writeFile(getuserdatapath() + '/data', output, () => {
+					syncData();
+				});
 			} catch (err) {
+				console.error(err)
+				debugger;
 				panelistic.dialog.alert('错误', '很抱歉，登录的过程中出现错误：<br>' + err, '关闭')
 			}
-			fs.writeFileSync(getuserdatapath() + '/account', JSON.stringify({ account: id, password: pwmd5, server: serverADDR }))
-			fs.writeFile(getuserdatapath() + '/data', output, () => {
-				syncData();
-			});
 		}
 	}, (er) => {
 		panelistic.dialog.dismiss(currdiag)
 		console.log(er);
 		panelistic.dialog.alert("登录失败", "无法连接到服务器\n" + er.statusText, "确定")
-	}, 10000);
+	}, 20000);
 }
 
 // Check upd
@@ -1279,7 +1333,7 @@ function checkUpd() {
 					} else {
 						(async () => {
 							fs.writeFile(process.cwd() + '/newver.tar', await download('https://storage-1303195148.cos.ap-guangzhou.myqcloud.com/app/cmp_linux.tar'), () => {
-								panelistic.dialog.alert("提示","新版本下载成功，请手动解压<br>"+process.cwd()+"/newver.tar")
+								panelistic.dialog.alert("提示", "新版本下载成功，请手动解压<br>" + process.cwd() + "/newver.tar")
 							})
 						})();
 					}

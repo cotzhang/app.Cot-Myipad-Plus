@@ -227,6 +227,12 @@ function makeTray() {
 					win.show()
 				}
 			}, {
+				label: '在线答疑',
+				click: function() {
+					win.webContents.send('gotochat')
+					win.show()
+				}
+			}, {
 				type: 'separator'
 			}, {
 				label: '账号与设置',

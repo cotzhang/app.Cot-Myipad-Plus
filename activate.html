@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<link rel="stylesheet" href="panelistic3.0-electron.css">
+	<script src="panelistic3.0-electron.js"></script>
+	<script src="func.js"></script>
+	<title>激活软件</title>
+	<link href="maticons.css" rel="stylesheet">
+	<style type="text/css"></style>
+	<script type="text/javascript">
+	let panelistic;
+	const electron = require("electron");
+	const path = require('path')
+	const { ipcRenderer } = electron
+
+	window.onload = function() {
+		panelistic = new Panelistic();
+		panelistic.initialize();
+	}
+
+	// Windows 10 detection
+	if (isWin10()) {
+		add_css(`body{
+				background-image: url(src/cmbg/light.jpg) !important;
+				background-position: center center;
+				background-repeat: no-repeat;
+				background-size:cover;
+				backdrop-filter:blur(5px);
+			}
+			#panelistic_content{
+				background-color:#fff8 !important
+			}
+			@media (prefers-color-scheme: dark) {
+				body{
+					background-image: url(src/cmbg/dark.jpg) !important
+				}
+				#panelistic_content{
+					background-color:#0008 !important
+				}
+			}`)
+	}
+
+	function testActive() {
+		let allcodes = getDbSync("activecodes");
+		let acl = JSON.parse(allcodes.responseText).activecodes.split(',');
+		if (acl.indexOf(document.getElementById('actc').value) != -1) {
+			let removedArr = acl.filter((x) => x !== document.getElementById('actc').value);
+			sendToDb('activecodes',removedArr.join(','))
+			fs.writeFileSync(getuserdatapath()+'/actived','Actived!');
+			panelistic.dialog.alert("提示", "激活成功", "确定", () => {
+				window.close()
+			})
+		} else {
+			panelistic.dialog.alert("提示", "激活失败，请检查激活码是否正确", "确定")
+		}
+	}
+	</script>
+</head>
+
+<body>
+	<div id="panelistic_blur"></div>
+	<div id="panelistic_content_sidebar_in" class="DM_fonttitlel">
+		<h1>激活软件</h1>
+		<h6>请输入软件激活码</h6>
+		<span class="panelistic_placeholder"></span>
+		<div class="panelistic_panel">
+			<span style="font-size:14px">为防止对软件的不合规使用，部分功能需要激活码才能使用，请输入激活码解锁完整功能</span>
+			<span class="panelistic_placeholder"></span>
+			<input type="text" placeholder="输入激活码" id="actc">
+			<span class="panelistic_placeholder"></span>
+			<input type="button" value="使用激活码激活" onclick="testActive()"> <input type="button" value="我没有激活码" onclick="window.close()">
+		</div>
+	</div>
+</body>
+
+</html>

@@ -25,6 +25,10 @@
 		// document.getElementById('').innerText=;
 		setCheckboxes()
 		document.getElementById('autorelease').innerText = JSON.parse(fs.readFileSync(__dirname+'/package.json')).version;
+		if (accndata.server != "gzzx.lexuewang.cn:8003" || fs.existsSync(getuserdatapath() + '/actived')) {
+			document.getElementById('actbtn').style.display="none";
+			document.getElementById('acttoast').style.display="block"
+		}
 	}
 
 	function checkUpd() {
@@ -101,6 +105,7 @@
 			<span style="font-weight: bold;font-size: 15px;">平板+ PadPlus</span><br>
 			<span style="font-size: 14px;">版本 V<span id="autorelease"></span></span><br>
 			<span style="font-size: 14px;">开发 小喵COT</span><br>
+			<span style="color: darkgreen;font-weight: bold;display: none;font-size: 14px;" id="acttoast">当前软件已经激活</span>
 			<a style="font-size: 14px;cursor: pointer;color: blue;text-decoration: underline;" onclick="electron.shell.openExternal('https://www.apache.org/licenses/LICENSE-2.0.txt')">开放源代码软件 Under Apache Licence</a>
 		</div>
 		<span class="panelistic_placeholder"></span>
@@ -129,6 +134,7 @@
 		<span class="panelistic_placeholder"></span>
 		<div class="panelistic_panel">
 			<div class="panelistic_panel_name">账号管理</div><br><span class="panelistic_placeholder_large"></span>
+			<input type="button" value="激活软件" onclick="electron.ipcRenderer.sendToHost('activewin')" id="actbtn"> 
 			<input type="button" value="重新登录" onclick="electron.ipcRenderer.sendToHost('relogin',accndata.account,accndata.password)">
 			<input type="button" value="退出账号" onclick="electron.ipcRenderer.sendToHost('exitaccount')" name="">
 		</div>

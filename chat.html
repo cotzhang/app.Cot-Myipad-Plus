@@ -64,6 +64,29 @@
 				panelistic.dialog.alert("提示","删除成功","确定",()=>{window.location.reload()})
 			},()=>{panelistic.dialog.alert("提示","删除失败","确定")},2000);
 		}
+
+
+		// Windows 10 detection
+		if (isWin10()) {
+			add_css(`body{
+				background-image: url(src/cmbg/light.jpg) !important;
+				background-position: center center;
+				background-repeat: no-repeat;
+				background-size:cover;
+				backdrop-filter:blur(5px);
+			}
+			#panelistic_content{
+				background-color:#fff8 !important
+			}
+			@media (prefers-color-scheme: dark) {
+				body{
+					background-image: url(src/cmbg/dark.jpg) !important
+				}
+				#panelistic_content{
+					background-color:#0008 !important
+				}
+			}`)
+		}
 	</script>
 </head>
 

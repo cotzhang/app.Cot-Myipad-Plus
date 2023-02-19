@@ -8,9 +8,33 @@ A desktop application for myipad.
 
 下载网站（高速）：https://cotx.tech/#/padplus
 
-### Please give me a **star** if you like! Thanks
+## 支持开发工作
 
-[![Security Status](https://www.murphysec.com/platform3/v3/badge/1612608646819643392.svg)](https://www.murphysec.com/accept?code=4954f30599db5571f81fb98a731f2cdd&type=1&from=2)
+Please give me a **star** if you like! Thanks
+
+Please give me a **star** if you like! Thanks
+
+Please give me a **star** if you like! Thanks
+
+Please give me a **star** if you like! Thanks
+
+Please give me a **star** if you like! Thanks
+
+Please give me a **star** if you like! Thanks
+
+Please give me a **star** if you like! Thanks
+
+Please give me a **star** if you like! Thanks
+
+Please give me a **star** if you like! Thanks
+
+Please give me a **star** if you like! Thanks
+
+## 核心功能
+- [x] 课件文件导出
+- [x] 自动作答选择题练习（100%正确）
+- [x] 创建讨论组
+- [x] 免破解上传文件到平板
 ## 功能
 ### - 抓取自主学习内容
 - [x] 高效率抓取自主学习内容（广州中学服务器测试抓取500条用时15秒）
@@ -63,6 +87,9 @@ A desktop application for myipad.
 - [x] 课堂实录节点播放
 - [x] 在线预览课程视频
 - [x] 课堂实录视频导出
+### - 在线答疑
+- [x] 讨论组拉取功能
+- [x] 讨论组删除功能
 ### - 后台功能
 - [x] 开机启动
 - [x] 托盘运行
@@ -89,6 +116,8 @@ A desktop application for myipad.
 ![image](https://user-images.githubusercontent.com/107354861/213110235-ef46725a-6168-4ac7-ba09-b826d0298649.png)
 ### 课堂实录视频页面预览
 ![image](https://user-images.githubusercontent.com/107354861/213110335-616e66be-c2a2-4eea-9c8c-7888a7b08d05.png)
+### 在线答疑讨论组页面预览
+![1676128990983](https://user-images.githubusercontent.com/107354861/218266552-63e546c7-8796-487f-a8d9-b399b42726c9.png)
 
 ## 联系
 QQ:3514048093

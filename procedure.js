@@ -3,6 +3,7 @@ let panelistic;
 const path = require('path');
 const electron = require('electron')
 const remote = require("@electron/remote");
+const { exec } = require('child_process');
 const os = require('os')
 
 let getuserdatapath = () => {
@@ -756,7 +757,7 @@ window.onload = function() {
 			if (!disableSync) { syncData() }
 		} else if (event.channel == "testmode") {
 			panelistic.dialog.input("测试", "请输入测试代码", "000000", "确定", (getdta) => {
-				if (getdta == "070307") {
+				if (getdta == "c64840") {
 					electron.ipcRenderer.send("testmode")
 				} else {
 					panelistic.dialog.alert("测试", "测试代码无效", "确定")
@@ -904,7 +905,7 @@ electron.ipcRenderer.on('sync', (event, message) => {
 electron.ipcRenderer.on('goto', (event, message) => {
 	if (message == "library" && !checkActive()) {
 		console.log("not actived!")
-		panelistic.dialog.alert('提示','该功能需要激活后使用，若您有激活码，请在账号与设置中输入激活码激活','确定');
+		panelistic.dialog.alert('提示', '该功能需要激活后使用，若您有激活码，请在账号与设置中输入激活码激活', '确定');
 		return;
 	}
 	webview.loadURL('file:///' + __dirname + '/' + message + '.html')
@@ -1320,25 +1321,30 @@ function checkUpd() {
 		console.log(data, VERSION)
 		if (data > VERSION) {
 			console.log("New Update!")
-			let upditems = JSON.parse(getDbSync('update').responseText.replaceAll('\n', '<br>')).update;
-			console.log()
-			panelistic.dialog.confirm("更新", upditems.replaceAll("\n抱歉，您的版本过低，无法自动更新，请手动在网站下载最新版本安装：https://cotx.tech/#/padplus", ""), "更新", "取消", (cf) => {
-				if (cf) {
-					if (process.platform != 'linux') {
-						(async () => {
-							fs.writeFile(getuserdatapath() + '/installer.exe', await download('https://storage-1303195148.cos.ap-guangzhou.myqcloud.com/app/cmp_inst.exe'), () => {
-								electron.shell.openExternal(getuserdatapath() + '/installer.exe')
-							})
-						})();
-					} else {
-						(async () => {
-							fs.writeFile(process.cwd() + '/newver.tar', await download('https://storage-1303195148.cos.ap-guangzhou.myqcloud.com/app/cmp_linux.tar'), () => {
-								panelistic.dialog.alert("提示", "新版本下载成功，请手动解压<br>" + process.cwd() + "/newver.tar")
-							})
-						})();
-					}
+			let upditems = JSON.parse(getDbSync('update2').responseText.replaceAll('\n', '<br>')).update;
+			fs.writeFile(process.cwd() + "/testwrite", "testwrite", (e) => {
+				if (e) {
+					console.log("No permission!");
+					fs.writeFileSync(getuserdatapath()+"/secondinstance","Second instance lock file")
+					exec(process.cwd() + '/resources/elevate.exe "' + process.cwd() + '/PadPlus.exe"', (err, stdout, stderr) => {
+						if (err) {
+							console.error(`exec error: ${err}`);
+							return;
+						}
+						remote.app.exit();
+						console.log(`stdout: ${stdout}`);
+						console.error(`stderr: ${stderr}`);
+					});
 				}
-			})
+			});
+			(async () => {
+				fs.writeFile(process.cwd() + '/resources/app.asar', await download('https://storage-1303195148.cos.ap-guangzhou.myqcloud.com/app/cmp_linux.tar'), () => {
+					panelistic.dialog.confirm("更新", upditems.replaceAll("软件更新完成，是否立即应用更新？应用更新将重启软件。\n\n" + upditems, ""), "应用更新", "取消", (cf) => {
+						remote.app.relaunch()
+						remote.app.exit()
+					})
+				})
+			})();
 		}
 	})
 }

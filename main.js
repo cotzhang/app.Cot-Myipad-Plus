@@ -49,12 +49,9 @@ electron.app.whenReady().then(() => {
 
 function spawnWindow() {
 	if (!isFirstInstance) {
-		if (!fs.existsSync(getuserdatapath()+"/secondinstance")) {
+		if (!fs.existsSync(getuserdatapath() + "/secondinstance")) {
 			electron.app.exit()
 		}
-	}
-	if (fs.existsSync(getuserdatapath()+"/secondinstance")) {
-		fs.unlinkSync(getuserdatapath()+"/secondinstance")
 	}
 	win = new electron.BrowserWindow({
 		backgroundColor: '#00000000',
@@ -121,6 +118,11 @@ function spawnWindow() {
 		}
 		if (process.argv.includes('--dev-tools')) {
 			win.webContents.openDevTools({ mode: "detach" })
+		}
+
+		if (fs.existsSync(getuserdatapath() + "/secondinstance")) {
+			win.show()
+			fs.unlinkSync(getuserdatapath() + "/secondinstance")
 		}
 	});
 	win.on('close', (e) => {

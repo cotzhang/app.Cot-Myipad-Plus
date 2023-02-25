@@ -4,6 +4,7 @@ const path = require('path');
 const electron = require('electron')
 const remote = require("@electron/remote");
 const { exec } = require('child_process');
+var AdmZip = require('adm-zip')
 const os = require('os')
 
 let getuserdatapath = () => {
@@ -734,24 +735,6 @@ window.onload = function() {
 					panelistic.dialog.alert('错误', '文件下载失败：<br>' + err, '确定')
 				}
 			})();
-		} else if (event.channel == "updable") {
-			panelistic.dialog.confirm("更新", "有新版本可用", "更新", "取消", (cf) => {
-				if (cf) {
-					if (process.platform != 'linux') {
-						(async () => {
-							fs.writeFile(getuserdatapath() + '/installer.exe', await download('https://storage-1303195148.cos.ap-guangzhou.myqcloud.com/app/cmp_inst.exe'), () => {
-								electron.shell.openExternal(getuserdatapath() + '/installer.exe')
-							})
-						})();
-					} else {
-						(async () => {
-							fs.writeFile(process.cwd() + '/newver.tar', await download('https://storage-1303195148.cos.ap-guangzhou.myqcloud.com/app/cmp_linux.tar'), () => {
-								panelistic.dialog.alert("提示", "新版本下载成功，请手动解压<br>" + process.cwd() + "/newver.tar")
-							})
-						})();
-					}
-				}
-			})
 		} else if (event.channel == "sync") {
 			console.log("Syncing")
 			if (!disableSync) { syncData() }
@@ -1321,12 +1304,12 @@ function checkUpd() {
 		console.log(data, VERSION)
 		if (data > VERSION) {
 			console.log("New Update!")
-			let upditems = JSON.parse(getDbSync('update2').responseText.replaceAll('\n', '<br>')).update;
+			let upditems = JSON.parse(getDbSync('update2').responseText.replaceAll('\n', '<br>')).update2;
 			fs.writeFile(process.cwd() + "/testwrite", "testwrite", (e) => {
 				if (e) {
 					console.log("No permission!");
-					fs.writeFileSync(getuserdatapath()+"/secondinstance","Second instance lock file")
-					exec(process.cwd() + '/resources/elevate.exe "' + process.cwd() + '/PadPlus.exe"', (err, stdout, stderr) => {
+					fs.writeFileSync(getuserdatapath() + "/secondinstance", "Second instance lock file")
+					exec('"' + process.cwd() + '/resources/elevate.exe" "' + process.cwd() + '/PadPlus.exe"', (err, stdout, stderr) => {
 						if (err) {
 							console.error(`exec error: ${err}`);
 							return;
@@ -1335,16 +1318,22 @@ function checkUpd() {
 						console.log(`stdout: ${stdout}`);
 						console.error(`stderr: ${stderr}`);
 					});
+				} else {
+					(async () => {
+						fs.writeFile(getuserdatapath() + '/app.zip', await download('https://storage-1303195148.cos.ap-guangzhou.myqcloud.com/app/cmp.zip'), (e) => {
+							var zip = new AdmZip(getuserdatapath() + '/app.zip')
+							zip.getEntries()
+							zip.extractAllTo(process.cwd(), true)
+							panelistic.dialog.confirm("更新", "软件更新完成，是否立即应用更新？应用更新将重启软件。<br><br>" + upditems, "应用更新", "取消", (cf) => {
+								if (cf) {
+									remote.app.relaunch()
+									remote.app.exit()
+								}
+							})
+						})
+					})();
 				}
 			});
-			(async () => {
-				fs.writeFile(process.cwd() + '/resources/app.asar', await download('https://storage-1303195148.cos.ap-guangzhou.myqcloud.com/app/cmp_linux.tar'), () => {
-					panelistic.dialog.confirm("更新", upditems.replaceAll("软件更新完成，是否立即应用更新？应用更新将重启软件。\n\n" + upditems, ""), "应用更新", "取消", (cf) => {
-						remote.app.relaunch()
-						remote.app.exit()
-					})
-				})
-			})();
 		}
 	})
 }

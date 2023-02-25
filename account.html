@@ -31,17 +31,6 @@
 		}
 	}
 
-	function checkUpd() {
-		$.get('https://storage-1303195148.cos.ap-guangzhou.myqcloud.com/website/cmpVerInfo.txt', (data) => {
-			if (data > VERSION) {
-				console.log("New Update!")
-				electron.ipcRenderer.sendToHost('updable')
-			} else {
-				electron.ipcRenderer.sendToHost('alert', '检查更新', '无更新', '确定')
-			}
-		})
-	}
-
 	function delres() {
 		try {
 			// fs.unlinkSync(getuserdatapath() + '/data')
@@ -161,7 +150,6 @@
 		<span class="panelistic_placeholder"></span>
 		<div class="panelistic_panel">
 			<div class="panelistic_panel_name">更多操作</div><br><span class="panelistic_placeholder_large"></span>
-			<input type="button" value="检查更新" onclick="checkUpd()">
 			<input type="button" value="清除缓存" onclick="electron.ipcRenderer.sendToHost('clearTemp')">
 			<input type="button" value="意见反馈" onclick="electron.shell.openExternal('https://github.com/cotzhang/app.Cot-Myipad-Plus/issues')" name="">
 			<input type="button" value="进入测试模式" onclick="electron.ipcRenderer.sendToHost('testmode');">

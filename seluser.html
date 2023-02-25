@@ -28,7 +28,7 @@
 
 	function model_classstart(name, id) {
 		return `<span class="panelistic_placeholder"></span><div class="panelistic_panel" style="font-size:14px">
-			<div style="font-weight:bold;">${name}</div><span class="panelistic_placeholder"></span><input type="button" value="显示/隐藏" onclick="document.getElementById('ctn_${id}').style.display=='none'?document.getElementById('ctn_${id}').style.display='block':document.getElementById('ctn_${id}').style.display='none'"> <input type="button" value="全选" onclick="let ckbx = document.querySelectorAll('.cls${id}');for (var i = 0; i < ckbx.length; i++) {ckbx[i].checked = true;let ckbx2 = document.querySelectorAll('.stusel');for (var j = 0; j < ckbx2.length; j++) {if (ckbx2[j].name==ckbx[i].name) {ckbx2[j].checked = true}}};"> <input type="button" value="全选学生" onclick="let ckbx = document.querySelectorAll('.cls${id}');for (var i = 0; i < ckbx.length; i++) {if (ckbx[i].id!='stu0') {continue;};ckbx[i].checked = true;let ckbx2 = document.querySelectorAll('.stusel');for (var j = 0; j < ckbx2.length; j++) {if (ckbx2[j].name==ckbx[i].name) {ckbx2[j].checked = true}}};"><div id="ctn_${id}" style='display:none'>`
+			<div style="font-weight:bold;">${name}</div><span class="panelistic_placeholder"></span><input type="button" value="显示/隐藏 ▼" onclick="document.getElementById('ctn_${id}').style.display=='none'?document.getElementById('ctn_${id}').style.display='block':document.getElementById('ctn_${id}').style.display='none'"> <input type="button" value="全选" onclick="let ckbx = document.querySelectorAll('.cls${id}');for (var i = 0; i < ckbx.length; i++) {ckbx[i].checked = true;let ckbx2 = document.querySelectorAll('.stusel');for (var j = 0; j < ckbx2.length; j++) {if (ckbx2[j].name==ckbx[i].name) {ckbx2[j].checked = true}}};"> <input type="button" value="全选学生" onclick="let ckbx = document.querySelectorAll('.cls${id}');for (var i = 0; i < ckbx.length; i++) {if (ckbx[i].id!='stu0') {continue;};ckbx[i].checked = true;let ckbx2 = document.querySelectorAll('.stusel');for (var j = 0; j < ckbx2.length; j++) {if (ckbx2[j].name==ckbx[i].name) {ckbx2[j].checked = true}}};"><div id="ctn_${id}" style='display:none'>`
 	}
 
 	function render() {
@@ -103,7 +103,7 @@
 			}
 		}
 		reqbody.flags = 0;
-		reqbody.type = 1;
+		reqbody.type = 2;
 		reqbody.guid = randguid;
 		reqbody.name = document.getElementById('imname').value
 		reqbody.ownerguid = getGlobalUserguid();

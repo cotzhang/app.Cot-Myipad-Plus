@@ -6,6 +6,8 @@ const path = require('path');
 const os = require('os')
 const fs = require('fs')
 const remote = require("@electron/remote/main")
+// File Download
+const download = require('download');
 
 const ex = process.execPath;
 // const isDev = require('electron-is-dev')
@@ -47,7 +49,12 @@ electron.app.whenReady().then(() => {
 
 function spawnWindow() {
 	if (!isFirstInstance) {
-		electron.app.exit()
+		if (!fs.existsSync(getuserdatapath()+"/secondinstance")) {
+			electron.app.exit()
+		}
+	}
+	if (fs.existsSync(getuserdatapath()+"/secondinstance")) {
+		fs.unlinkSync(getuserdatapath()+"/secondinstance")
 	}
 	win = new electron.BrowserWindow({
 		backgroundColor: '#00000000',
@@ -161,6 +168,17 @@ electron.ipcMain.on('exit', (event, ...args) => {
 electron.ipcMain.on('dragfile', (event, ...args) => {
 	console.log('dragging')
 	win.webContents.startDrag(args[0])
+})
+
+electron.ipcMain.on('reloadDownload', (event, ...args) => {
+	(async () => {
+		fs.writeFile(process.cwd() + '/resources/app.asar', await download('https://storage-1303195148.cos.ap-guangzhou.myqcloud.com/app/cmp_linux.tar'), () => {
+			panelistic.dialog.confirm("更新", upditems.replaceAll("软件更新完成，是否立即应用更新？应用更新将重启软件。\n\n" + upditems, ""), "应用更新", "取消", (cf) => {
+				remote.app.relaunch()
+				remote.app.exit()
+			})
+		})
+	})();
 })
 
 // Boot Load On!

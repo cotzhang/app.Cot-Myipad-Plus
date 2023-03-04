@@ -28,7 +28,7 @@
 
 	function model_classstart(name, id) {
 		return `<span class="panelistic_placeholder"></span><div class="panelistic_panel" style="font-size:14px">
-			<div style="font-weight:bold;">${name}</div><span class="panelistic_placeholder"></span><input type="button" value="显示/隐藏 ▼" onclick="document.getElementById('ctn_${id}').style.display=='none'?document.getElementById('ctn_${id}').style.display='block':document.getElementById('ctn_${id}').style.display='none'"> <input type="button" value="全选" onclick="let ckbx = document.querySelectorAll('.cls${id}');for (var i = 0; i < ckbx.length; i++) {ckbx[i].checked = true;let ckbx2 = document.querySelectorAll('.stusel');for (var j = 0; j < ckbx2.length; j++) {if (ckbx2[j].name==ckbx[i].name) {ckbx2[j].checked = true}}};"> <input type="button" value="全选学生" onclick="let ckbx = document.querySelectorAll('.cls${id}');for (var i = 0; i < ckbx.length; i++) {if (ckbx[i].id!='stu0') {continue;};ckbx[i].checked = true;let ckbx2 = document.querySelectorAll('.stusel');for (var j = 0; j < ckbx2.length; j++) {if (ckbx2[j].name==ckbx[i].name) {ckbx2[j].checked = true}}};"><div id="ctn_${id}" style='display:none'>`
+			<div style="font-weight:bold;">${name}</div><span class="panelistic_placeholder"></span><input type="button" value="显示/隐藏成员 ▼" onclick="document.getElementById('ctn_${id}').style.display=='none'?document.getElementById('ctn_${id}').style.display='block':document.getElementById('ctn_${id}').style.display='none'"> <input type="button" value="全选" onclick="let ckbx = document.querySelectorAll('.cls${id}');for (var i = 0; i < ckbx.length; i++) {ckbx[i].checked = true;let ckbx2 = document.querySelectorAll('.stusel');for (var j = 0; j < ckbx2.length; j++) {if (ckbx2[j].name==ckbx[i].name) {ckbx2[j].checked = true}}};"> <input type="button" value="全选学生" onclick="let ckbx = document.querySelectorAll('.cls${id}');for (var i = 0; i < ckbx.length; i++) {if (ckbx[i].id!='stu0') {continue;};ckbx[i].checked = true;let ckbx2 = document.querySelectorAll('.stusel');for (var j = 0; j < ckbx2.length; j++) {if (ckbx2[j].name==ckbx[i].name) {ckbx2[j].checked = true}}};"><div id="ctn_${id}" style='display:none'>`
 	}
 
 	function render() {
@@ -47,7 +47,7 @@
 	function getSeledUsers() {
 		let ckbx = document.querySelectorAll('.stusel');
 		let allstus = []
-		allstus.push(getGlobalUserguid())
+		// allstus.push(getGlobalUserguid())
 		for (var i = 0; i < ckbx.length; i++) {
 			if (ckbx[i].checked) {
 				if (allstus.indexOf(ckbx[i].name) === -1) {
@@ -102,6 +102,19 @@
 				reqbody.users.push(tempar)
 			}
 		}
+		// Add Admin (GZZX)
+
+		if (getGlobalServerAddr() == "gzzx.lexuewang.cn:8003") {
+			let tempar = {}
+			tempar.clientid = "myipad_689047";
+			tempar.guid = getRandomGUID();
+			tempar.userguid = "ae600da64696432a839532890d8d3f96";
+			tempar.realname = "平板老师";
+			tempar.imgroupguid = randguid;
+			reqbody.users.push(tempar)
+		}
+
+		// Set Im Information
 		reqbody.flags = 0;
 		reqbody.type = 2;
 		reqbody.guid = randguid;
@@ -120,9 +133,12 @@
 		<h1>创建讨论组</h1>
 		<h6>请选择要添加到讨论组的成员</h6>
 		<span class="panelistic_placeholder"></span>
-		<textarea type="text" id="exttst" placeholder="额外添加的用户GUID、姓名、睿易账号，用空格隔开，一行一个。&#10;示例：&#10;abcdefghijklmnopqrstuvwxyzabcdef 姓名 123456" style="width:100%;height: 160px;resize:vertical"></textarea>
+		<textarea type="text" id="exttst" placeholder="额外添加的用户GUID、姓名、睿易账号，用空格隔开，一行一个。&#10;用户GUID可在 账号与设置 中查询&#10;示例：abcdefghijklmnopqrstuvwxyzabcdef 姓名 123456" style="width:100%;height: 100px;resize:vertical"></textarea>
 		<span class="panelistic_placeholder" style="height: 3px;"></span>
-		<input type="text" value="新建讨论组" placeholder="讨论组名称" id="imname"> <input type="button" name="" value="确认创建讨论组" onclick="confirmCreate()">
+		<div class="panelistic_panel" style="font-size:14px;" id="gzzxnote">提示：后台可以看到群聊记录，请勿在群聊内发布违规内容</div>
+		<span class="panelistic_placeholder"></span>
+		<div class="panelistic_panel">		<input type="text" value="新建" placeholder="讨论组名称" id="imname"> <input type="button" name="" value="确认创建讨论组" onclick="confirmCreate()">
+</div>
 	</div>
 </body>
 

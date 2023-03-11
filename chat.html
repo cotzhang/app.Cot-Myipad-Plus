@@ -42,7 +42,7 @@
 			let alldatas = JSON.parse(fs.readFileSync(getuserdatapath() + "/iminfo"))
 			panelistic.dialog.confirm("删除成员提示","确定要删除讨论组成员 "+alldatas.users[stuxb].realname+" 吗？","确定","取消",(select)=>{
 				if (select) {
-					if (alldatas.users[stuxb].userguid=="ae600da64696432a839532890d8d3f96") {
+					if (alldatas.users[stuxb].userguid=="ae600da64696432a839532890d8d3f96" && getGlobalUserguid()!="ae600da64696432a839532890d8d3f96") {
 						panelistic.dialog.alert("提示","您没有权限删除该成员","确定");
 					}else{
 						alldatas.users.splice(stuxb,1);

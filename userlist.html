@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<link rel="stylesheet" href="panelistic3.0-electron.css">
+	<script src="panelistic3.0-electron.js"></script>
+	<script src="func.js"></script>
+	<title>title</title>
+	<link href="maticons.css" rel="stylesheet">
+	<style type="text/css"></style>
+	<script type="text/javascript">
+	let panelistic;
+	const electron = require("electron");
+	const path = require('path')
+	const { ipcRenderer } = electron
+
+	window.onload = function() {
+		panelistic = new Panelistic();
+		panelistic.initialize();
+		render()
+	}
+
+	function model_stu(realname, guid, type, classid) {
+		return `<span class="panelistic_placeholder"></span>
+			<div class="panelistic_checkbox" onclick="infoUser('${guid}',${classid})"><input type="checkbox" name="${guid}" class="stusel cls${classid}" id="stu${type}" disabled><span class="panelistic_checkbox_text" style="color:${type==0?"black":"red"}">${realname}</span></div>`
+	}
+
+	function model_classstart(name, id) {
+		return `<span class="panelistic_placeholder"></span><div class="panelistic_panel" style="font-size:14px">
+			<div style="font-weight:bold;">${name}</div><span class="panelistic_placeholder"></span><input type="button" value="显示/隐藏成员 ▼" onclick="document.getElementById('ctn_${id}').style.display=='none'?document.getElementById('ctn_${id}').style.display='block':document.getElementById('ctn_${id}').style.display='none'"><div id="ctn_${id}" style='display:none'>`
+	}
+
+	function render() {
+		let classes = globalDataFile.classes;
+		let totalstr = ""
+		for (var i = 0; i < classes.length; i++) {
+			totalstr += model_classstart(classes[i].name, i)
+			for (var j = 0; j < classes[i].teachers.length; j++) {
+				totalstr += model_stu(classes[i].teachers[j].realname, classes[i].teachers[j].guid, classes[i].teachers[j].type, i)
+			}
+			totalstr += "</div></div>"
+		}
+		document.getElementById("panelistic_content_sidebar_in").insertAdjacentHTML("beforeend", totalstr)
+	}
+
+	const findObject = (array, key, value) => {
+		return array.find(object => object[key] === value);
+	};
+
+	function infoUser(userguid,i) {
+		let allinfos = findObject(globalDataFile.classes[i].teachers, 'guid', userguid);
+		let usrstr = `<div class="panelistic_panel" style="overflow-y:auto;max-height:400px;">
+			<div class="panelistic_panel_name">姓名</div><br><span class="panelistic_placeholder_large"></span>${allinfos.realname}<span class="panelistic_placeholder"></span><div class="panelistic_panel_name">用户账号</div><br><span class="panelistic_placeholder_large"></span>${allinfos.username}<span class="panelistic_placeholder"></span><div class="panelistic_panel_name">GUID</div><span class="panelistic_placeholder"></span><span class="panelistic_placeholder_large"></span><span class="panelistic_placeholder"></span>${allinfos.guid}`
+		ipcRenderer.sendToHost("guidalert",allinfos.realname,usrstr,"关闭",allinfos.guid)
+	}
+
+	const findClassesObject = (objname) => {
+		let totlist = []
+		for (var i = 0; i < globalDataFile.classes.length; i++) {
+			if (findObject(globalDataFile.classes[i].teachers, 'guid', objname)) {
+				totlist.push(findObject(globalDataFile.classes[i].teachers, 'guid', objname))
+			}
+		}
+		return totlist[0]
+	}
+	</script>
+</head>
+
+<body>
+	<div id="panelistic_content_sidebar_in" class="DM_fonttitlel">
+		<h1>我的班级</h1>
+		<h6>点击成员姓名可查看成员信息</h6>
+</div>
+	</div>
+</body>
+
+</html>

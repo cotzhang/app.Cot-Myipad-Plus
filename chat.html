@@ -25,27 +25,49 @@
 			document.getElementById('webview').addEventListener('ipc-message', (event) => {
 				if (event.channel=="okay") {
 					panelistic.dialog.alert("提示","操作成功完成","确定",()=>{window.location.reload()})
+				}else if(event.channel=="delim"){
+					delIm(event.args[0])
+				}else if(event.channel=="delstu"){
+					delStu(event.args[0])
 				}
 			})
 		
 		}
 
-		function model_imgroup(groupname,groupguid) {
-			return `<div class="panelistic_sidebar_selection" onclick="delIm('${groupguid}')"><span style="vertical-align: middle;display: inline-block;"><img src="src/img/ic_placehold.jpg" style="height: 25px;vertical-align: middle;"></span><span style="display: inline-block;vertical-align: middle;">&nbsp;${groupname}</span></div>`
+		function model_imgroup(groupid,groupname) {
+			return `<div class="panelistic_panel" style="margin:8px;font-size:14px" onclick="openIm('${groupid}')"><span style="vertical-align: middle;display: inline-block;"><img src="src/img/ic_placehold.jpg" style="height: 25px;vertical-align: middle;"></span><span style="display: inline-block;vertical-align: middle;">&nbsp;${groupname}</span></div>`
 		}
 
+		function delStu(stuxb) {
+			let alldatas = JSON.parse(fs.readFileSync(getuserdatapath() + "/iminfo"))
+			panelistic.dialog.confirm("删除成员提示","确定要删除讨论组成员 "+alldatas.users[stuxb].realname+" 吗？","确定","取消",(select)=>{
+				if (select) {
+					alldatas.users.splice(stuxb,1);
+					console.log(alldatas);
+					autoRetryRequest("https://" + getGlobalServerAddr() + "/restfuldatasource/imgroups/dummy.json", JSON.stringify(alldatas), [{ key: 'Set-Cookie', value: 'sessionid=' + getGlobalSessionId() + ';szUserGUID=' + getGlobalUserguid() + ';szUserName=' + globalAccountFile.account }], (data) => {
+						console.log(data)
+						panelistic.dialog.alert("提示","删除成功","确定",()=>{window.location.reload()})
+					}, 200, 1000);
+				}
+			});
+		}
+
+		let retdata = {}
+
 		function getImgroups() {
-			simpleRequest("https://"+getGlobalServerAddr()+"/restfuldatasource/imgroups/users/?redirect=1&type=1&userguid="+getGlobalUserguid(),'',[{ key: 'Set-Cookie', value: 'sessionid=' + getGlobalSessionId() + ';szUserGUID=' + getGlobalUserguid() + ';szUserName=' + globalAccountFile.account }],(data)=>{
-				let retdata = JSON.parse(data)
+			simpleRequest("https://"+getGlobalServerAddr()+"/restfuldatasource/imgroups//users/?ownerguid="+getGlobalUserguid(),'',[{ key: 'Set-Cookie', value: 'sessionid=' + getGlobalSessionId() + ';szUserGUID=' + getGlobalUserguid() + ';szUserName=' + globalAccountFile.account }],(data)=>{
+				retdata = JSON.parse(data)
+				console.log(retdata)
 				let allstr=""
 				for (var i = 0; i < retdata.length; i++) {
-					allstr += model_imgroup(retdata[i].name,retdata[i].guid);
+					allstr += model_imgroup(i,retdata[i].name);
 				}
 				document.getElementById('sectionup').insertAdjacentHTML("beforeend", allstr)
+				document.getElementById('listref').style.display='none';
 			},(err)=>{
 				console.log(err)
 				panelistic.dialog.alert("提示","刷新列表出错，请检查网络后重试","确定")
-			},8000,true)
+			},20000,true)
 		}
 
 		function delIm(imguid) {
@@ -58,6 +80,17 @@
 					})
 				}
 			})
+		}
+
+		function openIm(imid) {
+			fs.writeFileSync(getuserdatapath()+'/iminfo',JSON.stringify(retdata[imid]));
+			try{
+				// document.getElementById('webview').openDevTools({mode:"detach"})
+				document.getElementById('webview').loadURL(__dirname+'/iminfo.html')
+			}catch{
+				document.getElementById('webview').src=__dirname+'/iminfo.html';
+			}
+
 		}
 
 		function yesDelIm(imguid) {
@@ -97,22 +130,12 @@
 		<div id="panelistic_content">
 			<div id="panelistic_sidebar" style="top: 0px;height: 100%">
 				<div id="sectionup" style="scroll-behavior: auto;overflow: auto;height: calc(100% - 54px)" id="alllists">
-					<!-- <div id="select1" class="panelistic_sidebar_selection" onclick="webview.loadURL(__dirname+'/selflearn.html')"><span style="vertical-align: middle;display: inline-block;"><img src="src/img/ic_placehold.jpg" style="height: 25px;"></span><span style="display: inline-block;vertical-align: middle;">&nbsp;平板老师1</span></div>
-					<div id="select1" class="panelistic_sidebar_selection" onclick="webview.loadURL(__dirname+'/selflearn.html')"><span style="vertical-align: middle;display: inline-block;"><img src="src/img/ic_placehold.jpg" style="height: 25px;"></span><span style="display: inline-block;vertical-align: middle;">&nbsp;平板老师1</span></div>
-					<div id="select1" class="panelistic_sidebar_selection" onclick="webview.loadURL(__dirname+'/selflearn.html')"><span style="vertical-align: middle;display: inline-block;"><img src="src/img/ic_placehold.jpg" style="height: 25px;"></span><span style="display: inline-block;vertical-align: middle;">&nbsp;平板老师1</span></div>
-					<div id="select1" class="panelistic_sidebar_selection" onclick="webview.loadURL(__dirname+'/selflearn.html')"><span style="vertical-align: middle;display: inline-block;"><img src="src/img/ic_placehold.jpg" style="height: 25px;"></span><span style="display: inline-block;vertical-align: middle;">&nbsp;平板老师1</span></div>
-					<div id="select1" class="panelistic_sidebar_selection" onclick="webview.loadURL(__dirname+'/selflearn.html')"><span style="vertical-align: middle;display: inline-block;"><img src="src/img/ic_placehold.jpg" style="height: 25px;"></span><span style="display: inline-block;vertical-align: middle;">&nbsp;平板老师1</span></div>
-					<div id="select1" class="panelistic_sidebar_selection" onclick="webview.loadURL(__dirname+'/selflearn.html')"><span style="vertical-align: middle;display: inline-block;"><img src="src/img/ic_placehold.jpg" style="height: 25px;"></span><span style="display: inline-block;vertical-align: middle;">&nbsp;平板老师1</span></div>
-					<div id="select1" class="panelistic_sidebar_selection" onclick="webview.loadURL(__dirname+'/selflearn.html')"><span style="vertical-align: middle;display: inline-block;"><img src="src/img/ic_placehold.jpg" style="height: 25px;"></span><span style="display: inline-block;vertical-align: middle;">&nbsp;平板老师1</span></div>
-					<div id="select1" class="panelistic_sidebar_selection" onclick="webview.loadURL(__dirname+'/selflearn.html')"><span style="vertical-align: middle;display: inline-block;"><img src="src/img/ic_placehold.jpg" style="height: 25px;"></span><span style="display: inline-block;vertical-align: middle;">&nbsp;平板老师1</span></div>
-					<div id="select1" class="panelistic_sidebar_selection" onclick="webview.loadURL(__dirname+'/selflearn.html')"><span style="vertical-align: middle;display: inline-block;"><img src="src/img/ic_placehold.jpg" style="height: 25px;"></span><span style="display: inline-block;vertical-align: middle;">&nbsp;平板老师1</span></div>
-					<div id="select1" class="panelistic_sidebar_selection" onclick="webview.loadURL(__dirname+'/selflearn.html')"><span style="vertical-align: middle;display: inline-block;"><img src="src/img/ic_placehold.jpg" style="height: 25px;"></span><span style="display: inline-block;vertical-align: middle;">&nbsp;平板老师1</span></div>
-					<div id="select1" class="panelistic_sidebar_selection" onclick="webview.loadURL(__dirname+'/selflearn.html')"><span style="vertical-align: middle;display: inline-block;"><img src="src/img/ic_placehold.jpg" style="height: 25px;"></span><span style="display: inline-block;vertical-align: middle;">&nbsp;平板老师1</span></div> -->
+					<span style="font-size:14px;padding-left:8px" id="listref">正在刷新列表...</span>
 				</div>
-				<div style="background-color:#fff8"><input type="button" value="创建讨论组" style="margin:8px"></div>
+				<div style="background-color:#fff8"><input type="button" value="创建讨论组" onclick="document.getElementById('webview').src = (__dirname+'/seluser.html')" style="margin:8px"></div>
 			</div>
 			<div id="panelistic_content_sidebar">
-				<webview id="webview" src="seluser.html" nodeintegration="true" disablewebsecurity webpreferences="contextIsolation=no" />
+				<webview id="webview" nodeintegration="true" disablewebsecurity webpreferences="contextIsolation=no" />
 				</webview>
 			</div>
 		</div>

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<link rel="stylesheet" href="panelistic3.0-electron.css">
+	<script src="panelistic3.0-electron.js"></script>
+	<script src="func.js"></script>
+	<title>title</title>
+	<link href="maticons.css" rel="stylesheet">
+	<style type="text/css"></style>
+	<script type="text/javascript">
+	let panelistic;
+	const electron = require("electron");
+	const path = require('path')
+	const { ipcRenderer } = electron
+	let alldatas = JSON.parse(fs.readFileSync(getuserdatapath() + "/iminfo"))
+
+	window.onload = function() {
+		panelistic = new Panelistic();
+		panelistic.initialize();
+		console.log(alldatas)
+		document.getElementById('tlzname').innerText = alldatas.name;
+		document.getElementById('tlznameinput').value = alldatas.name;
+	renderName()
+	}
+
+	function renameIm() {
+		let imname = document.getElementById('tlznameinput').value;
+		alldatas.name = imname;
+		submitImInfo()
+	}
+
+	function submitImInfo() {
+		autoRetryRequest("https://" + getGlobalServerAddr() + "/restfuldatasource/imgroups/dummy.json", JSON.stringify(alldatas), [{ key: 'Set-Cookie', value: 'sessionid=' + getGlobalSessionId() + ';szUserGUID=' + getGlobalUserguid() + ';szUserName=' + globalAccountFile.account }], (data) => {
+			ipcRenderer.sendToHost("okay")
+		}, 200, 1000)
+	}
+
+	function delIm() {
+		ipcRenderer.sendToHost("delim", alldatas.guid)
+	}
+
+	function model_stu(realname, guid, type,stuxb) {
+		return `<span class="panelistic_placeholder"></span>
+			<div class="panelistic_checkbox" onclick="delStu(${stuxb})"><input type="checkbox" disabled name="${guid}" class="stusel" id="stu${type}"><span class="panelistic_checkbox_text" style="color:${type==0?"black":"red"}">${realname}</span></div>`
+	}
+
+	function renderName() {
+		let users = alldatas.users;
+		let totalstr = "";
+		for (var i = 0; i < users.length; i++) {
+			totalstr += model_stu(users[i].realname, users[i].guid, 0,i);
+		}
+		document.getElementById('peoplemanage').insertAdjacentHTML("beforeend", totalstr);
+	}
+
+	function delStu(stuxb){
+		// electron.ipcRenderer.sendToHost("delstu",stuxb);
+	}
+	</script>
+</head>
+
+<body>
+	<div id="panelistic_content_sidebar_in" class="DM_fonttitlel">
+		<h1>讨论组管理</h1>
+		<h6 id="tlzname">未知讨论组未知讨论区</h6>
+		<span class="panelistic_placeholder"></span>
+		<div class="panelistic_panel" style="font-size:14px;">
+			<div class="panelistic_panel_name">讨论组名称</div><br><span class="panelistic_placeholder_large"></span><input type="text" value="" id="tlznameinput" placeholder="讨论组名称"> <input type="button" value="确认修改" onclick="renameIm()">
+		</div>
+		<span class="panelistic_placeholder"></span>
+		<div class="panelistic_panel" style="font-size:14px;">
+			<div class="panelistic_panel_name">讨论组设置</div><br><span class="panelistic_placeholder_large"></span><input type="button" value="删除讨论组" onclick="delIm()">
+		</div>
+		<span class="panelistic_placeholder"></span>
+		<div class="panelistic_panel" style="font-size:14px;" id="peoplemanage">
+			<div class="panelistic_panel_name">讨论组成员<!-- <span style="color: red;">(点击移除)</span> --></div><br><span class="panelistic_placeholder_large"></span>
+		</div>
+	</div>
+	</div>
+</body>
+
+</html>

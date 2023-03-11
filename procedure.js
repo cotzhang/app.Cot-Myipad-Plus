@@ -1040,6 +1040,7 @@ function removeAllConfigs() {
 	try { fs.unlinkSync(getuserdatapath() + '/answersheetsstudent') } catch {}
 	try { fs.unlinkSync(getuserdatapath() + '/secondlogin') } catch {}
 	try { fs.unlinkSync(getuserdatapath() + '/subjects') } catch {}
+	try { fs.unlinkSync(getuserdatapath() + '/iminfo') } catch {}
 	try {
 		deleteFolderRecursive(getuserdatapath() + '/downloads');
 	} catch {}

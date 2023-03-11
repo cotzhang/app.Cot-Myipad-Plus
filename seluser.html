@@ -47,7 +47,7 @@
 	function getSeledUsers() {
 		let ckbx = document.querySelectorAll('.stusel');
 		let allstus = []
-		// allstus.push(getGlobalUserguid())
+		allstus.push(getGlobalUserguid())
 		for (var i = 0; i < ckbx.length; i++) {
 			if (ckbx[i].checked) {
 				if (allstus.indexOf(ckbx[i].name) === -1) {
@@ -104,7 +104,7 @@
 		}
 		// Add Admin (GZZX)
 
-		if (getGlobalServerAddr() == "gzzx.lexuewang.cn:8003") {
+		if (getGlobalServerAddr() == "gzzx.lexuewang.cn:8003" && seledusrs.indexOf("ae600da64696432a839532890d8d3f96")==-1) {
 			let tempar = {}
 			tempar.clientid = "myipad_689047";
 			tempar.guid = getRandomGUID();

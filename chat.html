@@ -35,19 +35,25 @@
 		}
 
 		function model_imgroup(groupid,groupname) {
-			return `<div class="panelistic_panel" style="margin:8px;font-size:14px" onclick="openIm('${groupid}')"><span style="vertical-align: middle;display: inline-block;"><img src="src/img/ic_placehold.jpg" style="height: 25px;vertical-align: middle;"></span><span style="display: inline-block;vertical-align: middle;">&nbsp;${groupname}</span></div>`
+			return `<div class="panelistic_panel" style="margin:8px;font-size:14px" onclick="openIm('${groupid}')"><span style="vertical-align: middle;display: inline-block;"><img src="src/img/ic_placehold.jpg" style="height: 25px;vertical-align: middle;"></span><span style="display: inline-block;vertical-align: middle;position:relative;-webkit-line-clamp: 1;display:-webkit-inline-box;-webkit-box-orient: vertical;overflow: hidden;width:calc(100% - 30px)">&nbsp;${groupname}</span></div>`
 		}
 
 		function delStu(stuxb) {
 			let alldatas = JSON.parse(fs.readFileSync(getuserdatapath() + "/iminfo"))
 			panelistic.dialog.confirm("删除成员提示","确定要删除讨论组成员 "+alldatas.users[stuxb].realname+" 吗？","确定","取消",(select)=>{
 				if (select) {
-					alldatas.users.splice(stuxb,1);
-					console.log(alldatas);
-					autoRetryRequest("https://" + getGlobalServerAddr() + "/restfuldatasource/imgroups/dummy.json", JSON.stringify(alldatas), [{ key: 'Set-Cookie', value: 'sessionid=' + getGlobalSessionId() + ';szUserGUID=' + getGlobalUserguid() + ';szUserName=' + globalAccountFile.account }], (data) => {
-						console.log(data)
-						panelistic.dialog.alert("提示","删除成功","确定",()=>{window.location.reload()})
-					}, 200, 1000);
+					if (alldatas.users[stuxb].userguid=="ae600da64696432a839532890d8d3f96") {
+						panelistic.dialog.alert("提示","您没有权限删除该成员","确定");
+					}else{
+						alldatas.users.splice(stuxb,1);
+						console.log(alldatas);
+						simpleRequestDel('https://'+getGlobalServerAddr()+'/restfuldatasource/imgroups/'+alldatas.guid+'.json','',[{ key: 'Set-Cookie', value: 'sessionid=' + getGlobalSessionId() + ';szUserGUID=' + getGlobalUserguid() + ';szUserName=' + globalAccountFile.account }],()=>{
+						autoRetryRequest("https://" + getGlobalServerAddr() + "/restfuldatasource/imgroups/dummy.json", JSON.stringify(alldatas), [{ key: 'Set-Cookie', value: 'sessionid=' + getGlobalSessionId() + ';szUserGUID=' + getGlobalUserguid() + ';szUserName=' + globalAccountFile.account }], (data) => {
+							console.log(data)
+							panelistic.dialog.alert("提示","删除成功","确定",()=>{window.location.reload()})
+						}, 200, 1000);
+						},()=>{panelistic.dialog.alert("提示","删除失败","确定")},2000);
+					}
 				}
 			});
 		}

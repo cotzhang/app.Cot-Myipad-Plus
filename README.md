@@ -4,31 +4,21 @@ A desktop application for myipad.
 
 睿易少年派桌面客户端
 
+## 公告
+
+很抱歉，由于云存储服务器受到攻击产生了23TB流量，导致欠费11655元，平板+项目已无力维护，暂停开发
+
+如需下载最新版本，请在Realese中查找.
+
+如果您希望平板+能够继续维护，若您愿意，也可以给予我一点小小的帮助，谢谢！
+
+
+
+## 平板+
+
 ![image](https://user-images.githubusercontent.com/107354861/213108549-0a8be2b7-42f7-4f6e-bd94-2c74fd9523e4.png)
 
 下载网站（高速）：https://cotx.tech/#/padplus
-
-## 支持开发工作
-
-Please give me a **star** if you like! Thanks
-
-Please give me a **star** if you like! Thanks
-
-Please give me a **star** if you like! Thanks
-
-Please give me a **star** if you like! Thanks
-
-Please give me a **star** if you like! Thanks
-
-Please give me a **star** if you like! Thanks
-
-Please give me a **star** if you like! Thanks
-
-Please give me a **star** if you like! Thanks
-
-Please give me a **star** if you like! Thanks
-
-Please give me a **star** if you like! Thanks
 
 ## 核心功能
 - [x] 课件文件导出

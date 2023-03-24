@@ -12,10 +12,11 @@ A desktop application for myipad.
 
 如果您希望平板+能够继续维护，若您愿意，也可以给予我一点小小的帮助，谢谢！
 
-![Screenshot_2023-03-19-08-26-19-114_com tencent mm](https://gzzx.lexuewang.cn:8003/GetTemporaryStorage?filename=imgzz1)
-![Screenshot_2023-03-19-08-26-37-549_com android mm](https://gzzx.lexuewang.cn:8003/GetTemporaryStorage?filename=imgzz2)
-![Screenshot_2023-03-19-12-23-38-483_com eg android](https://gzzx.lexuewang.cn:8003/GetTemporaryStorage?filename=imgzz3)
-![Screenshot_2023-03-19-12-23-28-429_com tencent mm](https://gzzx.lexuewang.cn:8003/GetTemporaryStorage?filename=imgzz4)
+![Screenshot_2023-03-19-08-26-37-549_com android mm](https://user-images.githubusercontent.com/107354861/227490065-a9666cc3-8420-457f-882f-5ea7a1f0dbb2.jpg)
+![Screenshot_2023-03-19-08-26-19-114_com tencent mm](https://user-images.githubusercontent.com/107354861/227490080-5f17d1d3-2272-4585-9573-2942faee33ba.jpg)
+![1679651133865](https://user-images.githubusercontent.com/107354861/227490089-440f3181-b3d8-444c-be09-e8db4891fe89.png)
+![1679651367233](https://user-images.githubusercontent.com/107354861/227490103-ebb2bde4-84fc-49cc-8ab1-3575fcab621d.jpg)
+
 
 
 ## 平板+

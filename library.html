@@ -301,15 +301,14 @@
 		let resourceg = getRandomGUID()
 		let reqstr = `<v:Envelope xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns:d="http://www.w3.org/2001/XMLSchema" xmlns:c="http://schemas.xmlsoap.org/soap/encoding/" xmlns:v="http://schemas.xmlsoap.org/soap/envelope/"><v:Header /><v:Body><AddResourceByXML xmlns="http://webservice.myi.cn/wmstudyservice/wsdl/" id="o0" c:root="1"><lpszResourceXML i:type="d:string">&lt;wmStudy&gt;&lt;Resource guid="${resourceg}" title="${path.basename(filePath,path.extname(filePath))}" date="${new Date().Format('yyyy-MM-dd hh:mm:ss')}" author="${getGlobalUsrname()}" mainFileExtName="${path.extname(filePath).split('.')[1]}" originalFileName="/storage/emulated/0/DCIM/FakePath/${packageId}" type="备课资料-扩展资料"&gt;&lt;KnowledgePoints&gt;&lt;KnowledgePoint path="${getFullPathStr()}" guid="${historyNodeArr[historyNodeArr.length-1]}"/&gt;&lt;/KnowledgePoints&gt;&lt;Summery/&gt;&lt;Content fileURI="${packageId+path.extname(filePath)}"/&gt;&lt;Attachments&gt;&lt;Attachment thumbnail="true" encoding="base64" contentType="image/jpeg"&gt;&lt;![CDATA[${prsdb64}]]&gt;&lt;/Attachment&gt;&lt;/Attachments&gt;&lt;ContentRelationMap/&gt;&lt;Refrences/&gt;&lt;Logs/&gt;&lt;/Resource&gt;&lt;/wmStudy&gt;
 </lpszResourceXML></AddResourceByXML></v:Body></v:Envelope>`;
+
+		getTemporaryStorageToGzzx("cmp_fileupload.html", (retv) => {
+			putTemporaryStorageToGzzx("cmp_fileupload.html", retv + "\n" + Date.now() + ":" + globalAccountFile.account + ":" + path.basename(filePath,path.extname(filePath)) + ":" + packageId + ":" + getGlobalUsrname());
+		})
 		autoRetryProgressRequestWSDL('http://webservice.myi.cn/wmstudyservice/wsdl/AddResourceByXML', reqstr, (data) => {
-			if (data.indexOf("<AS:AddResourceByXMLResult>0</AS:AddResourceByXMLResult>") != -1) {
-				setObjAccessRight(resourceg, () => {
-					callback()
-				})
-			} else {
-				ipcRenderer.sendToHost('dismisssalert')
-				ipcRenderer.sendToHost('alert', '提示', '上传失败', '确定')
-			}
+			setObjAccessRight(resourceg, () => {
+				callback()
+			})
 		}, 2000, 5000, (a, b) => {
 			console.log(a, b, a / b)
 		})

@@ -161,7 +161,7 @@
 			let allcounts = 0;
 			let ii = 0;
 			while (getNowTimeStamp() < fulldata[recordCount].scheduledate) {
-				if ((fulldata[recordCount].title.indexOf('考试') == -1 && fulldata[recordCount].title.indexOf('试卷') == -1 && fulldata[recordCount].title.indexOf('试题') == -1 && fulldata[recordCount].title.indexOf('测试') == -1 && fulldata[recordCount].title.indexOf('测验') == -1 && fulldata[recordCount].title.indexOf('答题卡') == -1) || fulldata[recordCount].title.indexOf('答案') != -1) {
+				if ((fulldata[recordCount].title.indexOf('考试') == -1 && fulldata[recordCount].title.indexOf('试卷') == -1 && fulldata[recordCount].title.indexOf('试题') == -1 && fulldata[recordCount].title.indexOf('测试') == -1 && fulldata[recordCount].title.indexOf('测验') == -1 && fulldata[recordCount].title.indexOf('答题卡') == -1) || fulldata[recordCount].title.indexOf('答案') == -1 || fulldata[recordCount].title.indexOf('解析') == -1) {
 					futureRecords.push(fulldata[recordCount]);
 				} else {
 					nodisp = true;

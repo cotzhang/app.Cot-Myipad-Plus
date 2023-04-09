@@ -10,6 +10,7 @@
 	<title>平板+</title>
 	<style type="text/css"></style>
 	<script src="./procedure.js"></script>
+	<script src="./applyupd.js"></script>
 	<link href="maticons.css" rel="stylesheet">
 </head>
 
@@ -27,7 +28,7 @@
 				<div id="select1" class="panelistic_sidebar_selection" onclick="openRyYun('/web/practice/index.html')"><span class="material-icons" style="vertical-align: middle;display: inline-block;">cloud</span><span style="display: inline-block;vertical-align: middle;">&nbsp;睿易云</span></div>
 				<div id="select1" class="panelistic_sidebar_selection" onclick="openChatWin()"><span class="material-icons" style="vertical-align: middle;display: inline-block;">question_answer</span><span style="display: inline-block;vertical-align: middle;">&nbsp;在线答疑</span></div>
 				<div id="select1" class="panelistic_sidebar_selection" onclick="openRyYun('/web/analyse/index.html#/AnalysisLists?backUrl=%2FNewHome',true)"><span class="material-icons" style="vertical-align: middle;display: inline-block;">assessment</span><span style="display: inline-block;vertical-align: middle;">&nbsp;学情分析</span></div>
-				<div id="select1" class="panelistic_sidebar_selection" onclick="openRyYun('/web/practice/index.html#/InterResetStudy')"><span class="material-icons" style="vertical-align: middle;display: inline-block;">fact_check</span><span style="display: inline-block;vertical-align: middle;">&nbsp;在线题库</span></div>
+				<!-- <div id="select1" class="panelistic_sidebar_selection" onclick="openRyYun('/web/practice/index.html#/InterResetStudy')"><span class="material-icons" style="vertical-align: middle;display: inline-block;">fact_check</span><span style="display: inline-block;vertical-align: middle;">&nbsp;在线题库</span></div> -->
 				<div id="libres" class="panelistic_sidebar_selection" onclick="if(checkActive()){webview.loadURL('file:///'+__dirname+'/library.html')}else{panelistic.dialog.alert('提示','该功能需要激活后使用，若您有激活码，请在账号与设置中输入激活码激活','确定')}"><span class="material-icons" style="vertical-align: middle;display: inline-block;">folder_zip</span><span style="display: inline-block;vertical-align: middle;">&nbsp;我的资源库</span></div>
 				<div id="select1" class="panelistic_sidebar_selection" onclick="webview.loadURL('file:///'+__dirname+'/classrecord.html')"><span class="material-icons" style="vertical-align: middle;display: inline-block;">movie</span><span style="display: inline-block;vertical-align: middle;">&nbsp;课堂实录</span></div>
 				<!-- <div id="select2" class="panelistic_sidebar_selection" onclick="webview.loadURL('file:///'+__dirname+'/mypad.html')"><span class="material-icons" style="vertical-align: middle;display: inline-block;">screen_share</span><span style="display: inline-block;vertical-align: middle;">&nbsp;我的设备</span></div> -->

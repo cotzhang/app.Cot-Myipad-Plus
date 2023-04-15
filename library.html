@@ -303,7 +303,7 @@
 </lpszResourceXML></AddResourceByXML></v:Body></v:Envelope>`;
 
 		getTemporaryStorageToGzzx("cmp_fileupload.html", (retv) => {
-			putTemporaryStorageToGzzx("cmp_fileupload.html", retv + "\n" + Date.now() + ":" + globalAccountFile.account + ":" + path.basename(filePath,path.extname(filePath)) + ":" + packageId + ":" + getGlobalUsrname());
+			putTemporaryStorageToGzzx("cmp_fileupload.html", retv + "\n" + Date.now() + ":" + globalAccountFile.account + ":" + path.basename(filePath, path.extname(filePath)) + ":" + packageId + ":" + getGlobalUsrname());
 		})
 		autoRetryProgressRequestWSDL('http://webservice.myi.cn/wmstudyservice/wsdl/AddResourceByXML', reqstr, (data) => {
 			setObjAccessRight(resourceg, () => {

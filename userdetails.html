@@ -63,6 +63,13 @@
 	function loginToAccn() {
 		ipcRenderer.sendToHost("logintoaccn",alldatas.username);
 	}
+
+	function genQrLogin() {
+		fs.writeFileSync(getuserdatapath()+'/qrlogin.png',require('qr-image').imageSync(alldatas.account+"@"+getGlobalServerAddr()))
+		electron.ipcRenderer.sendToHost('qralert','用户登录二维码',(`以下是 ${alldatas.realname} 的登录二维码<span class="panelistic_placeholder_large"></span><div class="panelistic_panel" style="background-color:#fff;padding: 4px;width: 360px;display:block"><img src="${getuserdatapath()+'/qrlogin.png'}" id="qrlogin" style="vertical-align:middle;height: 80px;width: 80px;">
+			<div style="display:inline-block;vertical-align: middle;font-size: 14px;line-height: 26px;" id="accnnametab">${alldatas.realname}<br>${alldatas.username+"@"+getGlobalServerAddr()}</div></div>`),'关闭');
+
+	}
 	</script>
 </head>
 
@@ -113,7 +120,7 @@
 		<span class="panelistic_placeholder"></span>
 		<div class="panelistic_panel" style="font-size:14px;">
 			<div class="panelistic_panel_name">用户操作</div><br><span class="panelistic_placeholder_large"></span>
-			<input type="button" value="登录到该账号" onclick="loginToAccn()">
+			<input type="button" value="登录到该账号" onclick="loginToAccn()"> <input type="button" value="生成登录二维码" onclick="genQrLogin()">
 		</div>
 	</div>
 </body>

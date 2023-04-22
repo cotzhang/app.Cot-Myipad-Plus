@@ -161,7 +161,7 @@
 			let allcounts = 0;
 			let ii = 0;
 			while (getNowTimeStamp() < fulldata[recordCount].scheduledate) {
-				if ((fulldata[recordCount].title.indexOf('考试') == -1 && fulldata[recordCount].title.indexOf('试卷') == -1 && fulldata[recordCount].title.indexOf('试题') == -1 && fulldata[recordCount].title.indexOf('测试') == -1 && fulldata[recordCount].title.indexOf('测验') == -1 && fulldata[recordCount].title.indexOf('答题卡') == -1) || fulldata[recordCount].title.indexOf('答案') == -1 || fulldata[recordCount].title.indexOf('解析') == -1) {
+				if ((fulldata[recordCount].title.indexOf('考试') == -1 && fulldata[recordCount].title.indexOf('Exam') == -1 && fulldata[recordCount].title.indexOf('Test') == -1 && fulldata[recordCount].title.indexOf('试卷') == -1 && fulldata[recordCount].title.indexOf('试题') == -1 && fulldata[recordCount].title.indexOf('测试') == -1 && fulldata[recordCount].title.indexOf('测验') == -1 && fulldata[recordCount].title.indexOf('答题卡') == -1) && fulldata[recordCount].title.indexOf('答案') == -1 && fulldata[recordCount].title.indexOf('解析') == -1) {
 					futureRecords.push(fulldata[recordCount]);
 				} else {
 					nodisp = true;
@@ -364,7 +364,7 @@
 				let allstrs = ``
 				allstrs += model_futureStart('未来的备课')
 				if (nodisp) {
-					allstrs += model_note('未来备课包含考试相关内容，不予显示')
+					allstrs += model_note('未来备课包含考试或测验相关内容，不予显示')
 				}
 				if (futureRecords.length == 0) {
 					allstrs += model_note('无未来备课')

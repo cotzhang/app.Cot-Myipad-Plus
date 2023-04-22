@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<link rel="stylesheet" href="panelistic3.0-electron.css">
+	<script src="panelistic3.0-electron.js"></script>
+	<script src="func.js"></script>
+	<title>title</title>
+	<link href="maticons.css" rel="stylesheet">
+	<style type="text/css"></style>
+	<script type="text/javascript">
+	let panelistic;
+	const electron = require("electron");
+	const path = require('path')
+	const { ipcRenderer } = electron
+	let alldatas = JSON.parse(fs.readFileSync(getuserdatapath() + "/userinfo"))
+
+	window.onload = function() {
+		panelistic = new Panelistic();
+		panelistic.initialize();
+		console.log(alldatas)
+		document.getElementById('tlzname').innerText = alldatas.realname;
+		document.getElementById('tlznameinput').value = alldatas.guid;
+		document.getElementById('stuname').innerText = alldatas.realname;
+		document.getElementById('stuacct').innerText = alldatas.username;
+		document.getElementById('usrava').src = `https://${getGlobalServerAddr()}/DataSynchronizeGetSingleData?clientid=${alldatas.type != 0 ? alldatas.username + '_teacherpad' : 'myipad_' + alldatas.username}&packageid=UserAvatar_${alldatas.username}`;
+		if (alldatas.type == 2) {
+			document.getElementById("padpluscreate").style.display = "block"
+		}
+		getUserInfoByGuid(alldatas.guid, (usrifo) => {
+			document.getElementById('stunb').innerText = usrifo.studentid;
+			document.getElementById('createdate').innerText = usrifo.createdate;
+			document.getElementById('editdate').innerText = usrifo.modifydate;
+			document.getElementById('accntype').innerText = usrifo.usertype;
+			document.getElementById('lastlogindate').innerText = usrifo.lastlogindate;
+			document.getElementById('lastloginip').innerText = usrifo.lastloginip;
+		})
+	}
+
+	function model_stu(realname, guid, type, stuxb) {
+		return `<span class="panelistic_placeholder"></span>
+			<div class="panelistic_checkbox" onclick="delStu(${stuxb})"><input type="checkbox" disabled name="${guid}" class="stusel" id="stu${type}"><span class="panelistic_checkbox_text" style="color:${type==0?"black":"red"}">${realname}</span></div>`
+	}
+
+	function getUserInfoByGuid(userguid, callb) {
+		let str1 = fs.readFileSync(__dirname + "/strconstant/struserdetail.txt");
+		let str2 = `</lpszJSFileContent><n1:arrInputParamValue i:type="n1:arrInputParamValue" xmlns:n1="http://webservice.myi.cn/wmstudyservice/wsdl/"><anyType i:type="d:string">` + userguid + "</anyType></n1:arrInputParamValue></ProcessJSFunction></v:Body></v:Envelope>"
+		autoRetryRequestWSDL("http://webservice.myi.cn/wmstudyservice/wsdl/ProcessJSFunction", str1 + str2, (allretval) => {
+			let psretval = allretval.substring(allretval.indexOf('<AS:szJSResult>') + 15, allretval.indexOf("</AS:szJSResult>"));
+			var temp = document.createElement("div");
+			temp.innerHTML = psretval;
+			psretval = temp.innerText || temp.textContent;
+			temp = null;
+			callb(JSON.parse(psretval))
+		}, 500, 2000)
+	}
+
+	function copyGUID() {
+		ipcRenderer.sendToHost("guidalert",alldatas.guid);
+	}
+
+	function loginToAccn() {
+		ipcRenderer.sendToHost("logintoaccn",alldatas.username);
+	}
+
+	function genQrLogin() {
+		fs.writeFileSync(getuserdatapath()+'/qrlogin.png',require('qr-image').imageSync(alldatas.account+"@"+getGlobalServerAddr()))
+		electron.ipcRenderer.sendToHost('qralert','用户登录二维码',(`以下是 ${alldatas.realname} 的登录二维码<span class="panelistic_placeholder_large"></span><div class="panelistic_panel" style="background-color:#fff;padding: 4px;width: 360px;display:block"><img src="${getuserdatapath()+'/qrlogin.png'}" id="qrlogin" style="vertical-align:middle;height: 80px;width: 80px;">
+			<div style="display:inline-block;vertical-align: middle;font-size: 14px;line-height: 26px;" id="accnnametab">${alldatas.realname}<br>${alldatas.username+"@"+getGlobalServerAddr()}</div></div>`),'关闭');
+
+	}
+	</script>
+</head>
+
+<body>
+	<div id="panelistic_content_sidebar_in" class="DM_fonttitlel">
+		<h1 id="tlzname">用户详情</h1>
+		<h6>用户详情</h6>
+		<span id="padpluscreate" style="display:none;">
+			<span class="panelistic_placeholder"></span>
+			<div class="panelistic_panel" style="font-size:14px;">
+				<img src="src/img/ic_placehold.jpg" style="height:20px;vertical-align:middle;display: inline-block;" ondragstart="return false"> <b style="vertical-align:middle;display: inline-block;"> 该用户为教师账号</b>
+			</div>
+		</span>
+		<span class="panelistic_placeholder"></span>
+		<div class="panelistic_panel" style="font-size:14px;">
+			<div class="panelistic_panel_name">用户信息</div><br><span class="panelistic_placeholder_large"></span>
+			<div style="margin: 4px;">
+				<img style="height:60px;width:60px;vertical-align:middle;margin-right: 4px;" id="usrava" onerror="this.src='src/no_pic.jpg'">
+				<div style="vertical-align:middle;display: inline-block;" id="rtp">姓名 <span id="stuname"></span><br>
+					账号 <span id="stuacct"></span><br>
+					学号 <span id="stunb"></span></div>
+			</div>
+		</div>
+		<span class="panelistic_placeholder"></span>
+		<div class="panelistic_panel" style="font-size:14px;">
+			<div class="panelistic_panel_name">用户GUID</div><br><span class="panelistic_placeholder_large"></span><input type="text" value="" id="tlznameinput" placeholder="USERGUID" disabled style="width:300px"> <input type="button" value="复制GUID" onclick="copyGUID()">
+		</div>
+		<span class="panelistic_placeholder"></span>
+		<div class="panelistic_panel" style="font-size:14px;">
+			<div class="panelistic_panel_name">账号属性</div><br><span class="panelistic_placeholder_large"></span>
+			<div style="margin: 4px;">
+				<div style="vertical-align:middle;display: inline-block;" id="rtp">
+					账号类别 <span id="accntype"></span><br>
+					创建日期 <span id="createdate"></span><br>
+					编辑日期 <span id="editdate"></span></div>
+			</div>
+		</div>
+		<span class="panelistic_placeholder"></span>
+		<div class="panelistic_panel" style="font-size:14px;">
+			<div class="panelistic_panel_name">登录记录</div><br><span class="panelistic_placeholder_large"></span>
+			<div style="margin: 4px;">
+				<div style="vertical-align:middle;display: inline-block;" id="rtp">
+					最近登录时间 <span id="lastlogindate"></span><br>
+					最近登录ip <span id="lastloginip"></span>
+				</div>
+			</div>
+		</div>
+		<span class="panelistic_placeholder"></span>
+		<div class="panelistic_panel" style="font-size:14px;">
+			<div class="panelistic_panel_name">用户操作</div><br><span class="panelistic_placeholder_large"></span>
+			<input type="button" value="登录到该账号" onclick="loginToAccn()"> <input type="button" value="生成登录二维码" onclick="genQrLogin()">
+		</div>
+	</div>
+</body>
+
+</html>

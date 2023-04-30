@@ -42,7 +42,7 @@
 				<span class="panelistic_placeholder"></span>
 				<input type="button" value="登录" onclick="ipcRenderer.sendToHost('logindial',document.getElementById('zhanghao').value,require('crypto').createHash('md5').update(document.getElementById('mima').value).digest('hex'),document.getElementById('school').selectedIndex);">&nbsp;<input type="button" value="使用md5登录" onclick="ipcRenderer.sendToHost('logindial',document.getElementById('zhanghao').value,document.getElementById('mima').value,document.getElementById('school').selectedIndex);">
 				<span class="panelistic_placeholder"></span>
-				<input type="button" value="进入测试模式" onclick="ipcRenderer.sendToHost('testmode');"> <input type="button" value="提交issue" onclick="electron.shell.openExternal('https://github.com/cotzhang/app.Cot-Myipad-Plus/issues')"><br>
+				<input type="button" value="少年派网页版" onclick="electron.shell.openExternal('https://cotx.tech/myipadweb')"> <input type="button" value="提交issue" onclick="electron.shell.openExternal('https://github.com/cotzhang/app.Cot-Myipad-Plus/issues')"><br>
 			</div>
 	</div>
 </body>

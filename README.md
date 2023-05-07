@@ -8,12 +8,13 @@ The desktop application for MyiPad.
 
 ## 平板+
 
-![image](https://user-images.githubusercontent.com/107354861/213108549-0a8be2b7-42f7-4f6e-bd94-2c74fd9523e4.png)
+![image](https://user-images.githubusercontent.com/107354861/236652545-6a2c2199-9f96-4224-ae1c-f18052e1e20a.png)
 
-下载网站（高速）：https://cotx.tech/#/padplus
+下载网站（高速）：https://cotx.tech/padplus
 
 ```
-继续使用本软件及其服务，表明您同意仅使用该软件进行学习相关用途。禁止使用本软件进行破坏教学系统等违反学校规章制度的行为。
+继续使用本软件及其服务，表明您同意仅使用该软件进行学习相关用途。
+禁止使用本软件进行破坏教学系统等违反学校规章制度的行为。
 ```
 
 ## 核心功能
@@ -95,26 +96,36 @@ The desktop application for MyiPad.
 等等功能...
 ## 屏幕截图
 ### 浅色模式预览
-![image](https://user-images.githubusercontent.com/107354861/213109033-a47e7ddf-3bd6-48dc-94a8-18c43a941edf.png)
+![image](https://user-images.githubusercontent.com/107354861/236652590-40a6b384-6897-4b78-9cf0-dd17d4c25089.png)
 ### 深色模式预览
-![image](https://user-images.githubusercontent.com/107354861/213109047-52aedf7a-b91a-45d5-a2e7-1f27f4b82416.png)
+![image](https://user-images.githubusercontent.com/107354861/236652601-812c46ee-74df-4296-ba7c-5f704194596c.png)
 ### 答题卡预览
-![image](https://user-images.githubusercontent.com/107354861/213109195-fccbbacb-95fe-4263-af86-4d7b4d8fbc28.png)
+![image](https://user-images.githubusercontent.com/107354861/236652626-258d74f6-c708-48a9-b68c-512da9e92913.png)
 ### 托盘菜单预览
-![image](https://user-images.githubusercontent.com/107354861/213109296-c753bd18-fb5a-4ab6-8e5f-ff442b3510e7.png)
+![image](https://user-images.githubusercontent.com/107354861/236652635-d677958f-2b6b-4cae-ab99-2fe63d6bd52e.png)
 ### 资源库预览
-![image](https://user-images.githubusercontent.com/107354861/213110104-241f896d-09c2-463b-8226-f8316e85f33a.png)
+![image](https://user-images.githubusercontent.com/107354861/236652655-9720c1a9-cbaf-4593-8eb9-64b5b0014de6.png)
 ### 睿易云主界面预览
-![image](https://user-images.githubusercontent.com/107354861/213110139-883b2df0-5cef-4d18-b4a4-d46b4c94231d.png)
+![image](https://user-images.githubusercontent.com/107354861/236652671-08a7ac88-c4f0-49f6-9e2f-dfacdc628ac0.png)
 ### 课堂实录主界面预览
-![image](https://user-images.githubusercontent.com/107354861/213110235-ef46725a-6168-4ac7-ba09-b826d0298649.png)
+![image](https://user-images.githubusercontent.com/107354861/236652694-7dac14f5-c8e6-4e8e-adbd-e9627006cc26.png)
 ### 课堂实录视频页面预览
-![image](https://user-images.githubusercontent.com/107354861/213110335-616e66be-c2a2-4eea-9c8c-7888a7b08d05.png)
+![image](https://user-images.githubusercontent.com/107354861/236652728-8f859498-8069-4ea4-9dff-ec772173a8ad.png)
+### 我的班级界面预览
+![image](https://user-images.githubusercontent.com/107354861/236652848-f981a20d-f85d-42bb-986b-38aa8cd7a47f.png)
+### 学生信息界面预览
+![image](https://user-images.githubusercontent.com/107354861/236652854-d1a59688-7a92-4cc1-a95a-b463ba9b99ac.png)
 ### 在线答疑讨论组页面预览
-![1676128990983](https://user-images.githubusercontent.com/107354861/218266552-63e546c7-8796-487f-a8d9-b399b42726c9.png)
+![image](https://user-images.githubusercontent.com/107354861/236652894-6327549a-6e86-49b5-8839-641ad7cc6ec8.png)
+### 在线答疑创建讨论组页面预览
+![image](https://user-images.githubusercontent.com/107354861/236653033-8b581228-68d9-432c-a221-727c0c969c16.png)
+### 在线答疑讨论组管理页面预览
+![image](https://user-images.githubusercontent.com/107354861/236653000-5f7bcd23-fff6-4605-b81c-3aa0b9b5d6a3.png)
+
 
 ## 联系
 QQ:3514048093
+请勿将该软件及其源码用作商业用途！
 ## 运行
 编译需要rust环境
 您需要先安装rust

@@ -4,7 +4,7 @@ The desktop application for MyiPad.
 
 睿易少年派桌面客户端
 
-**[Note: This project is currently under the inspection of NingBoRuiYi]**
+**[Note: PadPlus 2正在开发中，敬请期待]**
 
 ## 平板+
 

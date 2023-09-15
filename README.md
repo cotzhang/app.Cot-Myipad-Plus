@@ -4,13 +4,13 @@ The desktop application for MyiPad.
 
 睿易少年派桌面客户端
 
-**[Note: PadPlus 2正在开发中，敬请期待]**
+**[Note: PadPlus 2 已开发完成，您可以从官网或releases下载最新版本]**
 
 ## 平板+
 
 ![image](https://user-images.githubusercontent.com/107354861/236652545-6a2c2199-9f96-4224-ae1c-f18052e1e20a.png)
 
-下载网站（高速）：https://cotx.tech/padplus
+下载网站：https://cotzhang.cn/padplus
 
 ```
 继续使用本软件及其服务，表明您同意仅使用该软件进行学习相关用途。

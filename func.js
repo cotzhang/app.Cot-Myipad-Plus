@@ -528,3 +528,9 @@ function add_css(str_css) { //Copyright @ rainic.com
 function isWin10() {
 	return ((process.getSystemVersion().startsWith('10.0') && new Number(process.getSystemVersion().split('.')[2]) <= 19045) || (process.getSystemVersion().startsWith('11.0') && new Number(process.getSystemVersion().split('.')[2]) <= 19045)) || process.platform === 'linux'
 }
+
+function getRandomMac(){
+	return "XX:XX:XX:XX:XX:XX".replace(/X/g,function() {
+		return "0123456789ABCDEF".charAt(Math.floor(Math.random()*16))
+	});
+}

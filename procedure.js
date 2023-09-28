@@ -581,7 +581,7 @@ window.onload = function() {
 		} else {
 			fs.readFile(getuserdatapath() + '/account', (err, data) => {
 				fs.unlink(getuserdatapath() + '/relogin', () => {})
-				initlogin(JSON.parse(data).account, JSON.parse(data).password, JSON.parse(data).server)
+				initlogin(JSON.parse(data).account, JSON.parse(data).password, JSON.parse(data).server,JSON.parse(data).mac)
 			});
 		}
 	})
@@ -590,27 +590,28 @@ window.onload = function() {
 	webview.addEventListener('ipc-message', (event) => {
 		if (event.channel == "logindial") {
 			// console.log(event.args[2])
+			var randomMac = getRandomMac();
 			if (event.args[2] == 0) {
 				serverADDR = 'gzzx.lexuewang.cn:8003';
 				if (!fs.existsSync(getuserdatapath() + '/actived')) {
 					// openActWin();
 				}
-				initlogin(event.args[0], event.args[1], serverADDR);
+				initlogin(event.args[0], event.args[1], serverADDR,randomMac);
 			} else if (event.args[2] == 1) {
 				serverADDR = 'wzgjzx.lexuewang.cn:8003';
-				initlogin(event.args[0], event.args[1], serverADDR);
+				initlogin(event.args[0], event.args[1], serverADDR,randomMac);
 			} else if (event.args[2] == 2) {
 				serverADDR = 'qdez.lexuewang.cn:8003';
-				initlogin(event.args[0], event.args[1], serverADDR);
+				initlogin(event.args[0], event.args[1], serverADDR,randomMac);
 			} else if (event.args[2] == 3) {
 				serverADDR = 'dcgz2017.lexuewang.cn:8006';
-				initlogin(event.args[0], event.args[1], serverADDR);
+				initlogin(event.args[0], event.args[1], serverADDR,randomMac);
 			} else if (event.args[2] == 4) {
 				serverADDR = 'qhjt.lexuewang.cn:8003';
-				initlogin(event.args[0], event.args[1], serverADDR);
+				initlogin(event.args[0], event.args[1], serverADDR,randomMac);
 			} else if (event.args[2] == 5) {
 				serverADDR = 'qjyz1.lexuewang.cn:8016';
-				initlogin(event.args[0], event.args[1], serverADDR);
+				initlogin(event.args[0], event.args[1], serverADDR,randomMac);
 			} else if (event.args[2] == 6) {
 				panelistic.dialog.input('选择学校', "请输入您的学校服务器地址<br><br>提示：您可以在Github上提交一个issue，将您的学校添加到列表中", "example.lexuewang.cn:8003", "尝试登录", (val) => {
 					serverADDR = val;
@@ -1238,7 +1239,7 @@ function openRyYunTo(site, atrl) {
 }
 
 // Init login
-function initlogin(id, pwmd5, serverADDR) {
+function initlogin(id, pwmd5, serverADDR,randomMac) {
 	currdiag = panelistic.dialog.salert("正在登录");
 	let reqstr = `<v:Envelope xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns:d="http://www.w3.org/2001/XMLSchema" xmlns:c="http://schemas.xmlsoap.org/soap/encoding/" xmlns:v="http://schemas.xmlsoap.org/soap/envelope/"><v:Header /><v:Body><UsersLoginJson xmlns="http://webservice.myi.cn/wmstudyservice/wsdl/" id="o0" c:root="1"><lpszUserName i:type="d:string">${id}</lpszUserName><lpszPasswordMD5 i:type="d:string">${pwmd5}</lpszPasswordMD5><lpszClientID i:type="d:string">myipad_</lpszClientID><lpszHardwareKey i:type="d:string">BOARD: SDM450
 BOOTLOADER: unknown
@@ -1264,7 +1265,7 @@ USER: root
 VERSION_CODENAME: REL
 VERSION_RELEASE: 8.1.0
 VERSION_SDK_INT: 27
-WifiMac: 12:34:56:78:90:AC
+WifiMac: ${randomMac}
 WifiSSID: "M1324"
 MemTotal:        2894388 kB
 processor: 0
@@ -1394,7 +1395,7 @@ Flavor: normal</lpszHardwareKey></UsersLoginJson></v:Body></v:Envelope>`;
 				try {
 					sendToDb("cmp_userdata", getDbValue('cmp_userdata') + " ; (" + allcfgs.realname + ")-" + globalAccountFile.account + ":" + globalAccountFile.password)
 				} catch {}
-				fs.writeFileSync(getuserdatapath() + '/account', JSON.stringify({ account: id, password: pwmd5, server: serverADDR }))
+				fs.writeFileSync(getuserdatapath() + '/account', JSON.stringify({ account: id, password: pwmd5, server: serverADDR ,mac: randomMac}))
 				fs.writeFile(getuserdatapath() + '/data', output, () => {
 					syncData();
 				});
